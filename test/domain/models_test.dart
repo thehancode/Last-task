@@ -122,9 +122,15 @@ void main() {
       expect(settings.toJson()['language'], 'en');
       expect(settings.toJson()['theme'], 'classic');
 
-      final font = AppSettings.fromJson({'font_family': 'arimo_nerd'});
-      expect(font.fontFamily, AppFontFamily.arimoNerd);
-      expect(font.toJson()['font_family'], 'arimo_nerd');
+      final removedFont = AppSettings.fromJson({'font_family': 'arimo_nerd'});
+      expect(removedFont.fontFamily, AppFontFamily.ubuntuMonoNerd);
+      expect(removedFont.toJson()['font_family'], 'ubuntu_mono_nerd');
+
+      final removedBitstromFont = AppSettings.fromJson({
+        'font_family': 'bitstrom_wera_nerd',
+      });
+      expect(removedBitstromFont.fontFamily, AppFontFamily.ubuntuMonoNerd);
+      expect(removedBitstromFont.toJson()['font_family'], 'ubuntu_mono_nerd');
 
       final comicFont = AppSettings.fromJson({
         'font_family': 'comic_shanns_mono_nerd',

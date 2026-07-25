@@ -101,45 +101,35 @@ extension RewardDurationX on RewardDuration {
 
 enum AppFontFamily {
   ubuntuMonoNerd,
-  arimoNerd,
-  bitstromWeraNerd,
-  goMonoNerd,
   comicShannsMonoNerd,
+  goMonoNerd,
 }
 
 extension AppFontFamilyX on AppFontFamily {
   String get wireName => switch (this) {
     AppFontFamily.ubuntuMonoNerd => 'ubuntu_mono_nerd',
-    AppFontFamily.arimoNerd => 'arimo_nerd',
-    AppFontFamily.bitstromWeraNerd => 'bitstrom_wera_nerd',
-    AppFontFamily.goMonoNerd => 'go_mono_nerd',
     AppFontFamily.comicShannsMonoNerd => 'comic_shanns_mono_nerd',
+    AppFontFamily.goMonoNerd => 'go_mono_nerd',
   };
 
   String get flutterFamily => switch (this) {
     AppFontFamily.ubuntuMonoNerd => 'UbuntuMonoNerd',
-    AppFontFamily.arimoNerd => 'ArimoNerd',
-    AppFontFamily.bitstromWeraNerd => 'BitstromWeraNerd',
-    AppFontFamily.goMonoNerd => 'GoMonoNerd',
     AppFontFamily.comicShannsMonoNerd => 'ComicShannsMonoNerd',
+    AppFontFamily.goMonoNerd => 'GoMonoNerd',
   };
 
   String get label => switch (this) {
     AppFontFamily.ubuntuMonoNerd => 'Ubuntu Mono Nerd Font',
-    AppFontFamily.arimoNerd => 'Arimo Nerd Font',
-    AppFontFamily.bitstromWeraNerd => 'BitstromWera Nerd Font',
-    AppFontFamily.goMonoNerd => 'Go Mono Nerd Font',
     AppFontFamily.comicShannsMonoNerd => 'Comic Shanns Mono Nerd Font',
+    AppFontFamily.goMonoNerd => 'Go Mono Nerd Font',
   };
 
   AppFontFamily get next =>
       AppFontFamily.values[(index + 1) % AppFontFamily.values.length];
 
   static AppFontFamily fromWireName(Object? value) => switch (value) {
-    'arimo_nerd' => AppFontFamily.arimoNerd,
-    'bitstrom_wera_nerd' => AppFontFamily.bitstromWeraNerd,
-    'go_mono_nerd' => AppFontFamily.goMonoNerd,
     'comic_shanns_mono_nerd' => AppFontFamily.comicShannsMonoNerd,
+    'go_mono_nerd' => AppFontFamily.goMonoNerd,
     _ => AppFontFamily.ubuntuMonoNerd,
   };
 }

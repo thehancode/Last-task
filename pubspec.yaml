@@ -79,25 +79,13 @@ flutter:
           weight: 400
         - asset: assets/fonts/UbuntuMonoNerdFontMono-Bold.ttf
           weight: 700
-    - family: ArimoNerd
-      fonts:
-        - asset: assets/fonts/ArimoNerdFont-Bold.ttf
-          weight: 400
-        - asset: assets/fonts/ArimoNerdFont-Bold.ttf
-          weight: 700
-    - family: BitstromWeraNerd
-      fonts:
-        - asset: assets/fonts/BitstromWeraNerdFont-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/BitstromWeraNerdFont-Bold.ttf
-          weight: 700
-    - family: GoMonoNerd
-      fonts:
-        - asset: assets/fonts/GoMonoNerdFont-Regular.ttf
-          weight: 400
     - family: ComicShannsMonoNerd
       fonts:
         - asset: assets/fonts/ComicShannsMonoNerdFont-Regular.otf
+          weight: 400
+    - family: GoMonoNerd
+      fonts:
+        - asset: assets/fonts/GoMonoNerdFont-Regular.ttf
           weight: 400
 
   # To add assets to your application, add an assets section, like this:
