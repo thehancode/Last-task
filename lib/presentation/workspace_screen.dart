@@ -483,8 +483,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
               grabbed: _grabbed,
               onNewTask: _showTaskEditor,
               onCreateList: _showListEditor,
-              onRenameList: () => _showListEditor(rename: true),
-              onDeleteList: _confirmDeleteList,
               onSettings: _showSettings,
               onHelp: _showHelp,
             ),

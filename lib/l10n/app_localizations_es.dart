@@ -199,10 +199,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commandLists => 'listas';
 
   @override
-  String get commandMove => 'mover';
+  String get commandMove => 'Mover';
 
   @override
-  String get commandNew => 'nueva';
+  String get commandMoveLegacy => 'mover';
+
+  @override
+  String get commandNew => 'Nueva tarea';
+
+  @override
+  String get commandNewLegacy => 'nueva';
 
   @override
   String get commandAdvance => 'avanzar';
@@ -211,10 +217,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commandSort => 'ordenar';
 
   @override
-  String get commandTags => 'etiquetas';
+  String get commandTags => 'Etiquetar tarea';
 
   @override
-  String get commandNewList => 'nueva lista';
+  String get commandTagsLegacy => 'etiquetas';
+
+  @override
+  String get commandNewList => 'Nueva lista';
+
+  @override
+  String get commandNewListLegacy => 'nueva lista';
 
   @override
   String get commandRename => 'renombrar';
@@ -223,10 +235,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commandDeleteList => 'elim. lista';
 
   @override
-  String get commandSettings => 'ajustes';
+  String get commandSettings => 'Ajustes';
 
   @override
-  String get commandHelp => 'ayuda';
+  String get commandSettingsLegacy => 'ajustes';
+
+  @override
+  String get commandHelp => 'Ayuda';
+
+  @override
+  String get commandHelpLegacy => 'ayuda';
 
   @override
   String get taskTitle => 'Título';
@@ -608,10 +626,16 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get commandLists => 'listas';
 
   @override
-  String get commandMove => 'mover';
+  String get commandMove => 'Mover';
 
   @override
-  String get commandNew => 'nueva';
+  String get commandMoveLegacy => 'mover';
+
+  @override
+  String get commandNew => 'Nueva tarea';
+
+  @override
+  String get commandNewLegacy => 'nueva';
 
   @override
   String get commandAdvance => 'avanzar';
@@ -620,10 +644,16 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get commandSort => 'ordenar';
 
   @override
-  String get commandTags => 'etiquetas';
+  String get commandTags => 'Etiquetar tarea';
 
   @override
-  String get commandNewList => 'nueva lista';
+  String get commandTagsLegacy => 'etiquetas';
+
+  @override
+  String get commandNewList => 'Nueva lista';
+
+  @override
+  String get commandNewListLegacy => 'nueva lista';
 
   @override
   String get commandRename => 'cambiar nombre';
@@ -632,10 +662,16 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get commandDeleteList => 'elim. lista';
 
   @override
-  String get commandSettings => 'config.';
+  String get commandSettings => 'Configuración';
 
   @override
-  String get commandHelp => 'ayuda';
+  String get commandSettingsLegacy => 'config.';
+
+  @override
+  String get commandHelp => 'Ayuda';
+
+  @override
+  String get commandHelpLegacy => 'ayuda';
 
   @override
   String get taskTitle => 'Título';
@@ -1017,10 +1053,16 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get commandLists => 'listas';
 
   @override
-  String get commandMove => 'mover';
+  String get commandMove => 'Mover';
 
   @override
-  String get commandNew => 'nueva';
+  String get commandMoveLegacy => 'mover';
+
+  @override
+  String get commandNew => 'Nueva tarea';
+
+  @override
+  String get commandNewLegacy => 'nueva';
 
   @override
   String get commandAdvance => 'avanzar';
@@ -1029,10 +1071,16 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get commandSort => 'ordenar';
 
   @override
-  String get commandTags => 'etiquetas';
+  String get commandTags => 'Etiquetar tarea';
 
   @override
-  String get commandNewList => 'nueva lista';
+  String get commandTagsLegacy => 'etiquetas';
+
+  @override
+  String get commandNewList => 'Nueva lista';
+
+  @override
+  String get commandNewListLegacy => 'nueva lista';
 
   @override
   String get commandRename => 'renombrar';
@@ -1041,10 +1089,16 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get commandDeleteList => 'elim. lista';
 
   @override
-  String get commandSettings => 'ajustes';
+  String get commandSettings => 'Ajustes';
 
   @override
-  String get commandHelp => 'ayuda';
+  String get commandSettingsLegacy => 'ajustes';
+
+  @override
+  String get commandHelp => 'Ayuda';
+
+  @override
+  String get commandHelpLegacy => 'ayuda';
 
   @override
   String get taskTitle => 'Título';

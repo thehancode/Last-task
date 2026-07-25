@@ -199,10 +199,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commandLists => 'lists';
 
   @override
-  String get commandMove => 'move';
+  String get commandMove => 'Move';
 
   @override
-  String get commandNew => 'new';
+  String get commandMoveLegacy => 'move';
+
+  @override
+  String get commandNew => 'New task';
+
+  @override
+  String get commandNewLegacy => 'new';
 
   @override
   String get commandAdvance => 'advance';
@@ -211,10 +217,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commandSort => 'sort';
 
   @override
-  String get commandTags => 'tags';
+  String get commandTags => 'Tag task';
 
   @override
-  String get commandNewList => 'new list';
+  String get commandTagsLegacy => 'tags';
+
+  @override
+  String get commandNewList => 'New list';
+
+  @override
+  String get commandNewListLegacy => 'new list';
 
   @override
   String get commandRename => 'rename';
@@ -223,10 +235,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commandDeleteList => 'del list';
 
   @override
-  String get commandSettings => 'settings';
+  String get commandSettings => 'Settings';
 
   @override
-  String get commandHelp => 'help';
+  String get commandSettingsLegacy => 'settings';
+
+  @override
+  String get commandHelp => 'Help';
+
+  @override
+  String get commandHelpLegacy => 'help';
 
   @override
   String get taskTitle => 'Task title';

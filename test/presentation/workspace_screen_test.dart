@@ -49,6 +49,53 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('terminal footer uses two right-aligned command lines', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(1000, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const FocusListApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.text('New task'), findsOneWidget);
+    expect(find.text('New list'), findsOneWidget);
+    expect(find.text('Move'), findsOneWidget);
+    expect(find.text('Tag task'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('New list')).dx,
+      lessThan(tester.getTopLeft(find.text('New task')).dx),
+    );
+
+    final status = tester.getRect(
+      find.byKey(const Key('terminal-footer-status')),
+    );
+    final primary = tester.getRect(
+      find.byKey(const Key('terminal-footer-primary')),
+    );
+    final secondary = tester.getRect(
+      find.byKey(const Key('terminal-footer-secondary')),
+    );
+    expect(status.bottom, lessThanOrEqualTo(primary.top));
+    expect(primary.top, lessThan(secondary.top));
+    expect(primary.right, equals(1000));
+    expect(secondary.right, equals(1000));
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets(
     'entrance tip appears near the bottom above the terminal footer',
     (tester) async {
@@ -418,7 +465,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp('new command')));
     await tester.pumpAndSettle();
 
-    final title = find.text('New task');
+    final title = find.text('New task').last;
     final body = find.text('Daily task');
     expect(title, findsOneWidget);
     expect(body, findsOneWidget);

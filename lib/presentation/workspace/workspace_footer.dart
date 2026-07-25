@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/ui_mode.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
-import 'workspace_dialogs.dart';
 import 'workspace_presenters.dart';
-import 'workspace_settings_dialog.dart';
 
-class WorkspaceFooter extends ConsumerWidget {
+class WorkspaceFooter extends StatelessWidget {
   const WorkspaceFooter({
     super.key,
     required this.state,
     required this.grabbed,
     required this.onNewTask,
     required this.onCreateList,
-    required this.onRenameList,
-    required this.onDeleteList,
     required this.onSettings,
     required this.onHelp,
   });
@@ -25,13 +20,11 @@ class WorkspaceFooter extends ConsumerWidget {
   final bool grabbed;
   final VoidCallback onNewTask;
   final VoidCallback onCreateList;
-  final VoidCallback onRenameList;
-  final VoidCallback onDeleteList;
   final VoidCallback onSettings;
   final VoidCallback onHelp;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final terminal = usesTerminalPresentation;
     final activity = state.notice != null
         ? Text(
@@ -89,100 +82,117 @@ class WorkspaceFooter extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
+          key: const Key('terminal-footer-status'),
           padding: const EdgeInsets.symmetric(vertical: 1),
           child: activity,
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _TerminalCommand(
-                keys: 'ctrl+a',
-                label: AppLocalizations.of(context)!.commandMulti,
-                onTap: ref
-                    .read(workspaceViewModelProvider.notifier)
-                    .toggleMultiView,
-              ),
-              _TerminalCommand(
-                keys: '←/→',
-                label: AppLocalizations.of(context)!.commandLists,
-                onTap: () =>
-                    ref.read(workspaceViewModelProvider.notifier).cycleList(1),
-              ),
-              _TerminalCommand(
-                keys: '↑↓',
-                label: AppLocalizations.of(context)!.commandMove,
-              ),
-              _TerminalCommand(
-                keys: 'n',
-                label: AppLocalizations.of(context)!.commandNew,
-                onTap: onNewTask,
-              ),
-              _TerminalCommand(
-                keys: 'space f',
-                label: AppLocalizations.of(context)!.commandAdvance,
-              ),
-              _TerminalCommand(
-                keys: 'space ↑↓',
-                label: AppLocalizations.of(context)!.commandSort,
-              ),
-              _TerminalCommand(
-                keys: 't',
-                label: 'themes',
-                onTap: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => const WorkspaceSettingsDialog(
-                    initialTab: SettingsTab.themes,
-                  ),
-                ),
-              ),
-              _TerminalCommand(
-                keys: 'w/shift+w',
-                label: AppLocalizations.of(context)!.commandTags,
-              ),
-              _TerminalCommand(
-                keys: 'ctrl+n',
-                label: AppLocalizations.of(context)!.commandNewList,
-                onTap: onCreateList,
-              ),
-              _TerminalCommand(
-                keys: 'f2',
-                label: AppLocalizations.of(context)!.commandRename,
-                onTap: onRenameList,
-              ),
-              _TerminalCommand(
-                keys: 'ctrl+x',
-                label: AppLocalizations.of(context)!.commandDeleteList,
-                onTap: onDeleteList,
-              ),
-              _TerminalCommand(
-                keys: 'g',
-                label: AppLocalizations.of(context)!.commandSettings,
-                onTap: onSettings,
-              ),
-              _TerminalCommand(
-                keys: '?',
-                label: AppLocalizations.of(context)!.commandHelp,
-                onTap: onHelp,
-              ),
-            ],
-          ),
+        _TerminalFooterLine(
+          lineKey: const Key('terminal-footer-primary'),
+          children: [
+            _TerminalCommand(
+              keys: 'ctrl+n',
+              label: AppLocalizations.of(context)!.commandNewList,
+              semanticsLabel: AppLocalizations.of(
+                context,
+              )!.commandNewListLegacy,
+              onTap: onCreateList,
+            ),
+            const _TerminalSeparator(),
+            _TerminalCommand(
+              keys: 'n',
+              label: AppLocalizations.of(context)!.commandNew,
+              semanticsLabel: AppLocalizations.of(context)!.commandNewLegacy,
+              onTap: onNewTask,
+            ),
+            const _TerminalSeparator(),
+            _TerminalCommand(
+              keys: '↑↓←→',
+              label: AppLocalizations.of(context)!.commandMove,
+              semanticsLabel: AppLocalizations.of(context)!.commandMoveLegacy,
+            ),
+            const _TerminalSeparator(),
+            _TerminalCommand(
+              keys: 'w',
+              label: AppLocalizations.of(context)!.commandTags,
+              semanticsLabel: AppLocalizations.of(context)!.commandTagsLegacy,
+            ),
+          ],
+        ),
+        _TerminalFooterLine(
+          lineKey: const Key('terminal-footer-secondary'),
+          children: [
+            _TerminalCommand(
+              keys: 'g',
+              label: AppLocalizations.of(context)!.commandSettings,
+              semanticsLabel: AppLocalizations.of(
+                context,
+              )!.commandSettingsLegacy,
+              onTap: onSettings,
+            ),
+            const _TerminalSeparator(),
+            _TerminalCommand(
+              keys: '?',
+              label: AppLocalizations.of(context)!.commandHelp,
+              semanticsLabel: AppLocalizations.of(context)!.commandHelpLegacy,
+              onTap: onHelp,
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
+class _TerminalFooterLine extends StatelessWidget {
+  const _TerminalFooterLine({required this.lineKey, required this.children});
+
+  final Key lineKey;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => KeyedSubtree(
+      key: lineKey,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Row(mainAxisSize: MainAxisSize.min, children: children),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _TerminalSeparator extends StatelessWidget {
+  const _TerminalSeparator();
+
+  @override
+  Widget build(BuildContext context) =>
+      Text('|', style: TextStyle(color: TerminalPalette.of(context).muted));
+}
+
 class _TerminalCommand extends StatelessWidget {
-  const _TerminalCommand({required this.keys, required this.label, this.onTap});
+  const _TerminalCommand({
+    required this.keys,
+    required this.label,
+    this.semanticsLabel,
+    this.onTap,
+  });
   final String keys;
   final String label;
+  final String? semanticsLabel;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: onTap != null,
-    label: AppLocalizations.of(context)!.commandSemantics(label, keys),
+    label: AppLocalizations.of(
+      context,
+    )!.commandSemantics(semanticsLabel ?? label, keys),
     child: InkWell(
       onTap: onTap,
       child: Padding(

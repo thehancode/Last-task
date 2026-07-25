@@ -207,25 +207,33 @@ class WorkspaceTabs extends ConsumerWidget {
                 onTap: () => ref
                     .read(workspaceViewModelProvider.notifier)
                     .selectList(list.id),
-                child: Container(
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: selected
+                            ? TerminalPalette.of(context).accent
+                            : TerminalPalette.of(context).muted,
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
                   ),
-                  color: selected
-                      ? TerminalPalette.of(context).accent
-                      : TerminalPalette.of(context).panel,
-                  child: Text(
-                    list.name,
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      color: selected
-                          ? TerminalPalette.of(context).background
-                          : TerminalPalette.of(context).muted,
-                      fontWeight: selected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: TerminalMetrics.cell(context),
+                      vertical: TerminalMetrics.line(context) * .2,
+                    ),
+                    child: Text(
+                      list.name,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: selected
+                            ? TerminalPalette.of(context).accent
+                            : TerminalPalette.of(context).muted,
+                        fontWeight: selected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ),

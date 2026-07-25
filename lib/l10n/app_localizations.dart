@@ -451,14 +451,26 @@ abstract class AppLocalizations {
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'move'**
+  /// **'Move'**
   String get commandMove;
+
+  /// Stable accessibility label for the terminal move command.
+  ///
+  /// In en, this message translates to:
+  /// **'move'**
+  String get commandMoveLegacy;
 
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'new'**
+  /// **'New task'**
   String get commandNew;
+
+  /// Stable accessibility label for the terminal new-task command.
+  ///
+  /// In en, this message translates to:
+  /// **'new'**
+  String get commandNewLegacy;
 
   /// Short terminal footer command label.
   ///
@@ -475,14 +487,26 @@ abstract class AppLocalizations {
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'tags'**
+  /// **'Tag task'**
   String get commandTags;
+
+  /// Stable accessibility label for the terminal tag command.
+  ///
+  /// In en, this message translates to:
+  /// **'tags'**
+  String get commandTagsLegacy;
 
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'new list'**
+  /// **'New list'**
   String get commandNewList;
+
+  /// Stable accessibility label for the terminal new-list command.
+  ///
+  /// In en, this message translates to:
+  /// **'new list'**
+  String get commandNewListLegacy;
 
   /// Short terminal footer command label.
   ///
@@ -499,14 +523,26 @@ abstract class AppLocalizations {
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'settings'**
+  /// **'Settings'**
   String get commandSettings;
+
+  /// Stable accessibility label for the terminal settings command.
+  ///
+  /// In en, this message translates to:
+  /// **'settings'**
+  String get commandSettingsLegacy;
 
   /// Short terminal footer command label.
   ///
   /// In en, this message translates to:
-  /// **'help'**
+  /// **'Help'**
   String get commandHelp;
+
+  /// Stable accessibility label for the terminal help command.
+  ///
+  /// In en, this message translates to:
+  /// **'help'**
+  String get commandHelpLegacy;
 
   /// Floating label for the task-title input.
   ///
