@@ -35,32 +35,58 @@ formatter over unrelated user changes. Before finishing, run at least
 `flutter analyze` and `flutter test`; build the affected target for changes to
 platform setup, plugins, storage, or release configuration.
 
-## Architecture
+## Project structure
 
 Keep dependencies flowing in this direction:
 
 ```text
-presentation -> domain <- data
-                    ^
-                  providers wire implementations together
+app -> presentation -> domain <- data
+          |                       ^
+          +---- providers --------+
 ```
 
+- `lib/main.dart`: process entry point and platform startup. It initializes
+  Flutter, desktop window behavior, and the root Riverpod scope.
+- `lib/app/`: application composition and platform integrations.
+  `focus_list_app.dart` owns the root app, localization delegates, themes, and
+  the workspace route; `ui_mode.dart` defines the presentation-mode boundary;
+  `theme_catalog.dart` loads theme definitions. Desktop background and window
+  position services use conditional imports with base/IO/stub files so shared
+  and web code never import `dart:io`.
 - `lib/domain/models.dart`: immutable entities, enums, validation, JSON wire
   shapes, and platform-independent helpers.
-- `lib/domain/repositories.dart`: repository contracts. Domain code must not
-  import Flutter widgets, files, IndexedDB, or platform APIs.
-- `lib/data/`: repository implementations and persistence adapters.
-- `lib/data/local/local_store.dart`: conditional-import entry point. Preserve
-  the IO/web/stub split; never import an IO implementation from shared code.
-- `lib/data/providers.dart`: Riverpod dependency wiring.
-- `lib/presentation/workspace_view_model.dart`: application state and actions.
-  Persistence and business workflows belong here, not in widgets.
-- `lib/presentation/workspace_screen.dart`: workspace widgets, keyboard and
-  pointer interactions, and dialogs.
-- `lib/app/focus_list_app.dart`: app-wide themes and typography.
-- `lib/app/ui_mode.dart`: the deliberate presentation-mode boundary.
-- `lib/presentation/terminal_style.dart`: terminal colors and measured font
+- `lib/domain/repositories.dart`: repository contracts and persistence result
+  types. Domain code must not import Flutter widgets, files, IndexedDB,
+  Riverpod, or platform APIs.
+- `lib/data/local_repositories.dart`: repository implementations that translate
+  between domain objects and stored documents.
+- `lib/data/local/`: platform persistence adapters.
+  `local_store.dart` is the conditional-import entry point; preserve the
+  base/IO/web/stub split and never import an IO implementation from shared code.
+- `lib/data/providers.dart`: Riverpod dependency wiring for repository
+  implementations. Keep construction here rather than in widgets or domain
+  code.
+- `lib/presentation/workspace_view_model.dart`: application state transitions,
+  actions, persistence workflows, undo/redo, and notices.
+  `workspace/workspace_state.dart` contains the immutable state and derived
+  state queries exported by the view model.
+- `lib/presentation/workspace_projection.dart`: pure projection of workspace
+  state into the task sections shown by each view.
+- `lib/presentation/workspace_screen.dart`: top-level workspace coordinator for
+  focus, shortcuts, pointer/keyboard dispatch, dialogs, and composition of the
+  workspace widgets.
+- `lib/presentation/workspace/`: cohesive workspace UI pieces. Chrome and tabs,
+  task panels and rows, footer commands, dialogs/settings, presenters, and
+  selected-task visibility behavior live in their corresponding
+  `workspace_*` files. Keep persistence and business workflows out of them.
+- `lib/presentation/terminal_style.dart`: terminal palette and measured font
   metrics. Reuse these values instead of introducing local approximations.
+- `lib/l10n/`: ARB translation sources and generated localization Dart files.
+  Follow the additional instructions in `lib/l10n/AGENTS.md` when changing
+  localized copy.
+- `test/`: mirrors the production layers with domain, data, app, and
+  presentation tests; `test/widget_test.dart` is the root application smoke
+  test.
 
 If a file becomes difficult to navigate, extract a cohesive widget or service;
 do not create generic utility files containing unrelated helpers.
