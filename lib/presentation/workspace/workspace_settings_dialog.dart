@@ -404,6 +404,7 @@ class _BackgroundSettings extends StatelessWidget {
           onLabelTap: onPickImage,
           control: _TextAction(
             value: strings.clear,
+            fillWidth: true,
             onTap: selectedPath == null
                 ? null
                 : () =>
@@ -493,12 +494,9 @@ class _SettingsRow extends StatelessWidget {
         Expanded(
           flex: 3,
           child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: Align(alignment: Alignment.center, child: control),
-              ),
+            builder: (context, constraints) => SizedBox(
+              width: constraints.maxWidth,
+              child: control,
             ),
           ),
         ),
@@ -515,7 +513,7 @@ class _CycleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      _TextAction(value: '< $value >', onTap: onTap);
+      _TextAction(value: '< $value >', onTap: onTap, fillWidth: true);
 }
 
 class _ToggleButton extends StatelessWidget {
@@ -534,6 +532,7 @@ class _ToggleButton extends StatelessWidget {
       child: _TextAction(
         value: value ? '[x]' : '[ ]',
         onTap: () => onChanged(!value),
+        fillWidth: true,
       ),
     );
   }
@@ -554,18 +553,23 @@ class _StepControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        _TextAction(
-          value: '[−]',
-          semanticsLabel: strings.decrease,
-          onTap: onDecrease,
+        Expanded(
+          child: _TextAction(
+            value: '[−]',
+            semanticsLabel: strings.decrease,
+            onTap: onDecrease,
+            fillWidth: true,
+          ),
         ),
-        Text(value),
-        _TextAction(
-          value: '[+]',
-          semanticsLabel: strings.increase,
-          onTap: onIncrease,
+        Expanded(child: Center(child: Text(value))),
+        Expanded(
+          child: _TextAction(
+            value: '[+]',
+            semanticsLabel: strings.increase,
+            onTap: onIncrease,
+            fillWidth: true,
+          ),
         ),
       ],
     );
@@ -577,11 +581,13 @@ class _TextAction extends StatelessWidget {
     required this.value,
     required this.onTap,
     this.semanticsLabel,
+    this.fillWidth = false,
   });
 
   final String value;
   final VoidCallback? onTap;
   final String? semanticsLabel;
+  final bool fillWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -595,17 +601,30 @@ class _TextAction extends StatelessWidget {
       label: semanticsLabel,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: TerminalMetrics.line(context) * .1,
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              color: enabled
-                  ? TerminalPalette.of(context).accent
-                  : TerminalPalette.of(context).muted,
-              fontWeight: FontWeight.bold,
+        child: SizedBox(
+          width: fillWidth ? double.infinity : null,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: TerminalMetrics.line(context) * .1,
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Center(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        color: enabled
+                            ? TerminalPalette.of(context).accent
+                            : TerminalPalette.of(context).muted,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

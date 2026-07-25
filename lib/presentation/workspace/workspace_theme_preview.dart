@@ -63,22 +63,49 @@ class WorkspaceMarqueeText extends StatefulWidget {
 }
 
 class _WorkspaceMarqueeTextState extends State<WorkspaceMarqueeText> {
+  static const _separator = '  ▢  ';
+
   final _controller = ScrollController();
   Timer? _timer;
+  var _hovering = false;
+  var _loopWidth = 0.0;
 
-  @override
-  void initState() {
-    super.initState();
+  void _start() {
+    if (_hovering) return;
+    setState(() => _hovering = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.hasClients) return;
-      if (_controller.position.maxScrollExtent <= 0) return;
+      final textPainter = TextPainter(
+        text: TextSpan(text: widget.text, style: widget.style),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      if (textPainter.width <= _controller.position.viewportDimension) return;
+      final loopPainter = TextPainter(
+        text: TextSpan(
+          text: '${widget.text}$_separator',
+          style: widget.style,
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      _loopWidth = loopPainter.width;
       _timer = Timer.periodic(const Duration(milliseconds: 60), (_) {
         if (!_controller.hasClients) return;
-        final max = _controller.position.maxScrollExtent;
-        final next = _controller.offset + TerminalMetrics.cell(context) * .2;
-        _controller.jumpTo(next > max ? 0 : next);
+        var next = _controller.offset + TerminalMetrics.cell(context) * .2;
+        if (next >= _loopWidth) next -= _loopWidth;
+        _controller.jumpTo(next);
       });
     });
+  }
+
+  void _stop() {
+    _timer?.cancel();
+    _timer = null;
+    if (_controller.hasClients) _controller.jumpTo(0);
+    if (mounted) setState(() => _hovering = false);
   }
 
   @override
@@ -92,10 +119,20 @@ class _WorkspaceMarqueeTextState extends State<WorkspaceMarqueeText> {
   Widget build(BuildContext context) => Semantics(
     label: widget.text,
     child: ExcludeSemantics(
-      child: SingleChildScrollView(
-        controller: _controller,
-        scrollDirection: Axis.horizontal,
-        child: Text(widget.text, maxLines: 1, style: widget.style),
+      child: MouseRegion(
+        onEnter: (_) => _start(),
+        onExit: (_) => _stop(),
+        child: SingleChildScrollView(
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          child: Text(
+            _hovering
+                ? '${widget.text}$_separator${widget.text}$_separator'
+                : widget.text,
+            maxLines: 1,
+            style: widget.style,
+          ),
+        ),
       ),
     ),
   );
