@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -515,7 +516,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                         horizontal: TerminalMetrics.cell(context),
                       )
                     : const EdgeInsets.only(top: 10, bottom: 8),
-                child: _TaskPanel(state: state),
+                child: _TaskPanel(state: state, background: background),
               ),
             ),
             _Footer(
@@ -547,23 +548,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
             : null,
         body: Stack(
           children: [
-            if (background != null)
-              Positioned.fill(
-                child: Image.memory(
-                  background,
-                  fit: appearance.backgroundFit == DesktopBackgroundFit.cover
-                      ? BoxFit.cover
-                      : BoxFit.contain,
-                ),
-              ),
-            if (background != null)
-              Positioned.fill(
-                child: ColoredBox(
-                  color: TerminalPalette.of(context).background.withValues(
-                    alpha: appearance.backgroundOverlayOpacity,
-                  ),
-                ),
-              ),
             Positioned.fill(child: workspace),
             if (terminal && state.tipId != null)
               Positioned(
@@ -857,18 +841,15 @@ class _Tabs extends ConsumerWidget {
 }
 
 class _TaskPanel extends ConsumerWidget {
-  const _TaskPanel({required this.state});
+  const _TaskPanel({required this.state, required this.background});
   final WorkspaceState state;
+  final Uint8List? background;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appearance = state.deviceState.desktopAppearance;
-    final panelOpacity =
-        !kIsWeb &&
-            defaultTargetPlatform == TargetPlatform.linux &&
-            appearance.backgroundImagePath != null
-        ? 0.0
-        : 1.0;
+    final hasBackground = background != null;
+    final panelOpacity = hasBackground ? 0.0 : 1.0;
     final normalContent = switch (state.view) {
       WorkspaceView.list => _ListContent(state: state),
       WorkspaceView.focus => _FocusContent(state: state),
@@ -881,26 +862,45 @@ class _TaskPanel extends ConsumerWidget {
       WorkspaceView.completed => TerminalPalette.of(context).done,
       WorkspaceView.multi => TerminalPalette.of(context).accent,
     };
+    final radius = usesTerminalPresentation
+        ? BorderRadius.circular(TerminalMetrics.panelRadius)
+        : BorderRadius.circular(12);
+    final content = state.search == null
+        ? normalContent
+        : Column(
+            children: [
+              const _SearchBar(),
+              Expanded(child: normalContent),
+            ],
+          );
     return Container(
       key: ValueKey('task-panel-${state.view.name}'),
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: TerminalPalette.of(
-          context,
-        ).panel.withValues(alpha: panelOpacity),
+        color: TerminalPalette.of(context).panel.withValues(alpha: panelOpacity),
         border: Border.all(color: border),
-        borderRadius: usesTerminalPresentation
-            ? BorderRadius.circular(TerminalMetrics.panelRadius)
-            : BorderRadius.circular(12),
+        borderRadius: radius,
       ),
-      child: state.search == null
-          ? normalContent
-          : Column(
+      child: hasBackground
+          ? Stack(
+              fit: StackFit.expand,
               children: [
-                const _SearchBar(),
-                Expanded(child: normalContent),
+                Image.memory(
+                  background!,
+                  fit: appearance.backgroundFit == DesktopBackgroundFit.cover
+                      ? BoxFit.cover
+                      : BoxFit.contain,
+                ),
+                ColoredBox(
+                  color: TerminalPalette.of(context).background.withValues(
+                    alpha: appearance.backgroundOverlayOpacity,
+                  ),
+                ),
+                content,
               ],
-            ),
+            )
+          : content,
     );
   }
 }
