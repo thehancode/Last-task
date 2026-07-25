@@ -85,6 +85,7 @@
   "wrapLongTitles": "Ajustar títulos",
   "desktopFontSize": "Tamaño de fuente de escritorio: {points} pt",
   "desktopFontSizeLabel": "Fuente de escritorio",
+  "fontFamily": "Fuente",
   "tagNames": "Etiquetas",
   "saveTagNames": "Guardar etiquetas",
   "language": "Idioma",

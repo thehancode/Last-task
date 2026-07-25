@@ -99,6 +99,51 @@ extension RewardDurationX on RewardDuration {
   };
 }
 
+enum AppFontFamily {
+  ubuntuMonoNerd,
+  arimoNerd,
+  bitstromWeraNerd,
+  goMonoNerd,
+  comicShannsMonoNerd,
+}
+
+extension AppFontFamilyX on AppFontFamily {
+  String get wireName => switch (this) {
+    AppFontFamily.ubuntuMonoNerd => 'ubuntu_mono_nerd',
+    AppFontFamily.arimoNerd => 'arimo_nerd',
+    AppFontFamily.bitstromWeraNerd => 'bitstrom_wera_nerd',
+    AppFontFamily.goMonoNerd => 'go_mono_nerd',
+    AppFontFamily.comicShannsMonoNerd => 'comic_shanns_mono_nerd',
+  };
+
+  String get flutterFamily => switch (this) {
+    AppFontFamily.ubuntuMonoNerd => 'UbuntuMonoNerd',
+    AppFontFamily.arimoNerd => 'ArimoNerd',
+    AppFontFamily.bitstromWeraNerd => 'BitstromWeraNerd',
+    AppFontFamily.goMonoNerd => 'GoMonoNerd',
+    AppFontFamily.comicShannsMonoNerd => 'ComicShannsMonoNerd',
+  };
+
+  String get label => switch (this) {
+    AppFontFamily.ubuntuMonoNerd => 'Ubuntu Mono Nerd Font',
+    AppFontFamily.arimoNerd => 'Arimo Nerd Font',
+    AppFontFamily.bitstromWeraNerd => 'BitstromWera Nerd Font',
+    AppFontFamily.goMonoNerd => 'Go Mono Nerd Font',
+    AppFontFamily.comicShannsMonoNerd => 'Comic Shanns Mono Nerd Font',
+  };
+
+  AppFontFamily get next =>
+      AppFontFamily.values[(index + 1) % AppFontFamily.values.length];
+
+  static AppFontFamily fromWireName(Object? value) => switch (value) {
+    'arimo_nerd' => AppFontFamily.arimoNerd,
+    'bitstrom_wera_nerd' => AppFontFamily.bitstromWeraNerd,
+    'go_mono_nerd' => AppFontFamily.goMonoNerd,
+    'comic_shanns_mono_nerd' => AppFontFamily.comicShannsMonoNerd,
+    _ => AppFontFamily.ubuntuMonoNerd,
+  };
+}
+
 enum DesktopBackgroundFit { cover, contain }
 
 class DesktopAppearance {
@@ -507,6 +552,7 @@ class AppSettings {
   const AppSettings({
     this.marqueeSpeedMs = defaultMarqueeSpeedMs,
     this.longTitleDisplay = LongTitleDisplay.marquee,
+    this.fontFamily = AppFontFamily.ubuntuMonoNerd,
     this.nativeFontSize = 23,
     this.tagNames = const TagNames(),
     this.languageLocale = 'en',
@@ -517,6 +563,7 @@ class AppSettings {
 
   final int marqueeSpeedMs;
   final LongTitleDisplay longTitleDisplay;
+  final AppFontFamily fontFamily;
   final int nativeFontSize;
   final TagNames tagNames;
 
@@ -530,6 +577,7 @@ class AppSettings {
   AppSettings copyWith({
     int? marqueeSpeedMs,
     LongTitleDisplay? longTitleDisplay,
+    AppFontFamily? fontFamily,
     int? nativeFontSize,
     TagNames? tagNames,
     String? languageLocale,
@@ -539,6 +587,7 @@ class AppSettings {
   }) => AppSettings(
     marqueeSpeedMs: marqueeSpeedMs ?? this.marqueeSpeedMs,
     longTitleDisplay: longTitleDisplay ?? this.longTitleDisplay,
+    fontFamily: fontFamily ?? this.fontFamily,
     nativeFontSize: nativeFontSize ?? this.nativeFontSize,
     tagNames: tagNames ?? this.tagNames,
     languageLocale: languageLocale ?? this.languageLocale,
@@ -550,6 +599,7 @@ class AppSettings {
   Map<String, Object?> toJson() => {
     'marquee_speed_ms': marqueeSpeedMs,
     'long_title_display': longTitleDisplay.wireName,
+    'font_family': fontFamily.wireName,
     'native_font_size': nativeFontSize,
     'tag_names': tagNames.toJson(),
     'language': languageLocale,
@@ -563,6 +613,7 @@ class AppSettings {
     longTitleDisplay: LongTitleDisplayX.fromWireName(
       json['long_title_display'],
     ),
+    fontFamily: AppFontFamilyX.fromWireName(json['font_family']),
     nativeFontSize: json['native_font_size'] as int? ?? 23,
     tagNames: TagNames.fromJson(
       json['tag_names'] == null

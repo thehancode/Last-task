@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/models.dart';
 import '../presentation/workspace_screen.dart';
 import '../presentation/workspace_view_model.dart';
 import '../presentation/terminal_style.dart';
@@ -15,6 +16,7 @@ class FocusListApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(workspaceViewModelProvider);
     final fontScale = state.settings.nativeFontSize / 16;
+    final fontFamily = state.settings.fontFamily.flutterFamily;
     final palette = ref
         .watch(themeCatalogProvider)
         .byId(state.settings.themeId);
@@ -28,7 +30,7 @@ class FocusListApp extends ConsumerWidget {
         surface: palette.panel,
         error: palette.error,
       ),
-      fontFamily: 'UbuntuMonoNerd',
+      fontFamily: fontFamily,
       dialogTheme: DialogThemeData(backgroundColor: palette.panel),
     );
     final terminal = usesTerminalPresentation;
@@ -134,7 +136,7 @@ class FocusListApp extends ConsumerWidget {
                 color: palette.panel,
                 elevation: 0,
                 menuPadding: EdgeInsets.symmetric(vertical: 2),
-                textStyle: TextStyle(fontFamily: 'UbuntuMonoNerd'),
+                textStyle: TextStyle(fontFamily: fontFamily),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero,
                   side: BorderSide(color: palette.muted),

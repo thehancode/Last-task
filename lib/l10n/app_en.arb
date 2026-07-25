@@ -172,6 +172,8 @@
   "@desktopFontSize": { "description": "Settings label above the terminal font-size slider.", "placeholders": { "points": { "type": "int" } } },
   "desktopFontSizeLabel": "Desktop font size",
   "@desktopFontSizeLabel": {"description": "Settings row label for the terminal font-size stepper."},
+  "fontFamily": "Font",
+  "@fontFamily": {"description": "Settings row label for cycling among bundled font families."},
   "tagNames": "Tag names",
   "@tagNames": {"description": "Heading for editable task-tag names."},
   "saveTagNames": "Save tag names",

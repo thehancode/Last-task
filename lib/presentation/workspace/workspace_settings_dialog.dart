@@ -196,6 +196,15 @@ class _ConfigSettings extends StatelessWidget {
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
+            title: Text(strings.fontFamily),
+            subtitle: Text(settings.fontFamily.label),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => onUpdate(
+              settings.copyWith(fontFamily: settings.fontFamily.next),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
             title: Text(strings.language),
             subtitle: Text(_languageLabel(settings.languageLocale)),
             trailing: const Icon(Icons.chevron_right),
@@ -257,6 +266,16 @@ class _ConfigSettings extends StatelessWidget {
             ),
           ),
         ),
+        if (usesTerminalPresentation)
+          _SettingsRow(
+            label: strings.fontFamily,
+            control: _CycleButton(
+              value: settings.fontFamily.label,
+              onTap: () => onUpdate(
+                settings.copyWith(fontFamily: settings.fontFamily.next),
+              ),
+            ),
+          ),
         if (usesTerminalPresentation)
           _SettingsRow(
             label: strings.desktopFontSizeLabel,
@@ -494,10 +513,8 @@ class _SettingsRow extends StatelessWidget {
         Expanded(
           flex: 3,
           child: LayoutBuilder(
-            builder: (context, constraints) => SizedBox(
-              width: constraints.maxWidth,
-              child: control,
-            ),
+            builder: (context, constraints) =>
+                SizedBox(width: constraints.maxWidth, child: control),
           ),
         ),
       ],

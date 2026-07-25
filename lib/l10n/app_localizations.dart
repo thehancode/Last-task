@@ -616,6 +616,12 @@ abstract class AppLocalizations {
   /// **'Desktop font size'**
   String get desktopFontSizeLabel;
 
+  /// Settings row label for cycling among bundled font families.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get fontFamily;
+
   /// Heading for editable task-tag names.
   ///
   /// In en, this message translates to:

@@ -287,6 +287,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopFontSizeLabel => 'Desktop font size';
 
   @override
+  String get fontFamily => 'Font';
+
+  @override
   String get tagNames => 'Tag names';
 
   @override

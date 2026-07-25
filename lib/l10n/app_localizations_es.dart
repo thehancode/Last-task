@@ -288,6 +288,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get desktopFontSizeLabel => 'Fuente de escritorio';
 
   @override
+  String get fontFamily => 'Fuente';
+
+  @override
   String get tagNames => 'Etiquetas';
 
   @override
@@ -715,6 +718,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get desktopFontSizeLabel => 'Fuente de escritorio';
 
   @override
+  String get fontFamily => 'Fuente';
+
+  @override
   String get tagNames => 'Etiquetas';
 
   @override
@@ -1140,6 +1146,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get desktopFontSizeLabel => 'Fuente de escritorio';
+
+  @override
+  String get fontFamily => 'Fuente';
 
   @override
   String get tagNames => 'Etiquetas';

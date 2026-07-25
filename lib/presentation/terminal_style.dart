@@ -39,12 +39,7 @@ abstract final class TerminalMetrics {
 
   static double cell(BuildContext context) {
     final painter = TextPainter(
-      text: TextSpan(
-        text: 'M',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontFamily: 'UbuntuMonoNerd'),
-      ),
+      text: TextSpan(text: 'M', style: Theme.of(context).textTheme.bodyMedium),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
@@ -57,9 +52,7 @@ abstract final class TerminalMetrics {
     final painter = TextPainter(
       text: TextSpan(
         text: '█Mg',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontFamily: 'UbuntuMonoNerd'),
+        style: Theme.of(context).textTheme.bodyMedium,
       ),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),

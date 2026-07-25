@@ -103,6 +103,7 @@ void main() {
       expect(defaults.languageLocale, 'en');
       expect(defaults.themeId, 'classic');
       expect(defaults.marqueeSpeedMs, normalMarqueeSpeedMs);
+      expect(defaults.fontFamily, AppFontFamily.ubuntuMonoNerd);
       expect(defaults.nativeFontSize, 23);
       expect(defaults.tagNames.nameFor(TaskTag.spade), 'Spade');
       expect(defaults.tagNames.nameFor(TaskTag.heart), 'Heart');
@@ -120,6 +121,15 @@ void main() {
       expect((settings.toJson()['tag_names']! as Map)['heart'], 'Important');
       expect(settings.toJson()['language'], 'en');
       expect(settings.toJson()['theme'], 'classic');
+
+      final font = AppSettings.fromJson({'font_family': 'arimo_nerd'});
+      expect(font.fontFamily, AppFontFamily.arimoNerd);
+      expect(font.toJson()['font_family'], 'arimo_nerd');
+
+      final comicFont = AppSettings.fromJson({
+        'font_family': 'comic_shanns_mono_nerd',
+      });
+      expect(comicFont.fontFamily, AppFontFamily.comicShannsMonoNerd);
 
       final themed = AppSettings.fromJson({'theme': 'gruvbox'});
       expect(themed.themeId, 'gruvbox');
