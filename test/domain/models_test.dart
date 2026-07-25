@@ -102,6 +102,8 @@ void main() {
       final defaults = AppSettings.fromJson(const {});
       expect(defaults.languageLocale, 'en');
       expect(defaults.themeId, 'classic');
+      expect(defaults.marqueeSpeedMs, normalMarqueeSpeedMs);
+      expect(defaults.nativeFontSize, 23);
       expect(defaults.tagNames.nameFor(TaskTag.spade), 'Spade');
       expect(defaults.tagNames.nameFor(TaskTag.heart), 'Heart');
 
@@ -137,7 +139,7 @@ void main() {
   test('new settings preserve legacy long-title values and defaults', () {
     final legacyWrap = AppSettings.fromJson({'long_title_display': 'wrap'});
     expect(legacyWrap.longTitleDisplay, LongTitleDisplay.wrapAll);
-    expect(legacyWrap.tipsEnabled, isTrue);
+    expect(legacyWrap.tipsEnabled, isFalse);
     expect(legacyWrap.rewardDuration, RewardDuration.medium);
 
     final settings = AppSettings.fromJson({

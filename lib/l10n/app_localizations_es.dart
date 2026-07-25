@@ -106,6 +106,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings => 'Ajustes';
 
   @override
+  String get themes => 'Temas';
+
+  @override
   String taskList(Object listName) {
     return 'Lista de tareas $listName';
   }
@@ -244,12 +247,27 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get marqueeSpeedLabel => 'Velocidad de marquesina';
+
+  @override
+  String get slow => 'Lenta';
+
+  @override
+  String get normal => 'Normal';
+
+  @override
+  String get fast => 'Rápida';
+
+  @override
   String get wrapLongTitles => 'Ajustar títulos';
 
   @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente de escritorio: $points pt';
   }
+
+  @override
+  String get desktopFontSizeLabel => 'Fuente de escritorio';
 
   @override
   String get tagNames => 'Etiquetas';
@@ -360,6 +378,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backgroundOpacity => 'Opacidad del color de fondo';
+
+  @override
+  String get backgroundTransparency => 'Transparencia del fondo';
+
+  @override
+  String get configTab => 'Config.';
+
+  @override
+  String get backgroundTab => 'Fondo';
+
+  @override
+  String get decrease => 'Disminuir';
+
+  @override
+  String get increase => 'Aumentar';
 
   @override
   String get backgroundFit => 'Ajuste de imagen';
@@ -483,6 +516,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get settings => 'Ajustes';
+
+  @override
+  String get themes => 'Temas';
 
   @override
   String taskList(Object listName) {
@@ -620,12 +656,27 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   }
 
   @override
+  String get marqueeSpeedLabel => 'Velocidad de marquesina';
+
+  @override
+  String get slow => 'Lenta';
+
+  @override
+  String get normal => 'Normal';
+
+  @override
+  String get fast => 'Rápida';
+
+  @override
   String get wrapLongTitles => 'Ajustar títulos';
 
   @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente en escritorio: $points pt';
   }
+
+  @override
+  String get desktopFontSizeLabel => 'Fuente de escritorio';
 
   @override
   String get tagNames => 'Etiquetas';
@@ -736,6 +787,21 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get backgroundOpacity => 'Opacidad del color de fondo';
+
+  @override
+  String get backgroundTransparency => 'Transparencia del fondo';
+
+  @override
+  String get configTab => 'Config.';
+
+  @override
+  String get backgroundTab => 'Fondo';
+
+  @override
+  String get decrease => 'Disminuir';
+
+  @override
+  String get increase => 'Aumentar';
 
   @override
   String get backgroundFit => 'Ajuste de imagen';
@@ -859,6 +925,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get settings => 'Ajustes';
+
+  @override
+  String get themes => 'Temas';
 
   @override
   String taskList(Object listName) {
@@ -996,12 +1065,27 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   }
 
   @override
+  String get marqueeSpeedLabel => 'Velocidad de marquesina';
+
+  @override
+  String get slow => 'Lenta';
+
+  @override
+  String get normal => 'Normal';
+
+  @override
+  String get fast => 'Rápida';
+
+  @override
   String get wrapLongTitles => 'Ajustar títulos';
 
   @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente de escritorio: $points pt';
   }
+
+  @override
+  String get desktopFontSizeLabel => 'Fuente de escritorio';
 
   @override
   String get tagNames => 'Etiquetas';
@@ -1112,6 +1196,21 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get backgroundOpacity => 'Opacidad del color de fondo';
+
+  @override
+  String get backgroundTransparency => 'Transparencia del fondo';
+
+  @override
+  String get configTab => 'Config.';
+
+  @override
+  String get backgroundTab => 'Fondo';
+
+  @override
+  String get decrease => 'Disminuir';
+
+  @override
+  String get increase => 'Aumentar';
 
   @override
   String get backgroundFit => 'Ajuste de imagen';

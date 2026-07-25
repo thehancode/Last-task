@@ -106,6 +106,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get themes => 'Themes';
+
+  @override
   String taskList(Object listName) {
     return 'Task list $listName';
   }
@@ -243,12 +246,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get marqueeSpeedLabel => 'Marquee speed';
+
+  @override
+  String get slow => 'Slow';
+
+  @override
+  String get normal => 'Normal';
+
+  @override
+  String get fast => 'Fast';
+
+  @override
   String get wrapLongTitles => 'Wrap long titles';
 
   @override
   String desktopFontSize(int points) {
     return 'Desktop font size: $points pt';
   }
+
+  @override
+  String get desktopFontSizeLabel => 'Desktop font size';
 
   @override
   String get tagNames => 'Tag names';
@@ -358,6 +376,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backgroundOpacity => 'Background color opacity';
+
+  @override
+  String get backgroundTransparency => 'Background transparency';
+
+  @override
+  String get configTab => 'Config';
+
+  @override
+  String get backgroundTab => 'Background';
+
+  @override
+  String get decrease => 'Decrease';
+
+  @override
+  String get increase => 'Increase';
 
   @override
   String get backgroundFit => 'Image fit';

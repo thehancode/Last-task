@@ -286,6 +286,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// Settings tab for selecting the terminal color theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get themes;
+
   /// Accessibility label for a task-list tab; listName is user content.
   ///
   /// In en, this message translates to:
@@ -532,6 +538,30 @@ abstract class AppLocalizations {
   /// **'Marquee speed: {milliseconds} ms'**
   String marqueeSpeed(int milliseconds);
 
+  /// Settings row label for the task-title scrolling speed preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Marquee speed'**
+  String get marqueeSpeedLabel;
+
+  /// Slow marquee-speed preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get slow;
+
+  /// Normal marquee-speed preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normal;
+
+  /// Fast marquee-speed preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get fast;
+
   /// Setting that wraps rather than scrolls long task titles.
   ///
   /// In en, this message translates to:
@@ -543,6 +573,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Desktop font size: {points} pt'**
   String desktopFontSize(int points);
+
+  /// Settings row label for the terminal font-size stepper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop font size'**
+  String get desktopFontSizeLabel;
 
   /// Heading for editable task-tag names.
   ///
@@ -753,6 +789,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Background color opacity'**
   String get backgroundOpacity;
+
+  /// Linux background transparency stepper label.
+  ///
+  /// In en, this message translates to:
+  /// **'Background transparency'**
+  String get backgroundTransparency;
+
+  /// General settings tab label.
+  ///
+  /// In en, this message translates to:
+  /// **'Config'**
+  String get configTab;
+
+  /// Desktop background settings tab label.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get backgroundTab;
+
+  /// Accessible label for a setting decrement button.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease'**
+  String get decrease;
+
+  /// Accessible label for a setting increment button.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase'**
+  String get increase;
 
   /// Linux background image fitting control.
   ///

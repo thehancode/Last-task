@@ -325,10 +325,11 @@ void main() {
     expect(await vm.archiveSelectedTask(), isTrue);
     expect(repository.lists.single.tasks.first.status, TaskStatus.archived);
     expect(container.read(workspaceViewModelProvider).selectedTaskId, 'second');
-    expect(
-      container.read(workspaceViewModelProvider).visibleTaskIds,
-      ['second', 'third', 'first'],
-    );
+    expect(container.read(workspaceViewModelProvider).visibleTaskIds, [
+      'second',
+      'third',
+      'first',
+    ]);
 
     vm.toggleMultiView();
     expect(container.read(workspaceViewModelProvider).visibleTaskIds, [
@@ -439,7 +440,9 @@ void main() {
   test('one unseen entrance tip is recorded per device', () async {
     final list = _list('tasks', 'Tasks', [_task('task', 'Task')]);
     final device = _RecordingDeviceState(const DeviceWorkspaceState());
-    final container = _container([list], device: device);
+    final settings = _Settings()
+      ..settings = const AppSettings(tipsEnabled: true);
+    final container = _container([list], device: device, settings: settings);
     addTearDown(container.dispose);
     await _ready(container);
     await Future<void>.delayed(Duration.zero);
@@ -454,6 +457,7 @@ ProviderContainer _container(
   List<TaskList> lists, {
   TaskListRepository? repository,
   DeviceStateRepository? device,
+  SettingsRepository? settings,
   Random? random,
 }) => ProviderContainer(
   overrides: [
@@ -463,7 +467,7 @@ ProviderContainer _container(
     taskListRepositoryProvider.overrideWithValue(
       repository ?? _TaskLists(lists),
     ),
-    settingsRepositoryProvider.overrideWithValue(_Settings()),
+    settingsRepositoryProvider.overrideWithValue(settings ?? _Settings()),
     if (random != null) workspaceRandomProvider.overrideWithValue(random),
   ],
 );

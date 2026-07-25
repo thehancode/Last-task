@@ -7,6 +7,7 @@ import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 import 'workspace_dialogs.dart';
 import 'workspace_presenters.dart';
+import 'workspace_settings_dialog.dart';
 
 class WorkspaceFooter extends ConsumerWidget {
   const WorkspaceFooter({
@@ -130,7 +131,9 @@ class WorkspaceFooter extends ConsumerWidget {
                 label: 'themes',
                 onTap: () => showDialog<void>(
                   context: context,
-                  builder: (_) => const WorkspaceThemePickerDialog(),
+                  builder: (_) => const WorkspaceSettingsDialog(
+                    initialTab: SettingsTab.themes,
+                  ),
                 ),
               ),
               _TerminalCommand(

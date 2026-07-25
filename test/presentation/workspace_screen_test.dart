@@ -49,6 +49,40 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets(
+    'entrance tip appears near the bottom above the terminal footer',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(1000, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists()),
+            settingsRepositoryProvider.overrideWithValue(
+              const _Settings(AppSettings(tipsEnabled: true)),
+            ),
+          ],
+          child: const FocusListApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      final tip = find.textContaining('TIP:');
+      expect(tip, findsOneWidget);
+      final tipBottom = tester.getBottomLeft(tip).dy;
+      final lineHeight = TerminalMetrics.line(tester.element(tip));
+      expect(tipBottom, greaterThan(700 / 2));
+      expect(700 - tipBottom, lessThan(lineHeight * 3));
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
+
   testWidgets('pointer-down selects a terminal task before tap resolution', (
     tester,
   ) async {
@@ -1261,11 +1295,86 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('configured tag names update task semantics', (tester) async {
+  testWidgets('settings use two table tabs without tag configuration', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await tester.binding.setSurfaceSize(const Size(700, 600));
+    await tester.binding.setSurfaceSize(const Size(900, 700));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(
+            const _DeviceState(
+              DeviceWorkspaceState(
+                desktopAppearance: DesktopAppearance(
+                  backgroundImagePath: '/pictures/kanban/background.png',
+                  backgroundOverlayOpacity: .4,
+                  backgroundFit: DesktopBackgroundFit.contain,
+                ),
+              ),
+            ),
+          ),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
+          settingsRepositoryProvider.overrideWithValue(
+            const _Settings(AppSettings()),
+          ),
+        ],
+        child: const FocusListApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(tester.takeException(), isNull);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Config'), findsOneWidget);
+    expect(find.text('Background'), findsOneWidget);
+    expect(find.text('Long-title mode'), findsOneWidget);
+    expect(find.text('Marquee speed'), findsOneWidget);
+    expect(find.text('< Normal >'), findsOneWidget);
+    expect(find.text('23pt'), findsOneWidget);
+    expect(find.text('Tag names'), findsNothing);
+    expect(find.byKey(const ValueKey('tag-name-heart')), findsNothing);
+
+    await tester.tap(find.text('< Normal >'));
+    await tester.pump();
+    expect(find.text('< Fast >'), findsOneWidget);
+
+    await tester.tap(find.text('< Marquee >'));
+    await tester.pump();
+    expect(find.text('< Wrap selected >'), findsOneWidget);
+    final disabledSpeed = tester.widget<InkWell>(
+      find.ancestor(of: find.text('< Fast >'), matching: find.byType(InkWell)),
+    );
+    expect(disabledSpeed.onTap, isNull);
+
+    await tester.tap(find.text('[+]'));
+    await tester.pump();
+    expect(find.text('24pt'), findsOneWidget);
+
+    await tester.tap(find.text('Background'));
+    await tester.pump();
+    expect(find.text('background.png'), findsOneWidget);
+    expect(find.text('/pictures/kanban/background.png'), findsNothing);
+    expect(find.text('< Contain >'), findsOneWidget);
+    expect(find.text('Background transparency'), findsOneWidget);
+    expect(find.text('60%'), findsOneWidget);
+
+    await tester.tap(find.text('[+]'));
+    await tester.pump();
+    expect(find.text('70%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('configured tag names still update task semantics', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -1275,6 +1384,31 @@ void main() {
               _listWithTask(tags: const [TaskTag.heart]),
             ]),
           ),
+          settingsRepositoryProvider.overrideWithValue(
+            const _Settings(AppSettings(tagNames: TagNames(heart: 'Urgent'))),
+          ),
+        ],
+        child: const FocusListApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.bySemanticsLabel(RegExp('tags: Urgent')), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android settings keep touch controls for shared config', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
         child: const FocusListApp(),
@@ -1282,18 +1416,17 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 20));
 
+    expect(tester.takeException(), isNull);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('tag-name-heart')),
-      'Urgent',
-    );
-    await tester.tap(find.text('Save tag names'));
-    await tester.pump();
-    await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel(RegExp('tags: Urgent')), findsOneWidget);
+    expect(find.text('Long-title mode'), findsOneWidget);
+    expect(find.text('Marquee speed'), findsOneWidget);
+    expect(find.byType(Switch), findsOneWidget);
+    expect(find.text('Desktop font size'), findsNothing);
+    expect(find.text('Background'), findsNothing);
+    expect(find.text('Tag names'), findsNothing);
+    expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
 }
@@ -1386,7 +1519,7 @@ class _Lists implements TaskListRepository {
 }
 
 class _Settings implements SettingsRepository {
-  const _Settings([this.settings = const AppSettings()]);
+  const _Settings([this.settings = const AppSettings(nativeFontSize: 16)]);
   final AppSettings settings;
 
   @override

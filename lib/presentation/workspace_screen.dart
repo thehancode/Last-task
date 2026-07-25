@@ -391,50 +391,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   Future<void> _showThemePicker() async {
     await showDialog<void>(
       context: context,
-      builder: (_) => const WorkspaceThemePickerDialog(),
+      builder: (_) =>
+          const WorkspaceSettingsDialog(initialTab: SettingsTab.themes),
     );
     _focusNode.requestFocus();
   }
 
   Future<void> _showHelp() => showDialog<void>(
     context: context,
-    builder: (_) => AlertDialog(
-      titlePadding: _dialogTitlePadding,
-      contentPadding: _dialogContentPadding,
-      title: Text(AppLocalizations.of(context)!.keyboardShortcuts),
-      content: SingleChildScrollView(
-        child: Builder(
-          builder: (context) {
-            final strings = AppLocalizations.of(context)!;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(strings.keyboardShortcutsHelp),
-                const SizedBox(height: 12),
-                Text(
-                  strings.tipsTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                for (final id in const [
-                  'navigation',
-                  'reorder',
-                  'subtasks',
-                  'search',
-                  'copy',
-                ])
-                  Text('• ${_tipText(strings, id)}'),
-              ],
-            );
-          },
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.close),
-        ),
-      ],
-    ),
+    builder: (_) => const WorkspaceHelpDialog(),
   );
 
   @override
@@ -547,9 +512,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
               Positioned(
                 left: TerminalMetrics.cell(context),
                 right: TerminalMetrics.cell(context),
-                top: usesFramelessDesktopWindow
-                    ? TerminalMetrics.line(context) * 2
-                    : TerminalMetrics.line(context),
+                bottom: TerminalMetrics.line(context) * 2,
                 child: IgnorePointer(
                   child: WorkspaceTransientBanner(
                     text: _tipText(AppLocalizations.of(context)!, state.tipId!),

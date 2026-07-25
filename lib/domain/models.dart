@@ -1,7 +1,10 @@
 import 'dart:collection';
 
 const int currentSchemaVersion = 1;
-const int defaultMarqueeSpeedMs = 180;
+const int slowMarqueeSpeedMs = 325;
+const int normalMarqueeSpeedMs = 200;
+const int fastMarqueeSpeedMs = 150;
+const int defaultMarqueeSpeedMs = normalMarqueeSpeedMs;
 const int minMarqueeSpeedMs = 50;
 const int maxMarqueeSpeedMs = 1000;
 
@@ -504,11 +507,11 @@ class AppSettings {
   const AppSettings({
     this.marqueeSpeedMs = defaultMarqueeSpeedMs,
     this.longTitleDisplay = LongTitleDisplay.marquee,
-    this.nativeFontSize = 16,
+    this.nativeFontSize = 23,
     this.tagNames = const TagNames(),
     this.languageLocale = 'en',
     this.themeId = 'classic',
-    this.tipsEnabled = true,
+    this.tipsEnabled = false,
     this.rewardDuration = RewardDuration.medium,
   });
 
@@ -560,7 +563,7 @@ class AppSettings {
     longTitleDisplay: LongTitleDisplayX.fromWireName(
       json['long_title_display'],
     ),
-    nativeFontSize: json['native_font_size'] as int? ?? 16,
+    nativeFontSize: json['native_font_size'] as int? ?? 23,
     tagNames: TagNames.fromJson(
       json['tag_names'] == null
           ? null
@@ -568,7 +571,7 @@ class AppSettings {
     ),
     languageLocale: json['language'] as String? ?? 'en',
     themeId: json['theme'] as String? ?? 'classic',
-    tipsEnabled: json['tips_enabled'] as bool? ?? true,
+    tipsEnabled: json['tips_enabled'] as bool? ?? false,
     rewardDuration: RewardDurationX.fromWireName(json['reward_duration']),
   );
 

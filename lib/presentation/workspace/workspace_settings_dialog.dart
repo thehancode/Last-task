@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as path;
 
 import '../../app/desktop_background.dart';
+import '../../app/theme_catalog.dart';
 import '../../app/ui_mode.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
+import 'workspace_dialog_tabs.dart';
+import 'workspace_theme_preview.dart';
 
 EdgeInsetsGeometry? get _dialogTitlePadding =>
     usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 0) : null;
@@ -15,264 +19,105 @@ EdgeInsetsGeometry? get _dialogTitlePadding =>
 EdgeInsetsGeometry? get _dialogContentPadding =>
     usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : null;
 
-TextStyle? _dialogInputStyle(BuildContext context) =>
-    usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
-
-Color _tagColor(BuildContext context, TaskTag tag) => switch (tag) {
-  TaskTag.spade => TerminalPalette.of(context).accent,
-  TaskTag.heart => TerminalPalette.of(context).done,
-  TaskTag.club => TerminalPalette.of(context).error,
-  TaskTag.diamond => TerminalPalette.of(context).pending,
-};
+bool get _supportsDesktopBackground =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
 
 class WorkspaceSettingsDialog extends ConsumerStatefulWidget {
-  const WorkspaceSettingsDialog({super.key});
+  const WorkspaceSettingsDialog({
+    super.key,
+    this.initialTab = SettingsTab.config,
+  });
+
+  final SettingsTab initialTab;
 
   @override
   ConsumerState<WorkspaceSettingsDialog> createState() =>
       _WorkspaceSettingsDialogState();
 }
 
+enum SettingsTab { config, background, themes }
+
 class _WorkspaceSettingsDialogState
     extends ConsumerState<WorkspaceSettingsDialog> {
-  late final Map<TaskTag, TextEditingController> _tagControllers;
-  String? _tagError;
+  late var _selectedTab = widget.initialTab;
 
-  @override
-  void initState() {
-    super.initState();
-    final names = ref.read(workspaceViewModelProvider).settings.tagNames;
-    _tagControllers = {
-      for (final tag in TaskTag.values)
-        tag: TextEditingController(text: names.nameFor(tag)),
-    };
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _tagControllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _saveTagNames(AppSettings settings) async {
-    final values = {
-      for (final entry in _tagControllers.entries)
-        entry.key: normalizeName(entry.value.text),
-    };
-    if (values.values.any((value) => value.isEmpty)) {
-      setState(
-        () => _tagError = AppLocalizations.of(context)!.tagNamesCannotBeEmpty,
-      );
-      return;
-    }
-    setState(() => _tagError = null);
+  Future<void> _pickBackground() async {
+    final selectedPath = await ref
+        .read(desktopBackgroundServiceProvider)
+        .pickImagePath();
+    if (selectedPath == null) return;
+    final appearance = ref
+        .read(workspaceViewModelProvider)
+        .deviceState
+        .desktopAppearance;
     await ref
         .read(workspaceViewModelProvider.notifier)
-        .updateSettings(
-          settings.copyWith(
-            tagNames: TagNames(
-              spade: values[TaskTag.spade]!,
-              heart: values[TaskTag.heart]!,
-              club: values[TaskTag.club]!,
-              diamond: values[TaskTag.diamond]!,
-            ),
-          ),
+        .updateDesktopAppearance(
+          appearance.copyWith(backgroundImagePath: selectedPath),
         );
   }
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(workspaceViewModelProvider).settings;
+    final strings = AppLocalizations.of(context)!;
+    final state = ref.watch(workspaceViewModelProvider);
+    final settings = state.settings;
     final vm = ref.read(workspaceViewModelProvider.notifier);
+    final tabs = [
+      SettingsTab.config,
+      if (_supportsDesktopBackground) SettingsTab.background,
+      if (usesTerminalPresentation) SettingsTab.themes,
+    ];
+    final selectedTab = tabs.contains(_selectedTab)
+        ? _selectedTab
+        : SettingsTab.config;
+
     return AlertDialog(
       titlePadding: _dialogTitlePadding,
       contentPadding: _dialogContentPadding,
-      title: Text(AppLocalizations.of(context)!.settings),
+      title: Text(strings.settings),
       content: SizedBox(
-        width: 420,
+        width: 680,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                AppLocalizations.of(
-                  context,
-                )!.marqueeSpeed(settings.marqueeSpeedMs),
-              ),
-              Slider(
-                value: settings.marqueeSpeedMs.toDouble(),
-                min: minMarqueeSpeedMs.toDouble(),
-                max: maxMarqueeSpeedMs.toDouble(),
-                divisions: (maxMarqueeSpeedMs - minMarqueeSpeedMs) ~/ 25,
-                onChanged: (value) => vm.updateSettings(
-                  settings.copyWith(marqueeSpeedMs: (value / 25).round() * 25),
+              if (tabs.length > 1)
+                WorkspaceDialogTabs(
+                  labels: [
+                    for (final tab in tabs)
+                      switch (tab) {
+                        SettingsTab.config => strings.configTab,
+                        SettingsTab.background => strings.backgroundTab,
+                        SettingsTab.themes => strings.themes,
+                      },
+                  ],
+                  selectedIndex: tabs.indexOf(selectedTab),
+                  onSelected: (index) =>
+                      setState(() => _selectedTab = tabs[index]),
                 ),
-              ),
-              if (usesTerminalPresentation)
-                _TerminalCycleControl(
-                  label: AppLocalizations.of(context)!.longTitleMode,
-                  value: _longTitleLabel(
-                    AppLocalizations.of(context)!,
-                    settings.longTitleDisplay,
-                  ),
-                  onTap: () => vm.updateSettings(
-                    settings.copyWith(
-                      longTitleDisplay: settings.longTitleDisplay.next,
-                    ),
-                  ),
-                )
-              else
-                SwitchListTile(
-                  value: settings.longTitleDisplay == LongTitleDisplay.wrapAll,
-                  onChanged: (value) => vm.updateSettings(
-                    settings.copyWith(
-                      longTitleDisplay: value
-                          ? LongTitleDisplay.wrapAll
-                          : LongTitleDisplay.marquee,
-                    ),
-                  ),
-                  title: Text(AppLocalizations.of(context)!.wrapLongTitles),
-                ),
-              if (usesTerminalPresentation)
-                _TerminalToggle(
-                  value: settings.tipsEnabled,
-                  onChanged: (value) =>
-                      vm.updateSettings(settings.copyWith(tipsEnabled: value)),
-                  label: AppLocalizations.of(context)!.showTips,
-                ),
-              if (usesTerminalPresentation)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(AppLocalizations.of(context)!.rewardDuration),
-                  subtitle: Text(switch (settings.rewardDuration) {
-                    RewardDuration.short => AppLocalizations.of(
-                      context,
-                    )!.shortDuration,
-                    RewardDuration.medium => AppLocalizations.of(
-                      context,
-                    )!.mediumDuration,
-                    RewardDuration.long => AppLocalizations.of(
-                      context,
-                    )!.longDuration,
-                  }),
-                  onTap: () => vm.updateSettings(
-                    settings.copyWith(
-                      rewardDuration:
-                          RewardDuration.values[(settings.rewardDuration.index +
-                                  1) %
-                              RewardDuration.values.length],
-                    ),
-                  ),
-                ),
-              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux) ...[
-                const Divider(),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(AppLocalizations.of(context)!.backgroundImage),
-                  subtitle: Text(
-                    ref
-                            .watch(workspaceViewModelProvider)
-                            .deviceState
-                            .desktopAppearance
-                            .backgroundImagePath ??
-                        AppLocalizations.of(context)!.none,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => const _DesktopBackgroundDialog(),
-                  ),
-                ),
-              ],
-              Text(
-                AppLocalizations.of(
-                  context,
-                )!.desktopFontSize(settings.nativeFontSize),
-              ),
-              Slider(
-                value: settings.nativeFontSize.toDouble(),
-                min: 10,
-                max: 28,
-                divisions: 18,
-                onChanged: (value) => vm.updateSettings(
-                  settings.copyWith(nativeFontSize: value.round()),
-                ),
-              ),
-              if (usesTerminalPresentation)
-                _TerminalLanguageControl(
-                  languageLocale: settings.languageLocale,
-                  onTap: () => vm.updateSettings(
-                    settings.copyWith(
-                      languageLocale: _nextLanguageLocale(
-                        settings.languageLocale,
+              SizedBox(height: TerminalMetrics.line(context) * .35),
+              IndexedStack(
+                index: tabs.indexOf(selectedTab),
+                children: [
+                  for (final tab in tabs)
+                    switch (tab) {
+                      SettingsTab.config => _ConfigSettings(
+                        settings: settings,
+                        onUpdate: vm.updateSettings,
                       ),
-                    ),
-                  ),
-                )
-              else
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(AppLocalizations.of(context)!.language),
-                  subtitle: Text(_languageLabel(settings.languageLocale)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => vm.updateSettings(
-                    settings.copyWith(
-                      languageLocale: _nextLanguageLocale(
-                        settings.languageLocale,
+                      SettingsTab.background => _BackgroundSettings(
+                        appearance: state.deviceState.desktopAppearance,
+                        onPickImage: _pickBackground,
+                        onUpdate: vm.updateDesktopAppearance,
                       ),
-                    ),
-                  ),
-                ),
-              const Divider(),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(AppLocalizations.of(context)!.tagNames),
-              ),
-              for (final tag in TaskTag.values)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: TerminalMetrics.cell(context) * 2,
-                        child: Text(
-                          tag.glyph,
-                          style: TextStyle(
-                            color: _tagColor(context, tag),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      SettingsTab.themes => _ThemeSettings(
+                        themeId: settings.themeId,
+                        onSelect: (id) =>
+                            vm.updateSettings(settings.copyWith(themeId: id)),
                       ),
-                      Expanded(
-                        child: TextField(
-                          key: ValueKey('tag-name-${tag.wireName}'),
-                          controller: _tagControllers[tag],
-                          style: _dialogInputStyle(context),
-                          decoration: InputDecoration(
-                            labelText: const TagNames().nameFor(tag),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (_tagError != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _tagError!,
-                    style: TextStyle(color: TerminalPalette.of(context).error),
-                  ),
-                ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => _saveTagNames(settings),
-                  child: Text(AppLocalizations.of(context)!.saveTagNames),
-                ),
+                    },
+                ],
               ),
             ],
           ),
@@ -281,207 +126,533 @@ class _WorkspaceSettingsDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.close),
+          child: Text(strings.close),
         ),
       ],
     );
   }
 }
 
-class _DesktopBackgroundDialog extends ConsumerWidget {
-  const _DesktopBackgroundDialog();
+class _ConfigSettings extends StatelessWidget {
+  const _ConfigSettings({required this.settings, required this.onUpdate});
 
-  Future<void> _pick(WidgetRef ref) async {
-    final path = await ref
-        .read(desktopBackgroundServiceProvider)
-        .pickImagePath();
-    if (path == null) return;
-    final appearance = ref
-        .read(workspaceViewModelProvider)
-        .deviceState
-        .desktopAppearance;
-    await ref
-        .read(workspaceViewModelProvider.notifier)
-        .updateDesktopAppearance(
-          appearance.copyWith(backgroundImagePath: path),
-        );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appearance = ref
-        .watch(workspaceViewModelProvider)
-        .deviceState
-        .desktopAppearance;
-    final vm = ref.read(workspaceViewModelProvider.notifier);
-    return AlertDialog(
-      titlePadding: _dialogTitlePadding,
-      contentPadding: _dialogContentPadding,
-      title: Text(AppLocalizations.of(context)!.backgroundImage),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                appearance.backgroundImagePath ??
-                    AppLocalizations.of(context)!.noImageSelected,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              onTap: () => _pick(ref),
-              trailing: TextButton(
-                onPressed: appearance.backgroundImagePath == null
-                    ? null
-                    : () => vm.updateDesktopAppearance(
-                        appearance.copyWith(clearBackgroundImage: true),
-                      ),
-                child: Text(AppLocalizations.of(context)!.clear),
-              ),
-            ),
-            Text(
-              '${AppLocalizations.of(context)!.backgroundOpacity}: '
-              '${(appearance.backgroundOverlayOpacity * 100).round()}%',
-            ),
-            Slider(
-              value: appearance.backgroundOverlayOpacity,
-              min: 0,
-              max: 1,
-              divisions: 20,
-              onChanged: (value) => vm.updateDesktopAppearance(
-                appearance.copyWith(backgroundOverlayOpacity: value),
-              ),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(AppLocalizations.of(context)!.backgroundFit),
-              subtitle: Text(
-                appearance.backgroundFit == DesktopBackgroundFit.cover
-                    ? AppLocalizations.of(context)!.cover
-                    : AppLocalizations.of(context)!.contain,
-              ),
-              onTap: () => vm.updateDesktopAppearance(
-                appearance.copyWith(
-                  backgroundFit:
-                      appearance.backgroundFit == DesktopBackgroundFit.cover
-                      ? DesktopBackgroundFit.contain
-                      : DesktopBackgroundFit.cover,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.close),
-        ),
-      ],
-    );
-  }
-}
-
-class _TerminalCycleControl extends StatelessWidget {
-  const _TerminalCycleControl({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: '$label: $value',
-    child: InkWell(
-      onTap: onTap,
-      child: SizedBox(
-        height: TerminalMetrics.line(context),
-        child: Row(
-          children: [
-            Text(
-              '< $value >',
-              style: TextStyle(
-                color: TerminalPalette.of(context).accent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: TerminalMetrics.cell(context)),
-            Text(label),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _TerminalToggle extends StatelessWidget {
-  const _TerminalToggle({
-    required this.value,
-    required this.label,
-    required this.onChanged,
-  });
-  final bool value;
-  final String label;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    toggled: value,
-    button: true,
-    label: label,
-    child: InkWell(
-      onTap: () => onChanged(!value),
-      child: SizedBox(
-        height: TerminalMetrics.line(context),
-        child: Row(
-          children: [
-            Text(
-              value ? '[x]' : '[ ]',
-              style: TextStyle(
-                color: TerminalPalette.of(context).accent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: TerminalMetrics.cell(context)),
-            Text(label),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _TerminalLanguageControl extends StatelessWidget {
-  const _TerminalLanguageControl({
-    required this.languageLocale,
-    required this.onTap,
-  });
-
-  final String languageLocale;
-  final VoidCallback onTap;
+  final AppSettings settings;
+  final ValueChanged<AppSettings> onUpdate;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final marqueePreset = _MarqueePreset.nearest(settings.marqueeSpeedMs);
+    if (!usesTerminalPresentation) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.longTitleMode),
+            subtitle: Text(_longTitleLabel(strings, settings.longTitleDisplay)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                longTitleDisplay: settings.longTitleDisplay.next,
+              ),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            enabled: settings.longTitleDisplay == LongTitleDisplay.marquee,
+            title: Text(strings.marqueeSpeedLabel),
+            subtitle: Text(marqueePreset.label(strings)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: settings.longTitleDisplay == LongTitleDisplay.marquee
+                ? () => onUpdate(
+                    settings.copyWith(
+                      marqueeSpeedMs: marqueePreset.next.milliseconds,
+                    ),
+                  )
+                : null,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.showTips),
+            value: settings.tipsEnabled,
+            onChanged: (value) =>
+                onUpdate(settings.copyWith(tipsEnabled: value)),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.rewardDuration),
+            subtitle: Text(
+              _rewardDurationLabel(strings, settings.rewardDuration),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                rewardDuration:
+                    RewardDuration.values[(settings.rewardDuration.index + 1) %
+                        RewardDuration.values.length],
+              ),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.language),
+            subtitle: Text(_languageLabel(settings.languageLocale)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                languageLocale: _nextLanguageLocale(settings.languageLocale),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SettingsRow(
+          label: strings.longTitleMode,
+          control: _CycleButton(
+            value: _longTitleLabel(strings, settings.longTitleDisplay),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                longTitleDisplay: settings.longTitleDisplay.next,
+              ),
+            ),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.marqueeSpeedLabel,
+          control: _CycleButton(
+            value: marqueePreset.label(strings),
+            onTap: settings.longTitleDisplay == LongTitleDisplay.marquee
+                ? () {
+                    final next = marqueePreset.next;
+                    onUpdate(
+                      settings.copyWith(marqueeSpeedMs: next.milliseconds),
+                    );
+                  }
+                : null,
+          ),
+        ),
+        _SettingsRow(
+          label: strings.showTips,
+          control: _ToggleButton(
+            value: settings.tipsEnabled,
+            onChanged: (value) =>
+                onUpdate(settings.copyWith(tipsEnabled: value)),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.rewardDuration,
+          control: _CycleButton(
+            value: _rewardDurationLabel(strings, settings.rewardDuration),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                rewardDuration:
+                    RewardDuration.values[(settings.rewardDuration.index + 1) %
+                        RewardDuration.values.length],
+              ),
+            ),
+          ),
+        ),
+        if (usesTerminalPresentation)
+          _SettingsRow(
+            label: strings.desktopFontSizeLabel,
+            control: _StepControl(
+              value: '${settings.nativeFontSize}pt',
+              onDecrease: settings.nativeFontSize > 10
+                  ? () => onUpdate(
+                      settings.copyWith(
+                        nativeFontSize: settings.nativeFontSize - 1,
+                      ),
+                    )
+                  : null,
+              onIncrease: settings.nativeFontSize < 28
+                  ? () => onUpdate(
+                      settings.copyWith(
+                        nativeFontSize: settings.nativeFontSize + 1,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        _SettingsRow(
+          label: strings.language,
+          control: _CycleButton(
+            value: _languageLabel(settings.languageLocale),
+            onTap: () => onUpdate(
+              settings.copyWith(
+                languageLocale: _nextLanguageLocale(settings.languageLocale),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeSettings extends ConsumerWidget {
+  const _ThemeSettings({required this.themeId, required this.onSelect});
+
+  final String themeId;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(themeCatalogProvider);
+    final selected = catalog.byId(themeId);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 7, child: WorkspaceThemePreview(theme: selected)),
+        SizedBox(width: TerminalMetrics.cell(context)),
+        Expanded(
+          flex: 3,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final theme in catalog.themes)
+                _ThemeChoice(
+                  theme: theme,
+                  selected: theme.id == themeId,
+                  onTap: () => onSelect(theme.id),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeChoice extends StatelessWidget {
+  const _ThemeChoice({
+    required this.theme,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final AppThemeDefinition theme;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    label: theme.name,
+    child: InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        margin: EdgeInsets.symmetric(
+          vertical: TerminalMetrics.line(context) * .06,
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: TerminalMetrics.cell(context) * .4,
+          vertical: TerminalMetrics.line(context) * .1,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected
+                ? TerminalPalette.of(context).accent
+                : TerminalPalette.of(context).muted,
+          ),
+        ),
+        child: WorkspaceMarqueeText(
+          text: theme.name,
+          style: TextStyle(
+            color: selected
+                ? TerminalPalette.of(context).accent
+                : TerminalPalette.of(context).text,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _BackgroundSettings extends StatelessWidget {
+  const _BackgroundSettings({
+    required this.appearance,
+    required this.onPickImage,
+    required this.onUpdate,
+  });
+
+  final DesktopAppearance appearance;
+  final VoidCallback onPickImage;
+  final ValueChanged<DesktopAppearance> onUpdate;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    final selectedPath = appearance.backgroundImagePath;
+    final transparency = ((1 - appearance.backgroundOverlayOpacity) * 100)
+        .round();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SettingsRow(
+          label: selectedPath == null
+              ? strings.noImageSelected
+              : path.basename(selectedPath),
+          onLabelTap: onPickImage,
+          control: _TextAction(
+            value: strings.clear,
+            onTap: selectedPath == null
+                ? null
+                : () =>
+                      onUpdate(appearance.copyWith(clearBackgroundImage: true)),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.backgroundFit,
+          control: _CycleButton(
+            value: appearance.backgroundFit == DesktopBackgroundFit.cover
+                ? strings.cover
+                : strings.contain,
+            onTap: () => onUpdate(
+              appearance.copyWith(
+                backgroundFit:
+                    appearance.backgroundFit == DesktopBackgroundFit.cover
+                    ? DesktopBackgroundFit.contain
+                    : DesktopBackgroundFit.cover,
+              ),
+            ),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.backgroundTransparency,
+          control: _StepControl(
+            value: '$transparency%',
+            onDecrease: transparency > 0
+                ? () => onUpdate(
+                    appearance.copyWith(
+                      backgroundOverlayOpacity:
+                          (appearance.backgroundOverlayOpacity + .1)
+                              .clamp(0.0, 1.0)
+                              .toDouble(),
+                    ),
+                  )
+                : null,
+            onIncrease: transparency < 100
+                ? () => onUpdate(
+                    appearance.copyWith(
+                      backgroundOverlayOpacity:
+                          (appearance.backgroundOverlayOpacity - .1)
+                              .clamp(0.0, 1.0)
+                              .toDouble(),
+                    ),
+                  )
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.label,
+    required this.control,
+    this.onLabelTap,
+  });
+
+  final String label;
+  final Widget control;
+  final VoidCallback? onLabelTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(vertical: TerminalMetrics.line(context) * .1),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          flex: 7,
+          child: onLabelTap == null
+              ? Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)
+              : Semantics(
+                  button: true,
+                  child: InkWell(
+                    onTap: onLabelTap,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+        ),
+        Expanded(
+          flex: 3,
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: Align(alignment: Alignment.center, child: control),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CycleButton extends StatelessWidget {
+  const _CycleButton({required this.value, required this.onTap});
+
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) =>
+      _TextAction(value: '< $value >', onTap: onTap);
+}
+
+class _ToggleButton extends StatelessWidget {
+  const _ToggleButton({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!usesTerminalPresentation) {
+      return Switch(value: value, onChanged: onChanged);
+    }
+    return Semantics(
+      toggled: value,
+      child: _TextAction(
+        value: value ? '[x]' : '[ ]',
+        onTap: () => onChanged(!value),
+      ),
+    );
+  }
+}
+
+class _StepControl extends StatelessWidget {
+  const _StepControl({
+    required this.value,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+
+  final String value;
+  final VoidCallback? onDecrease;
+  final VoidCallback? onIncrease;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _TextAction(
+          value: '[−]',
+          semanticsLabel: strings.decrease,
+          onTap: onDecrease,
+        ),
+        Text(value),
+        _TextAction(
+          value: '[+]',
+          semanticsLabel: strings.increase,
+          onTap: onIncrease,
+        ),
+      ],
+    );
+  }
+}
+
+class _TextAction extends StatelessWidget {
+  const _TextAction({
+    required this.value,
+    required this.onTap,
+    this.semanticsLabel,
+  });
+
+  final String value;
+  final VoidCallback? onTap;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    if (!usesTerminalPresentation) {
+      return TextButton(onPressed: onTap, child: Text(value));
+    }
     return Semantics(
       button: true,
-      label: strings.languageValue(_languageLabel(languageLocale)),
+      enabled: enabled,
+      label: semanticsLabel,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 1),
-          child: Text(strings.languageValue(_languageLabel(languageLocale))),
+          padding: EdgeInsets.symmetric(
+            vertical: TerminalMetrics.line(context) * .1,
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              color: enabled
+                  ? TerminalPalette.of(context).accent
+                  : TerminalPalette.of(context).muted,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
   }
 }
+
+enum _MarqueePreset {
+  slow(slowMarqueeSpeedMs),
+  normal(normalMarqueeSpeedMs),
+  fast(fastMarqueeSpeedMs);
+
+  const _MarqueePreset(this.milliseconds);
+
+  final int milliseconds;
+
+  _MarqueePreset get next => values[(index + 1) % values.length];
+
+  String label(AppLocalizations strings) => switch (this) {
+    _MarqueePreset.slow => strings.slow,
+    _MarqueePreset.normal => strings.normal,
+    _MarqueePreset.fast => strings.fast,
+  };
+
+  static _MarqueePreset nearest(int milliseconds) {
+    var nearest = values.first;
+    var distance = (milliseconds - nearest.milliseconds).abs();
+    for (final preset in values.skip(1)) {
+      final candidateDistance = (milliseconds - preset.milliseconds).abs();
+      if (candidateDistance < distance) {
+        nearest = preset;
+        distance = candidateDistance;
+      }
+    }
+    return nearest;
+  }
+}
+
+String _rewardDurationLabel(
+  AppLocalizations strings,
+  RewardDuration duration,
+) => switch (duration) {
+  RewardDuration.short => strings.shortDuration,
+  RewardDuration.medium => strings.mediumDuration,
+  RewardDuration.long => strings.longDuration,
+};
 
 String _longTitleLabel(AppLocalizations strings, LongTitleDisplay display) =>
     switch (display) {

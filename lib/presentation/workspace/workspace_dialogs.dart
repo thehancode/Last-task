@@ -9,6 +9,8 @@ import '../../app/ui_mode.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
+import 'workspace_dialog_tabs.dart';
+import 'workspace_theme_preview.dart';
 
 EdgeInsetsGeometry? get _dialogTitlePadding =>
     usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 0) : null;
@@ -18,6 +20,78 @@ EdgeInsetsGeometry? get _dialogContentPadding =>
 
 TextStyle? _dialogInputStyle(BuildContext context) =>
     usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
+
+class WorkspaceHelpDialog extends StatefulWidget {
+  const WorkspaceHelpDialog({super.key});
+
+  @override
+  State<WorkspaceHelpDialog> createState() => _WorkspaceHelpDialogState();
+}
+
+class _WorkspaceHelpDialogState extends State<WorkspaceHelpDialog> {
+  var _selectedTab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return AlertDialog(
+      titlePadding: _dialogTitlePadding,
+      contentPadding: _dialogContentPadding,
+      title: Text(strings.keyboardShortcuts),
+      content: SizedBox(
+        width: 680,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            WorkspaceDialogTabs(
+              labels: [strings.keyboardShortcuts, strings.tipsTitle],
+              selectedIndex: _selectedTab,
+              onSelected: (index) => setState(() => _selectedTab = index),
+            ),
+            SizedBox(height: TerminalMetrics.line(context) * .35),
+            IndexedStack(
+              index: _selectedTab,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(strings.keyboardShortcutsHelp),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final id in const [
+                      'navigation',
+                      'reorder',
+                      'subtasks',
+                      'search',
+                      'copy',
+                    ])
+                      Text('• ${_helpTipText(strings, id)}'),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(strings.close),
+        ),
+      ],
+    );
+  }
+}
+
+String _helpTipText(AppLocalizations strings, String id) => switch (id) {
+  'navigation' => strings.tipNavigation,
+  'reorder' => strings.tipReorder,
+  'subtasks' => strings.tipSubtasks,
+  'search' => strings.tipSearch,
+  'copy' => strings.tipCopy,
+  _ => '',
+};
 
 class WorkspaceThemePickerDialog extends ConsumerStatefulWidget {
   const WorkspaceThemePickerDialog({super.key});
@@ -97,7 +171,7 @@ class _WorkspaceThemePickerDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ThemePreview(theme: theme),
+              WorkspaceThemePreview(theme: theme),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
@@ -126,51 +200,6 @@ class _WorkspaceThemePickerDialogState
       ),
     );
   }
-}
-
-class _ThemePreview extends StatelessWidget {
-  const _ThemePreview({required this.theme});
-  final AppThemeDefinition theme;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    color: theme.panel,
-    padding: TerminalMetrics.panelPadding(context),
-    child: DefaultTextStyle(
-      style: Theme.of(
-        context,
-      ).textTheme.bodyMedium!.copyWith(color: theme.text),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('● Doing', style: TextStyle(color: theme.doing)),
-          Text('◌ Pending', style: TextStyle(color: theme.pending)),
-          Text('✓ Done', style: TextStyle(color: theme.done)),
-          const Text('  sample task'),
-          Text(
-            '  sample task',
-            style: TextStyle(
-              color: theme.muted,
-              decoration: TextDecoration.lineThrough,
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            color: theme.accent,
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              '› selected task',
-              style: TextStyle(
-                color: theme.background,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 class WorkspaceTaskDraft {
