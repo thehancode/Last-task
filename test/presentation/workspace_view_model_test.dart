@@ -48,6 +48,47 @@ void main() {
   });
 
   test(
+    'visible task ranges stay in the current list and bulk delete once',
+    () async {
+      final first = _list('personal', 'Personal', [
+        _task('one', 'One'),
+        _task('two', 'Two'),
+        _task('three', 'Three'),
+      ]);
+      final second = _list('work', 'Work', [_task('four', 'Four')]);
+      final repository = _TaskLists([first, second]);
+      final container = _container([first, second], repository: repository);
+      addTearDown(container.dispose);
+      final vm = await _ready(container);
+
+      vm.extendTaskSelection(1);
+      vm.extendTaskSelection(1);
+      var state = container.read(workspaceViewModelProvider);
+      expect(state.selectedTaskId, 'three');
+      expect(state.multiSelectedTaskIds, {'one', 'two', 'three'});
+
+      vm.cycleList(1);
+      state = container.read(workspaceViewModelProvider);
+      expect(state.multiSelectedTaskIds, isEmpty);
+      vm.selectAllVisibleTasks();
+      expect(state.currentListId, 'work');
+      expect(container.read(workspaceViewModelProvider).multiSelectedTaskIds, {
+        'four',
+      });
+
+      expect(await vm.deleteSelectedTasks(), isTrue);
+      expect(
+        repository.lists.singleWhere((list) => list.id == 'work').tasks,
+        isEmpty,
+      );
+      expect(
+        container.read(workspaceViewModelProvider).multiSelectedTaskIds,
+        isEmpty,
+      );
+    },
+  );
+
+  test(
     'grab reorder swaps only adjacent tasks with the same status and persists',
     () async {
       final list = _list('tasks', 'Tasks', [

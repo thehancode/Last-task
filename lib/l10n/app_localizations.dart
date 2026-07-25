@@ -208,6 +208,18 @@ abstract class AppLocalizations {
   /// **'This task and all its subtasks will be deleted. This cannot be undone.'**
   String get deleteTaskBody;
 
+  /// Bulk task-deletion confirmation title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected tasks?'**
+  String deleteSelectedTasksTitle(Object count);
+
+  /// Bulk task-deletion warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} selected tasks and their subtasks? This cannot be undone.'**
+  String deleteSelectedTasksBody(Object count);
+
   /// Delete-list confirmation; listName is user-created text.
   ///
   /// In en, this message translates to:
@@ -223,7 +235,7 @@ abstract class AppLocalizations {
   /// Multiline desktop shortcut reference. Keep key glyphs and line breaks.
   ///
   /// In en, this message translates to:
-  /// **'↑/↓ or J/K   Move selection\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task title\nCtrl+Shift+C   Copy current section\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+A   Multi view\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
+  /// **'↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
   String get keyboardShortcutsHelp;
 
   /// Fallback workspace loading error.
@@ -705,6 +717,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Selection was copied'**
   String get selectionWasCopied;
+
+  /// Status line count for the active task multi-selection.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 task selected} other{{count} tasks selected}}'**
+  String selectedTasksCount(num count);
 
   /// Brief task-completion celebration.
   ///

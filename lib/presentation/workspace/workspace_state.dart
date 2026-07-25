@@ -3,9 +3,14 @@ import '../../domain/models.dart';
 enum WorkspacePhase { loading, ready, failure }
 
 class NoticeState {
-  const NoticeState(this.text, {this.error = false});
+  const NoticeState(
+    this.text, {
+    this.error = false,
+    this.usesDoingColor = false,
+  });
   final String text;
   final bool error;
+  final bool usesDoingColor;
 }
 
 class WorkspaceSearchState {
@@ -56,6 +61,8 @@ class WorkspaceState {
     this.error,
     this.deviceState = const DeviceWorkspaceState(),
     this.highlightedTaskIds = const {},
+    this.multiSelectedTaskIds = const {},
+    this.selectionAnchorTaskId,
     this.tipId,
     this.reward,
     this.search,
@@ -75,6 +82,8 @@ class WorkspaceState {
       error = null,
       deviceState = const DeviceWorkspaceState(),
       highlightedTaskIds = const {},
+      multiSelectedTaskIds = const {},
+      selectionAnchorTaskId = null,
       tipId = null,
       reward = null,
       search = null;
@@ -92,6 +101,8 @@ class WorkspaceState {
   final String? error;
   final DeviceWorkspaceState deviceState;
   final Set<String> highlightedTaskIds;
+  final Set<String> multiSelectedTaskIds;
+  final String? selectionAnchorTaskId;
   final String? tipId;
   final RewardState? reward;
   final WorkspaceSearchState? search;
@@ -114,6 +125,10 @@ class WorkspaceState {
     bool clearError = false,
     DeviceWorkspaceState? deviceState,
     Set<String>? highlightedTaskIds,
+    Set<String>? multiSelectedTaskIds,
+    bool clearMultiSelection = false,
+    String? selectionAnchorTaskId,
+    bool clearSelectionAnchor = false,
     String? tipId,
     bool clearTip = false,
     RewardState? reward,
@@ -139,6 +154,12 @@ class WorkspaceState {
     error: clearError ? null : (error ?? this.error),
     deviceState: deviceState ?? this.deviceState,
     highlightedTaskIds: highlightedTaskIds ?? this.highlightedTaskIds,
+    multiSelectedTaskIds: clearMultiSelection
+        ? const {}
+        : (multiSelectedTaskIds ?? this.multiSelectedTaskIds),
+    selectionAnchorTaskId: clearSelectionAnchor
+        ? null
+        : (selectionAnchorTaskId ?? this.selectionAnchorTaskId),
     tipId: clearTip ? null : (tipId ?? this.tipId),
     reward: clearReward ? null : (reward ?? this.reward),
     search: clearSearch ? null : (search ?? this.search),
@@ -146,6 +167,7 @@ class WorkspaceState {
 }
 
 extension WorkspaceStateQueries on WorkspaceState {
+  bool get hasMultiSelection => multiSelectedTaskIds.isNotEmpty;
   TaskList? get currentList {
     final id = currentListId;
     if (id == null) return null;
@@ -175,28 +197,29 @@ extension WorkspaceStateQueries on WorkspaceState {
     return null;
   }
 
-  List<String> get visibleTaskIds => switch (view) {
-    WorkspaceView.list => visibleTreeTasksInStatusOrder(currentList, const [
+  List<String> visibleTaskIdsFor(TaskList? list) => switch (view) {
+    WorkspaceView.list => visibleTreeTasksInStatusOrder(list, const [
       TaskStatus.doing,
       TaskStatus.pending,
       TaskStatus.done,
       TaskStatus.archived,
     ]).map((task) => task.id).toList(),
     WorkspaceView.focus => visibleTreeTasks(
-      currentList,
+      list,
       rootStatuses: const {TaskStatus.doing},
     ).map((task) => task.id).toList(),
     WorkspaceView.completed => completedTreeRows(
-      currentList,
+      list,
     ).map((row) => row.task.id).toList(),
-    WorkspaceView.multi => [
-      for (final list in lists)
-        ...visibleTreeTasksInStatusOrder(list, const [
-          TaskStatus.doing,
-          TaskStatus.pending,
-        ]).map((task) => task.id),
-    ],
+    WorkspaceView.multi => visibleTreeTasksInStatusOrder(list, const [
+      TaskStatus.doing,
+      TaskStatus.pending,
+    ]).map((task) => task.id).toList(),
   };
+
+  List<String> get visibleTaskIds => view == WorkspaceView.multi
+      ? [for (final list in lists) ...visibleTaskIdsFor(list)]
+      : visibleTaskIdsFor(currentList);
 
   List<CompletionEntry> get completedEntries => completionEntries(currentList);
 }

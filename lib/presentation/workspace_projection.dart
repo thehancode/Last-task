@@ -42,3 +42,12 @@ String sectionAsIndentedText(ProjectedTaskSection section) {
       })
       .join('\n');
 }
+
+String selectedTasksAsIndentedText(TaskList list, Iterable<Task> tasks) => tasks
+    .map((task) {
+      final tags = task.tags.isEmpty
+          ? ''
+          : ' ${task.tags.map((tag) => tag.glyph).join()}';
+      return '${'\t' * taskDepth(list, task)}${task.title}$tags';
+    })
+    .join('\n');

@@ -34,6 +34,8 @@ class WorkspaceFooter extends StatelessWidget {
             style: TextStyle(
               color: state.notice!.error
                   ? TerminalPalette.of(context).error
+                  : state.notice!.usesDoingColor
+                  ? TerminalPalette.of(context).doing
                   : TerminalPalette.of(context).done,
               fontWeight: FontWeight.bold,
             ),
@@ -43,6 +45,16 @@ class WorkspaceFooter extends StatelessWidget {
             AppLocalizations.of(context)!.spaceArmed,
             style: TextStyle(
               color: TerminalPalette.of(context).pending,
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        : state.hasMultiSelection
+        ? Text(
+            AppLocalizations.of(
+              context,
+            )!.selectedTasksCount(state.multiSelectedTaskIds.length),
+            style: TextStyle(
+              color: TerminalPalette.of(context).doing,
               fontWeight: FontWeight.bold,
             ),
           )

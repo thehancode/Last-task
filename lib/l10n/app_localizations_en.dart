@@ -64,6 +64,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'This task and all its subtasks will be deleted. This cannot be undone.';
 
   @override
+  String deleteSelectedTasksTitle(Object count) {
+    return 'Delete selected tasks?';
+  }
+
+  @override
+  String deleteSelectedTasksBody(Object count) {
+    return 'Delete $count selected tasks and their subtasks? This cannot be undone.';
+  }
+
+  @override
   String deleteListBody(Object listName) {
     return 'Delete \"$listName\" and all its tasks?';
   }
@@ -73,7 +83,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ or J/K   Move selection\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task title\nCtrl+Shift+C   Copy current section\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+A   Multi view\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit';
+      '↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit';
 
   @override
   String get couldNotLoad => 'Could not load Focus List';
@@ -334,6 +344,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectionWasCopied => 'Selection was copied';
+
+  @override
+  String selectedTasksCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks selected',
+      one: '1 task selected',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get rewardGreatWork => 'Great work!';

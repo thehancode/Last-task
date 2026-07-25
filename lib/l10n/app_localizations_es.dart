@@ -64,6 +64,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'Se eliminarán esta tarea y todas sus subtareas. Esta acción no se puede deshacer.';
 
   @override
+  String deleteSelectedTasksTitle(Object count) {
+    return '¿Eliminar tareas seleccionadas?';
+  }
+
+  @override
+  String deleteSelectedTasksBody(Object count) {
+    return '¿Eliminar $count tareas seleccionadas y sus subtareas? Esta acción no se puede deshacer.';
+  }
+
+  @override
   String deleteListBody(Object listName) {
     return '¿Eliminar \"$listName\" y todas sus tareas?';
   }
@@ -73,7 +83,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar la lista de enfoque';
@@ -338,6 +348,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get selectionWasCopied => 'Se copió la selección';
 
   @override
+  String selectedTasksCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tareas seleccionadas',
+      one: '1 tarea seleccionada',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get rewardGreatWork => '¡Gran trabajo!';
 
   @override
@@ -497,6 +518,16 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
       'Se eliminarán esta tarea y todas sus subtareas. Esta acción no se puede deshacer.';
 
   @override
+  String deleteSelectedTasksTitle(Object count) {
+    return '¿Eliminar tareas seleccionadas?';
+  }
+
+  @override
+  String deleteSelectedTasksBody(Object count) {
+    return '¿Eliminar $count tareas seleccionadas y sus subtareas? Esta acción no se puede deshacer.';
+  }
+
+  @override
   String deleteListBody(Object listName) {
     return '¿Eliminar \"$listName\" y todas sus tareas?';
   }
@@ -506,7 +537,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Focus List';
@@ -768,6 +799,17 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get selectionWasCopied => 'Se copió la selección';
 
   @override
+  String selectedTasksCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tareas seleccionadas',
+      one: '1 tarea seleccionada',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get rewardGreatWork => '¡Gran trabajo!';
 
   @override
@@ -927,6 +969,16 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
       'Se eliminarán esta tarea y todas sus subtareas. Esta acción no se puede deshacer.';
 
   @override
+  String deleteSelectedTasksTitle(Object count) {
+    return '¿Eliminar tareas seleccionadas?';
+  }
+
+  @override
+  String deleteSelectedTasksBody(Object count) {
+    return '¿Eliminar $count tareas seleccionadas y sus subtareas? Esta acción no se puede deshacer.';
+  }
+
+  @override
   String deleteListBody(Object listName) {
     return '¿Eliminar \"$listName\" y todas sus tareas?';
   }
@@ -936,7 +988,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Focus List';
@@ -1196,6 +1248,17 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get selectionWasCopied => 'Se copió la selección';
+
+  @override
+  String selectedTasksCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tareas seleccionadas',
+      one: '1 tarea seleccionada',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get rewardGreatWork => '¡Gran trabajo!';

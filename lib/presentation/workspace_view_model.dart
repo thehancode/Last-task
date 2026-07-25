@@ -206,7 +206,8 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   void dismissNotice() => state = state.copyWith(clearNotice: true);
 
-  void showNotice(String message) => _showNotice(NoticeState(message));
+  void showNotice(String message, {bool usesDoingColor = false}) =>
+      _showNotice(NoticeState(message, usesDoingColor: usesDoingColor));
 
   void reportBackgroundUnavailable() => _showNotice(
     const NoticeState('Background image is unavailable', error: true),
@@ -221,10 +222,66 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       }
     }
     if (owner == null) return;
-    if (state.currentListId == owner.id && state.selectedTaskId == taskId) {
+    if (state.currentListId == owner.id &&
+        state.selectedTaskId == taskId &&
+        !state.hasMultiSelection) {
       return;
     }
-    state = state.copyWith(currentListId: owner.id, selectedTaskId: taskId);
+    state = state.copyWith(
+      currentListId: owner.id,
+      selectedTaskId: taskId,
+      clearMultiSelection: true,
+      clearSelectionAnchor: true,
+    );
+    _scheduleDeviceSave();
+  }
+
+  void clearMultiSelection() {
+    if (!state.hasMultiSelection && state.selectionAnchorTaskId == null) return;
+    state = state.copyWith(
+      clearMultiSelection: true,
+      clearSelectionAnchor: true,
+    );
+  }
+
+  void extendTaskSelection(int delta) {
+    final list = state.currentList;
+    if (list == null || delta == 0) return;
+    final ids = state.visibleTaskIdsFor(list);
+    if (ids.isEmpty) return;
+    final currentIndex = ids.indexOf(state.selectedTaskId ?? ids.first);
+    final selectedIndex = currentIndex < 0 ? 0 : currentIndex;
+    final anchorId = state.selectionAnchorTaskId ?? ids[selectedIndex];
+    final anchorIndex = ids.indexOf(anchorId);
+    final targetIndex = (selectedIndex + delta)
+        .clamp(0, ids.length - 1)
+        .toInt();
+    final start = min(
+      anchorIndex < 0 ? selectedIndex : anchorIndex,
+      targetIndex,
+    );
+    final end = max(anchorIndex < 0 ? selectedIndex : anchorIndex, targetIndex);
+    state = state.copyWith(
+      selectedTaskId: ids[targetIndex],
+      multiSelectedTaskIds: ids.sublist(start, end + 1).toSet(),
+      selectionAnchorTaskId: anchorId,
+    );
+    _scheduleDeviceSave();
+  }
+
+  void selectAllVisibleTasks() {
+    final list = state.currentList;
+    if (list == null) return;
+    final ids = state.visibleTaskIdsFor(list);
+    if (ids.isEmpty) return;
+    final selected = ids.contains(state.selectedTaskId)
+        ? state.selectedTaskId
+        : ids.first;
+    state = state.copyWith(
+      selectedTaskId: selected,
+      multiSelectedTaskIds: ids.toSet(),
+      selectionAnchorTaskId: selected,
+    );
     _scheduleDeviceSave();
   }
 
@@ -246,6 +303,8 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       view: WorkspaceView.list,
       returnToMultiAfterFocus: false,
       clearSelection: true,
+      clearMultiSelection: true,
+      clearSelectionAnchor: true,
     );
     state = _withFirstVisibleSelected(next);
     _scheduleDeviceSave();
@@ -548,6 +607,47 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     );
     if (result) {
       state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
+    }
+    return result;
+  }
+
+  Future<bool> deleteSelectedTasks() async {
+    final list = state.currentList;
+    if (list == null || !state.hasMultiSelection) return false;
+    final selectedIds = state.multiSelectedTaskIds;
+    final byId = {for (final task in list.tasks) task.id: task};
+    final rootIds = selectedIds.where((id) {
+      var parentId = byId[id]?.parentId;
+      while (parentId != null) {
+        if (selectedIds.contains(parentId)) return false;
+        parentId = byId[parentId]?.parentId;
+      }
+      return true;
+    });
+    final removedIds = <String>{};
+    for (final id in rootIds) {
+      final task = byId[id];
+      if (task == null) continue;
+      removedIds.add(id);
+      removedIds.addAll(taskDescendants(list, task).map((task) => task.id));
+    }
+    if (removedIds.isEmpty) return false;
+    final result = await _saveList(
+      list.copyWith(
+        tasks: list.tasks
+            .where((task) => !removedIds.contains(task.id))
+            .toList(),
+      ),
+      success: 'Tasks deleted',
+    );
+    if (result) {
+      state = _withFirstVisibleSelected(
+        state.copyWith(
+          clearSelection: true,
+          clearMultiSelection: true,
+          clearSelectionAnchor: true,
+        ),
+      );
     }
     return result;
   }
@@ -1010,7 +1110,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   void highlightTasks(Iterable<String> ids) {
     _highlightTimer?.cancel();
     state = state.copyWith(highlightedTaskIds: ids.toSet());
-    _highlightTimer = Timer(const Duration(milliseconds: 100), () {
+    _highlightTimer = Timer(const Duration(milliseconds: 250), () {
       state = state.copyWith(highlightedTaskIds: const {});
     });
   }

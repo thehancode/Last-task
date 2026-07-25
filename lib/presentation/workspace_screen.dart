@@ -105,6 +105,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
           key == LogicalKeyboardKey.arrowLeft ||
           key == LogicalKeyboardKey.arrowRight) {
         _releaseGrab();
+        vm.clearMultiSelection();
         if (key == LogicalKeyboardKey.arrowUp ||
             key == LogicalKeyboardKey.arrowDown) {
           unawaited(
@@ -133,7 +134,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         vm.openSearch();
         return KeyEventResult.handled;
       }
-      if (key == LogicalKeyboardKey.keyA) vm.toggleMultiView();
+      if (key == LogicalKeyboardKey.keyA) {
+        if (HardwareKeyboard.instance.isShiftPressed) {
+          vm.clearMultiSelection();
+          vm.toggleMultiView();
+        } else {
+          vm.selectAllVisibleTasks();
+        }
+      }
       if (key == LogicalKeyboardKey.keyN) unawaited(_showListEditor());
       if (key == LogicalKeyboardKey.keyR || key == LogicalKeyboardKey.f2) {
         unawaited(_showListEditor(rename: true));
@@ -146,10 +154,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowLeft) {
+      vm.clearMultiSelection();
       vm.cycleList(-1);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowRight) {
+      vm.clearMultiSelection();
       vm.cycleList(1);
       return KeyEventResult.handled;
     }
@@ -167,6 +177,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       }
       return KeyEventResult.handled;
     }
+    if (HardwareKeyboard.instance.isShiftPressed &&
+        (key == LogicalKeyboardKey.arrowUp ||
+            key == LogicalKeyboardKey.arrowDown)) {
+      _releaseGrab();
+      vm.extendTaskSelection(key == LogicalKeyboardKey.arrowUp ? -1 : 1);
+      return KeyEventResult.handled;
+    }
     if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyK) {
       _releaseGrab();
       vm.moveSelection(-1);
@@ -175,6 +192,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyJ) {
       _releaseGrab();
       vm.moveSelection(1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      vm.clearMultiSelection();
       return KeyEventResult.handled;
     }
     if (usesTerminalPresentation &&
@@ -237,11 +258,32 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   }
 
   Future<void> _copySelectedTitle() async {
-    final task = ref.read(workspaceViewModelProvider).selectedTask;
+    final state = ref.read(workspaceViewModelProvider);
+    if (state.hasMultiSelection) {
+      final list = state.currentList;
+      if (list == null) return;
+      final tasks = [
+        for (final id in state.visibleTaskIdsFor(list))
+          if (state.multiSelectedTaskIds.contains(id))
+            list.tasks.firstWhere((task) => task.id == id),
+      ];
+      if (tasks.isEmpty) return;
+      final message = AppLocalizations.of(context)!.selectionWasCopied;
+      await Clipboard.setData(
+        ClipboardData(text: selectedTasksAsIndentedText(list, tasks)),
+      );
+      final vm = ref.read(workspaceViewModelProvider.notifier);
+      vm.highlightTasks(tasks.map((task) => task.id));
+      vm.showNotice(message, usesDoingColor: true);
+      return;
+    }
+    final task = state.selectedTask;
     if (task == null) return;
     final message = AppLocalizations.of(context)!.taskWasCopied;
     await Clipboard.setData(ClipboardData(text: task.title));
-    ref.read(workspaceViewModelProvider.notifier).showNotice(message);
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    vm.highlightTasks([task.id]);
+    vm.showNotice(message, usesDoingColor: true);
   }
 
   Future<void> _copyCurrentSection() async {
@@ -254,7 +296,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     );
     final vm = ref.read(workspaceViewModelProvider.notifier);
     vm.highlightTasks(section.tasks.map((task) => task.id));
-    vm.showNotice(message);
+    vm.showNotice(message, usesDoingColor: true);
   }
 
   Future<void> _showTaskEditor({
@@ -322,14 +364,25 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   }
 
   Future<void> _confirmDeleteTask() async {
-    if (ref.read(workspaceViewModelProvider).selectedTask == null) return;
+    final state = ref.read(workspaceViewModelProvider);
+    if (state.selectedTask == null) return;
     final strings = AppLocalizations.of(context)!;
+    final deletingSelection = state.hasMultiSelection;
     final confirmed = await _confirm(
-      strings.deleteTaskTitle,
-      strings.deleteTaskBody,
+      deletingSelection
+          ? strings.deleteSelectedTasksTitle(state.multiSelectedTaskIds.length)
+          : strings.deleteTaskTitle,
+      deletingSelection
+          ? strings.deleteSelectedTasksBody(state.multiSelectedTaskIds.length)
+          : strings.deleteTaskBody,
     );
     if (confirmed) {
-      await ref.read(workspaceViewModelProvider.notifier).deleteSelectedTask();
+      final vm = ref.read(workspaceViewModelProvider.notifier);
+      if (deletingSelection) {
+        await vm.deleteSelectedTasks();
+      } else {
+        await vm.deleteSelectedTask();
+      }
     }
     _focusNode.requestFocus();
   }

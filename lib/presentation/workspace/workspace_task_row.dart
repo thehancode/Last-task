@@ -10,6 +10,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
+import '../workspace_projection.dart';
 import 'workspace_dialogs.dart';
 import 'workspace_presenters.dart';
 import 'workspace_task_visibility.dart';
@@ -41,6 +42,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
     final depth = taskDepth(list, task);
     final hasChildren = taskHasChildren(list, task);
     final selected = task.id == state.selectedTaskId;
+    final multiSelected = state.multiSelectedTaskIds.contains(task.id);
     final visibleTaskIds = selected ? state.visibleTaskIds : const <String>[];
     final done = task.status == TaskStatus.done;
     final archived = task.status == TaskStatus.archived;
@@ -57,17 +59,19 @@ class WorkspaceTaskRow extends ConsumerWidget {
       searchQuery: search?.query,
       currentSearchMatch: search?.currentTaskId == task.id,
       style: TextStyle(
-        color: selected
+        color: selected || multiSelected || highlighted
             ? TerminalPalette.of(context).background
             : done || archived
             ? TerminalPalette.of(context).muted
             : TerminalPalette.of(context).text,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+        fontWeight: selected || multiSelected || highlighted
+            ? FontWeight.bold
+            : FontWeight.normal,
         decoration: done || archived ? TextDecoration.lineThrough : null,
       ),
     );
     final row = Semantics(
-      selected: selected,
+      selected: selected || multiSelected,
       button: true,
       label: AppLocalizations.of(context)!.taskSemantics(
         workspaceStatusLabel(task.status, AppLocalizations.of(context)!),
@@ -79,17 +83,36 @@ class WorkspaceTaskRow extends ConsumerWidget {
               ),
       ),
       child: Listener(
-        onPointerDown: (_) =>
-            ref.read(workspaceViewModelProvider.notifier).selectTask(task.id),
+        onPointerDown: (_) {
+          if (!state.hasMultiSelection) {
+            ref.read(workspaceViewModelProvider.notifier).selectTask(task.id);
+          }
+        },
         child: InkWell(
           onTap: () =>
               ref.read(workspaceViewModelProvider.notifier).selectTask(task.id),
           onDoubleTap: () async {
             final vm = ref.read(workspaceViewModelProvider.notifier);
-            final message = AppLocalizations.of(context)!.taskWasCopied;
+            final list = state.currentList;
+            if (state.hasMultiSelection && list != null) {
+              final message = AppLocalizations.of(context)!.selectionWasCopied;
+              final tasks = [
+                for (final id in state.visibleTaskIdsFor(list))
+                  if (state.multiSelectedTaskIds.contains(id))
+                    list.tasks.firstWhere((task) => task.id == id),
+              ];
+              await Clipboard.setData(
+                ClipboardData(text: selectedTasksAsIndentedText(list, tasks)),
+              );
+              vm.highlightTasks(tasks.map((task) => task.id));
+              vm.showNotice(message, usesDoingColor: true);
+            } else {
+              final message = AppLocalizations.of(context)!.taskWasCopied;
+              await Clipboard.setData(ClipboardData(text: task.title));
+              vm.highlightTasks([task.id]);
+              vm.showNotice(message, usesDoingColor: true);
+            }
             vm.selectTask(task.id);
-            await Clipboard.setData(ClipboardData(text: task.title));
-            vm.showNotice(message);
           },
           borderRadius: terminal ? BorderRadius.zero : BorderRadius.circular(5),
           child: AnimatedContainer(
@@ -104,11 +127,13 @@ class WorkspaceTaskRow extends ConsumerWidget {
             ).add(EdgeInsets.only(left: terminal ? 0 : depth * 16.0)),
             decoration: BoxDecoration(
               color: highlighted
-                  ? TerminalPalette.of(context).accent
-                  : animated
-                  ? workspaceStatusColor(context, task.status)
+                  ? TerminalPalette.of(context).doing
                   : selected
                   ? TerminalPalette.of(context).accent
+                  : multiSelected
+                  ? TerminalPalette.of(context).doing
+                  : animated
+                  ? workspaceStatusColor(context, task.status)
                   : Colors.transparent,
               borderRadius: terminal
                   ? BorderRadius.zero

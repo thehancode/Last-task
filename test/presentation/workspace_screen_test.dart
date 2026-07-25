@@ -229,7 +229,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await tester.pump();
 
@@ -326,7 +328,9 @@ void main() {
           await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
         } else if (scenario.name == 'multi') {
           await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+          await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
           await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+          await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
           await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
         }
         await tester.pump();
@@ -1005,7 +1009,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 20));
 
       await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
       await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
       await tester.pump();
       await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
