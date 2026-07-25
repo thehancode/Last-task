@@ -9,13 +9,13 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'Focus List';
+  String get appTitle => 'Last Task';
 
   @override
-  String get windowTitle => 'Focus List';
+  String get windowTitle => 'Last Task';
 
   @override
-  String get workspaceTitle => 'Focus List';
+  String get workspaceTitle => 'Last Task';
 
   @override
   String get cancel => 'Cancelar';
@@ -89,7 +89,7 @@ class AppLocalizationsEs extends AppLocalizations {
       '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
-  String get couldNotLoad => 'No se pudo cargar la lista de enfoque';
+  String get couldNotLoad => 'No se pudo cargar Last Task';
 
   @override
   String get dragWindow => 'Arrastrar ventana';
@@ -469,13 +469,13 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   AppLocalizationsEs419() : super('es_419');
 
   @override
-  String get appTitle => 'Focus List';
+  String get appTitle => 'Last Task';
 
   @override
-  String get windowTitle => 'Focus List';
+  String get windowTitle => 'Last Task';
 
   @override
-  String get workspaceTitle => 'Focus List';
+  String get workspaceTitle => 'Last Task';
 
   @override
   String get cancel => 'Cancelar';
@@ -549,7 +549,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
       '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
 
   @override
-  String get couldNotLoad => 'No se pudo cargar Focus List';
+  String get couldNotLoad => 'No se pudo cargar Last Task';
 
   @override
   String get dragWindow => 'Arrastrar ventana';
@@ -926,13 +926,13 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   AppLocalizationsEsEs() : super('es_ES');
 
   @override
-  String get appTitle => 'Focus List';
+  String get appTitle => 'Last Task';
 
   @override
-  String get windowTitle => 'Focus List';
+  String get windowTitle => 'Last Task';
 
   @override
-  String get workspaceTitle => 'Focus List';
+  String get workspaceTitle => 'Last Task';
 
   @override
   String get cancel => 'Cancelar';
@@ -1006,7 +1006,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
       '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
-  String get couldNotLoad => 'No se pudo cargar Focus List';
+  String get couldNotLoad => 'No se pudo cargar Last Task';
 
   @override
   String get dragWindow => 'Arrastrar ventana';

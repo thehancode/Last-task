@@ -103,19 +103,19 @@ abstract class AppLocalizations {
   /// Application title used by Flutter.
   ///
   /// In en, this message translates to:
-  /// **'Focus List'**
+  /// **'Last Task'**
   String get appTitle;
 
   /// Reserved native window title.
   ///
   /// In en, this message translates to:
-  /// **'Focus List'**
+  /// **'Last Task'**
   String get windowTitle;
 
   /// Brand label at the workspace header.
   ///
   /// In en, this message translates to:
-  /// **'FOCUS LIST'**
+  /// **'LAST TASK'**
   String get workspaceTitle;
 
   /// Button that dismisses an editor or confirmation.
@@ -247,7 +247,7 @@ abstract class AppLocalizations {
   /// Fallback workspace loading error.
   ///
   /// In en, this message translates to:
-  /// **'Could not load Focus List'**
+  /// **'Could not load Last Task'**
   String get couldNotLoad;
 
   /// Accessibility label for Linux window drag area.

@@ -9,13 +9,13 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Focus List';
+  String get appTitle => 'Last Task';
 
   @override
-  String get windowTitle => 'Focus List';
+  String get windowTitle => 'Last Task';
 
   @override
-  String get workspaceTitle => 'FOCUS LIST';
+  String get workspaceTitle => 'LAST TASK';
 
   @override
   String get cancel => 'Cancel';
@@ -89,7 +89,7 @@ class AppLocalizationsEn extends AppLocalizations {
       '↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit';
 
   @override
-  String get couldNotLoad => 'Could not load Focus List';
+  String get couldNotLoad => 'Could not load Last Task';
 
   @override
   String get dragWindow => 'Drag window';

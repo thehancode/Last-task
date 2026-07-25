@@ -27,7 +27,7 @@ void main() {
     expect(list.toJson()['schema_version'], 1);
   });
 
-  test('normalization and status cycle match Focus List', () {
+  test('normalization and status cycle match Last Task', () {
     expect(normalizeName('  Personal\n  Tasks  '), 'Personal Tasks');
     expect(TaskStatus.pending.next, TaskStatus.doing);
     expect(TaskStatus.doing.next, TaskStatus.done);

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_app/app/focus_list_app.dart';
+import 'package:flutter_app/app/last_task_app.dart';
 import 'package:flutter_app/app/theme_catalog.dart';
 import 'package:flutter_app/data/providers.dart';
 import 'package:flutter_app/domain/models.dart';
@@ -28,12 +28,12 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(_Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
 
-    expect(find.textContaining('FOCUS LIST'), findsOneWidget);
+    expect(find.textContaining('LAST TASK'), findsOneWidget);
     expect(find.textContaining('Tasks'), findsOneWidget);
     final dragArea = find.byKey(const Key('desktop-window-drag-area'));
     expect(dragArea, findsOneWidget);
@@ -77,7 +77,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(_Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -118,7 +118,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -169,7 +169,7 @@ void main() {
               const _Settings(AppSettings(tipsEnabled: true)),
             ),
           ],
-          child: const FocusListApp(),
+          child: const LastTaskApp(),
         ),
       );
       await tester.pump(const Duration(milliseconds: 20));
@@ -201,7 +201,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -237,12 +237,12 @@ void main() {
             taskListRepositoryProvider.overrideWithValue(_Lists()),
             settingsRepositoryProvider.overrideWithValue(_Settings()),
           ],
-          child: const FocusListApp(),
+          child: const LastTaskApp(),
         ),
       );
       await tester.pump(const Duration(milliseconds: 20));
 
-      expect(find.textContaining('FOCUS LIST'), findsOneWidget);
+      expect(find.textContaining('LAST TASK'), findsOneWidget);
       await tester.dragFrom(const Offset(390, 350), const Offset(-1800, 0));
       await tester.pump();
       expect(
@@ -278,7 +278,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -324,7 +324,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -372,7 +372,7 @@ void main() {
               ),
               settingsRepositoryProvider.overrideWithValue(const _Settings()),
             ],
-            child: const FocusListApp(),
+            child: const LastTaskApp(),
           ),
         );
         await tester.pump(const Duration(milliseconds: 20));
@@ -517,7 +517,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -582,7 +582,7 @@ void main() {
             ),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -636,7 +636,7 @@ void main() {
             ),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -670,7 +670,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -745,7 +745,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(repository),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -787,7 +787,7 @@ void main() {
             ),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -822,7 +822,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -874,7 +874,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -962,7 +962,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1056,7 +1056,7 @@ void main() {
             taskListRepositoryProvider.overrideWithValue(_Lists(lists)),
             settingsRepositoryProvider.overrideWithValue(const _Settings()),
           ],
-          child: const FocusListApp(),
+          child: const LastTaskApp(),
         ),
       );
       await tester.pump(const Duration(milliseconds: 20));
@@ -1133,7 +1133,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1200,7 +1200,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1251,7 +1251,7 @@ void main() {
             const _Settings(AppSettings(nativeFontSize: 28)),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1286,7 +1286,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1319,7 +1319,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1371,7 +1371,7 @@ void main() {
           ),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1427,7 +1427,7 @@ void main() {
             const _Settings(AppSettings()),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1494,7 +1494,7 @@ void main() {
             const _Settings(AppSettings(tagNames: TagNames(heart: 'Urgent'))),
           ),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
@@ -1517,7 +1517,7 @@ void main() {
           taskListRepositoryProvider.overrideWithValue(_Lists()),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
-        child: const FocusListApp(),
+        child: const LastTaskApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));

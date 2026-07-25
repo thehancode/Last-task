@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv) {
   // Native Wayland intentionally gives the compositor sole control of window
-  // placement. Prefer X11 (XWayland in a Wayland session) so Focus List can
+  // placement. Prefer X11 (XWayland in a Wayland session) so Last Task can
   // restore its user-selected position. Keep an explicit caller override for
   // environments without XWayland or users who prefer native Wayland.
   g_setenv("GDK_BACKEND", "x11", FALSE);

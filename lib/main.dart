@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'app/focus_list_app.dart';
+import 'app/last_task_app.dart';
 import 'app/theme_catalog.dart';
 import 'app/ui_mode.dart';
 import 'app/window_position_persistence.dart';
@@ -31,7 +31,7 @@ Future<void> main() async {
     final options = WindowOptions(
       size: const Size(1100, 720),
       minimumSize: const Size(720, 480),
-      title: 'TUI Kanban',
+      title: 'Last Task',
       titleBarStyle: usesFramelessDesktopWindow
           ? TitleBarStyle.hidden
           : TitleBarStyle.normal,
@@ -65,7 +65,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [themeCatalogProvider.overrideWithValue(themeCatalog)],
-      child: const FocusListApp(),
+      child: const LastTaskApp(),
     ),
   );
 }

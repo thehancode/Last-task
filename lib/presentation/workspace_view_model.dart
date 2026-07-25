@@ -102,7 +102,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         lists: const [],
         settings: const AppSettings(),
         view: WorkspaceView.list,
-        error: 'Could not load Focus List: $error',
+        error: 'Could not load Last Task: $error',
       );
     }
   }

@@ -4,8 +4,8 @@
 Every visible UI message belongs in this catalog. Keep each message key stable;
 renaming a key breaks generated Dart call sites and every translation.
 
-Focus List is the product name. Keep appTitle, windowTitle, and
-workspaceTitle as Focus List in every locale; product names are not
+Last Task is the product name. Keep appTitle, windowTitle, and
+workspaceTitle as Last Task in every locale; product names are not
 translated.
 
 ## Adding or updating a translation

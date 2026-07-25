@@ -2,21 +2,21 @@
 # Build and install the Linux release bundle for local use.
 #
 # Optional overrides:
-#   FOCUS_LIST_INSTALL_DIR=/somewhere scripts/install-linux.sh
-#   FOCUS_LIST_BIN_DIR=/somewhere/bin scripts/install-linux.sh
+#   LAST_TASK_INSTALL_DIR=/somewhere scripts/install-linux.sh
+#   LAST_TASK_BIN_DIR=/somewhere/bin scripts/install-linux.sh
 
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 bundle_dir="$repo_root/build/linux/x64/release/bundle"
 binary_name="flutter_app"
-install_dir="${FOCUS_LIST_INSTALL_DIR:-$HOME/.local/opt/focus-list}"
-bin_dir="${FOCUS_LIST_BIN_DIR:-$HOME/.local/bin}"
-command_name="focus-list"
+install_dir="${LAST_TASK_INSTALL_DIR:-$HOME/.local/opt/last-task}"
+bin_dir="${LAST_TASK_BIN_DIR:-$HOME/.local/bin}"
+command_name="last-task"
 staging_dir="${install_dir}.new"
 desktop_dir="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
-desktop_file="$desktop_dir/tui-kanban.desktop"
-autostart_file="$HOME/.config/autostart/tui-kanban.desktop"
+desktop_file="$desktop_dir/last-task.desktop"
+autostart_file="$HOME/.config/autostart/last-task.desktop"
 
 case "$install_dir" in
   /|"$HOME"|"$HOME/.local"|"$HOME/.local/opt")
@@ -42,31 +42,30 @@ rm -rf "$install_dir"
 mv "$staging_dir" "$install_dir"
 ln -sfn "$install_dir/$binary_name" "$bin_dir/$command_name"
 
-# Keep the existing Focus List menu and login entries, but point both at the
-# Flutter application instead of the legacy Rust executable.
+# Install the Last Task menu and login entries.
 mkdir -p "$desktop_dir" "$(dirname "$autostart_file")"
 cat >"$desktop_file" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Focus List
+Name=Last Task
 GenericName=Task List
 Comment=Open your keyboard-first task list
 Exec=$bin_dir/$command_name
-Icon=tui-kanban
+Icon=last-task
 Terminal=false
 Categories=Office;
 StartupNotify=true
 StartupWMClass=com.tuikanban.flutter_app
-Keywords=focus;tasks;todo;
+Keywords=last;task;tasks;todo;
 EOF
 
 cat >"$autostart_file" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Focus List
-Comment=Open Focus List at login
+Name=Last Task
+Comment=Open Last Task at login
 Exec=$bin_dir/$command_name
-Icon=tui-kanban
+Icon=last-task
 Terminal=false
 StartupNotify=false
 X-GNOME-Autostart-enabled=true

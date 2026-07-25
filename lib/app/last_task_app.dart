@@ -9,8 +9,8 @@ import '../l10n/app_localizations.dart';
 import 'ui_mode.dart';
 import 'theme_catalog.dart';
 
-class FocusListApp extends ConsumerWidget {
-  const FocusListApp({super.key});
+class LastTaskApp extends ConsumerWidget {
+  const LastTaskApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

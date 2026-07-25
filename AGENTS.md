@@ -48,7 +48,7 @@ app -> presentation -> domain <- data
 - `lib/main.dart`: process entry point and platform startup. It initializes
   Flutter, desktop window behavior, and the root Riverpod scope.
 - `lib/app/`: application composition and platform integrations.
-  `focus_list_app.dart` owns the root app, localization delegates, themes, and
+  `last_task_app.dart` owns the root app, localization delegates, themes, and
   the workspace route; `ui_mode.dart` defines the presentation-mode boundary;
   `theme_catalog.dart` loads theme definitions. Desktop background and window
   position services use conditional imports with base/IO/stub files so shared

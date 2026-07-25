@@ -1,6 +1,6 @@
-# Focus List Flutter
+# Last Task
 
-Local-first Flutter migration of the Rust Focus List application. It currently
+Last Task is a local-first Flutter task manager. It currently
 targets Linux desktop, web, and Android from one codebase.
 
 ## Run
