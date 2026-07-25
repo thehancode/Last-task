@@ -10,11 +10,14 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 bundle_dir="$repo_root/build/linux/x64/release/bundle"
 binary_name="flutter_app"
+logo_source="$repo_root/assets/icons/logo.svg"
 install_dir="${LAST_TASK_INSTALL_DIR:-$HOME/.local/opt/last-task}"
 bin_dir="${LAST_TASK_BIN_DIR:-$HOME/.local/bin}"
 command_name="last-task"
 staging_dir="${install_dir}.new"
-desktop_dir="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}"
+desktop_dir="$data_dir/applications"
+icon_dir="$data_dir/icons/hicolor/scalable/apps"
 desktop_file="$desktop_dir/last-task.desktop"
 autostart_file="$HOME/.config/autostart/last-task.desktop"
 
@@ -26,6 +29,12 @@ case "$install_dir" in
 esac
 
 cd "$repo_root"
+
+if [[ ! -f "$logo_source" ]]; then
+  echo "Application logo is missing: $logo_source" >&2
+  exit 1
+fi
+
 flutter build linux --release
 
 if [[ ! -x "$bundle_dir/$binary_name" ]]; then
@@ -42,8 +51,10 @@ rm -rf "$install_dir"
 mv "$staging_dir" "$install_dir"
 ln -sfn "$install_dir/$binary_name" "$bin_dir/$command_name"
 
-# Install the Last Task menu and login entries.
-mkdir -p "$desktop_dir" "$(dirname "$autostart_file")"
+# Install the Last Task icon, menu, and login entries.  The hicolor location
+# is the standard icon-theme path used by Linux desktop environments.
+mkdir -p "$icon_dir" "$desktop_dir" "$(dirname "$autostart_file")"
+install -m 0644 "$logo_source" "$icon_dir/$command_name.svg"
 cat >"$desktop_file" <<EOF
 [Desktop Entry]
 Type=Application
@@ -71,6 +82,10 @@ StartupNotify=false
 X-GNOME-Autostart-enabled=true
 OnlyShowIn=GNOME;Unity;
 EOF
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache --force "$data_dir/icons/hicolor" >/dev/null 2>&1 || true
+fi
 
 echo "Installed $command_name to $install_dir"
 echo "Run it with: $bin_dir/$command_name"
