@@ -239,12 +239,121 @@ class _WorkspaceCloseButtonState extends State<WorkspaceCloseButton> {
   }
 }
 
-class WorkspaceTabs extends ConsumerWidget {
+class WorkspaceTabs extends ConsumerStatefulWidget {
   const WorkspaceTabs({super.key, required this.state});
   final WorkspaceState state;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WorkspaceTabs> createState() => _WorkspaceTabsState();
+}
+
+class _WorkspaceTabsState extends ConsumerState<WorkspaceTabs> {
+  static const _scrollDuration = Duration(milliseconds: 180);
+  final _scrollController = ScrollController();
+  final _viewportKey = GlobalKey();
+  final _tabKeys = <String, GlobalKey>{};
+
+  @override
+  void didUpdateWidget(covariant WorkspaceTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previousId = _selectedListId(oldWidget.state);
+    final selectedId = _selectedListId(widget.state);
+    if (selectedId == null || selectedId == previousId) return;
+
+    final direction = _selectionDirection(previousId, selectedId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _selectedListId(widget.state) == selectedId) {
+        _scrollToSelection(selectedId, direction);
+      }
+    });
+  }
+
+  String? _selectedListId(WorkspaceState state) =>
+      state.view == WorkspaceView.multi ? null : state.currentListId;
+
+  int _selectionDirection(String? previousId, String selectedId) {
+    if (previousId == null) return 0;
+    final previous = widget.state.lists.indexWhere(
+      (list) => list.id == previousId,
+    );
+    final selected = widget.state.lists.indexWhere(
+      (list) => list.id == selectedId,
+    );
+    if (previous < 0 || selected < 0 || previous == selected) return 0;
+    if (previous == widget.state.lists.length - 1 && selected == 0) return 1;
+    if (previous == 0 && selected == widget.state.lists.length - 1) return -1;
+    return selected > previous ? 1 : -1;
+  }
+
+  void _scrollToSelection(String selectedId, int direction) {
+    if (!_scrollController.hasClients) return;
+    final viewport = _viewportKey.currentContext?.findRenderObject();
+    final selected = _tabKeys[selectedId]?.currentContext?.findRenderObject();
+    if (viewport is! RenderBox || selected is! RenderBox) return;
+
+    RenderBox? adjacent;
+    final selectedIndex = widget.state.lists.indexWhere(
+      (list) => list.id == selectedId,
+    );
+    final adjacentIndex = selectedIndex + direction;
+    if (direction != 0 &&
+        adjacentIndex >= 0 &&
+        adjacentIndex < widget.state.lists.length) {
+      final adjacentRenderObject =
+          _tabKeys[widget.state.lists[adjacentIndex].id]?.currentContext
+              ?.findRenderObject();
+      if (adjacentRenderObject is RenderBox) {
+        adjacent = adjacentRenderObject;
+      }
+    }
+
+    final selectedRect = _rectInViewport(selected, viewport);
+    var targetRect = selectedRect;
+    if (adjacent != null) {
+      final adjacentRect = _rectInViewport(adjacent, viewport);
+      final combined = selectedRect.expandToInclude(adjacentRect);
+      if (combined.width <= _scrollController.position.viewportDimension) {
+        targetRect = combined;
+      }
+    }
+
+    final position = _scrollController.position;
+    final target = _targetOffset(position, targetRect);
+    if ((target - position.pixels).abs() < .5) return;
+    _scrollController.animateTo(
+      target,
+      duration: _scrollDuration,
+      curve: Curves.easeOut,
+    );
+  }
+
+  Rect _rectInViewport(RenderBox child, RenderBox viewport) => Rect.fromLTWH(
+    child.localToGlobal(Offset.zero, ancestor: viewport).dx,
+    0,
+    child.size.width,
+    child.size.height,
+  );
+
+  double _targetOffset(ScrollPosition position, Rect targetRect) {
+    final viewportEnd = position.viewportDimension;
+    var target = position.pixels;
+    if (targetRect.left < 0) {
+      target += targetRect.left;
+    } else if (targetRect.right > viewportEnd) {
+      target += targetRect.right - viewportEnd;
+    }
+    return target.clamp(position.minScrollExtent, position.maxScrollExtent);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
     final strings = AppLocalizations.of(context)!;
     Widget item(int index) {
       final list = state.lists[index];
@@ -253,54 +362,57 @@ class WorkspaceTabs extends ConsumerWidget {
       final selectedColor = list.isHabit
           ? TerminalPalette.of(context).doing
           : TerminalPalette.of(context).accent;
-      return Semantics(
-        selected: selected,
-        button: true,
-        label: strings.taskList(list.name),
-        child: usesTerminalPresentation
-            ? InkWell(
-                onTap: () => ref
-                    .read(workspaceViewModelProvider.notifier)
-                    .selectList(list.id),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: selected
-                            ? selectedColor
-                            : TerminalPalette.of(context).muted,
-                        width: selected ? 2 : 1,
+      return KeyedSubtree(
+        key: _tabKeys.putIfAbsent(list.id, GlobalKey.new),
+        child: Semantics(
+          selected: selected,
+          button: true,
+          label: strings.taskList(list.name),
+          child: usesTerminalPresentation
+              ? InkWell(
+                  onTap: () => ref
+                      .read(workspaceViewModelProvider.notifier)
+                      .selectList(list.id),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: selected
+                              ? selectedColor
+                              : TerminalPalette.of(context).muted,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: TerminalMetrics.cell(context),
+                        vertical: TerminalMetrics.line(context) * .2,
+                      ),
+                      child: Text(
+                        list.name,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: selected
+                              ? selectedColor
+                              : TerminalPalette.of(context).muted,
+                          fontWeight: selected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: TerminalMetrics.cell(context),
-                      vertical: TerminalMetrics.line(context) * .2,
-                    ),
-                    child: Text(
-                      list.name,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: selected
-                            ? selectedColor
-                            : TerminalPalette.of(context).muted,
-                        fontWeight: selected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
+                )
+              : ChoiceChip(
+                  selected: selected,
+                  label: Text(list.name),
+                  selectedColor: selectedColor,
+                  onSelected: (_) => ref
+                      .read(workspaceViewModelProvider.notifier)
+                      .selectList(list.id),
                 ),
-              )
-            : ChoiceChip(
-                selected: selected,
-                label: Text(list.name),
-                selectedColor: selectedColor,
-                onSelected: (_) => ref
-                    .read(workspaceViewModelProvider.notifier)
-                    .selectList(list.id),
-              ),
+        ),
       );
     }
 
@@ -308,6 +420,8 @@ class WorkspaceTabs extends ConsumerWidget {
       return SizedBox(
         width: double.infinity,
         child: SingleChildScrollView(
+          key: _viewportKey,
+          controller: _scrollController,
           scrollDirection: Axis.horizontal,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -323,6 +437,8 @@ class WorkspaceTabs extends ConsumerWidget {
     return SizedBox(
       height: 42,
       child: ListView.separated(
+        key: _viewportKey,
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
         itemCount: state.lists.length,
         separatorBuilder: (_, _) => const SizedBox(width: 6),

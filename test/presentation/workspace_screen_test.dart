@@ -259,7 +259,7 @@ void main() {
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await tester.binding.setSurfaceSize(const Size(700, 500));
+    await tester.binding.setSurfaceSize(const Size(420, 500));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final list = _listWithTask();
     final secondList = TaskList(
@@ -1535,6 +1535,146 @@ void main() {
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
+  testWidgets('terminal tab selection reveals the selected tab and next tab', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_workspaceWithLists(_tabLists()));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    _expectTextFullyVisible(tester, 'Tab three');
+    _expectTextFullyVisible(tester, 'Tab four');
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('terminal left tab selection reveals the preceding tab', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_workspaceWithLists(_tabLists()));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    for (var index = 0; index < 4; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+
+    _expectTextFullyVisible(tester, 'Tab three');
+    _expectTextFullyVisible(tester, 'Tab four');
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets(
+    'terminal pointer tab selection follows the same visibility rule',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(420, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_workspaceWithLists(_tabLists()));
+      await tester.pump(const Duration(milliseconds: 20));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      final targetRect = tester.getRect(find.text('Tab four'));
+      await tester.tapAt(Offset(419, targetRect.center.dy));
+      await tester.pumpAndSettle();
+
+      _expectTextFullyVisible(tester, 'Tab four');
+      _expectTextFullyVisible(tester, 'Tab five');
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
+
+  testWidgets('Android tab selection reveals the selected tab and next tab', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_workspaceWithLists(_wideTabLists()));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    _expectTextFullyVisible(tester, 'Tab number three', width: 700);
+    _expectTextFullyVisible(tester, 'Tab number four', width: 700);
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+}
+
+Widget _workspaceWithLists(List<TaskList> lists) => ProviderScope(
+  overrides: [
+    deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+    taskListRepositoryProvider.overrideWithValue(_Lists(lists)),
+    settingsRepositoryProvider.overrideWithValue(const _Settings()),
+  ],
+  child: const LastTaskApp(),
+);
+
+void _expectTextFullyVisible(
+  WidgetTester tester,
+  String text, {
+  double width = 420,
+}) {
+  final rect = tester.getRect(find.text(text));
+  expect(rect.left, greaterThanOrEqualTo(0));
+  expect(rect.right, lessThanOrEqualTo(width));
+}
+
+List<TaskList> _tabLists() {
+  final now = DateTime.utc(2026, 1, 1);
+  const names = ['Tab one', 'Tab two', 'Tab three', 'Tab four', 'Tab five'];
+  return [
+    for (var index = 0; index < names.length; index++)
+      TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'tab-$index',
+        name: names[index],
+        createdAt: now,
+        tasks: const [],
+      ),
+  ];
+}
+
+List<TaskList> _wideTabLists() {
+  final now = DateTime.utc(2026, 1, 1);
+  const names = [
+    'Tab number one',
+    'Tab number two',
+    'Tab number three',
+    'Tab number four',
+    'Tab number five',
+  ];
+  return [
+    for (var index = 0; index < names.length; index++)
+      TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'wide-tab-$index',
+        name: names[index],
+        createdAt: now,
+        tasks: const [],
+      ),
+  ];
 }
 
 TaskList _listWithTask({List<TaskTag> tags = const []}) {
