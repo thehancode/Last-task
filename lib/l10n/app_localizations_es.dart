@@ -73,7 +73,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nEspacio y ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar la lista de enfoque';
@@ -176,7 +176,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza, ↑↓ reordena ';
+  String get spaceArmed => ' ESPACIO activado — F avanza ';
 
   @override
   String dailyActivity(Object activity) {
@@ -185,7 +185,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Espacio+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {
@@ -318,7 +318,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tipReorder =>
-      'Pulsa Espacio y después arriba o abajo para reordenar una tarea.';
+      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
 
   @override
   String get tipSubtasks =>
@@ -506,7 +506,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nEspacio y ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Focus List';
@@ -606,7 +606,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza, ↑↓ reordena ';
+  String get spaceArmed => ' ESPACIO activado — F avanza ';
 
   @override
   String dailyActivity(Object activity) {
@@ -615,7 +615,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Espacio+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {
@@ -748,7 +748,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get tipReorder =>
-      'Presiona Espacio y luego arriba o abajo para reordenar una tarea.';
+      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
 
   @override
   String get tipSubtasks =>
@@ -936,7 +936,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nEspacio y ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar título\nCtrl+Mayús+C   Copiar sección\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+A   Vista múltiple\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Focus List';
@@ -1036,7 +1036,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza, ↑↓ reordena ';
+  String get spaceArmed => ' ESPACIO activado — F avanza ';
 
   @override
   String dailyActivity(Object activity) {
@@ -1045,7 +1045,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Espacio+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {
@@ -1178,7 +1178,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get tipReorder =>
-      'Pulsa Espacio y después arriba o abajo para reordenar una tarea.';
+      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
 
   @override
   String get tipSubtasks =>

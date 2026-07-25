@@ -100,6 +100,23 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         HardwareKeyboard.instance.isMetaPressed;
     final key = event.logicalKey;
     if (control) {
+      if (key == LogicalKeyboardKey.arrowUp ||
+          key == LogicalKeyboardKey.arrowDown ||
+          key == LogicalKeyboardKey.arrowLeft ||
+          key == LogicalKeyboardKey.arrowRight) {
+        _releaseGrab();
+        if (key == LogicalKeyboardKey.arrowUp ||
+            key == LogicalKeyboardKey.arrowDown) {
+          unawaited(
+            vm.reorderSelected(key == LogicalKeyboardKey.arrowUp ? -1 : 1),
+          );
+        } else {
+          unawaited(
+            vm.reorderCurrentList(key == LogicalKeyboardKey.arrowLeft ? -1 : 1),
+          );
+        }
+        return KeyEventResult.handled;
+      }
       if (key == LogicalKeyboardKey.keyC) {
         if (HardwareKeyboard.instance.isShiftPressed) {
           unawaited(_copyCurrentSection());
@@ -128,15 +145,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       unawaited(_showTaskEditor(subtask: true));
       return KeyEventResult.handled;
     }
-    if (HardwareKeyboard.instance.isShiftPressed &&
-        (key == LogicalKeyboardKey.arrowLeft ||
-            key == LogicalKeyboardKey.arrowRight)) {
-      _releaseGrab();
-      unawaited(
-        vm.reorderCurrentList(key == LogicalKeyboardKey.arrowLeft ? -1 : 1),
-      );
-      return KeyEventResult.handled;
-    }
     if (key == LogicalKeyboardKey.arrowLeft) {
       vm.cycleList(-1);
       return KeyEventResult.handled;
@@ -160,21 +168,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyK) {
-      if (_grabbed) {
-        unawaited(vm.reorderSelected(-1));
-        _armGrab();
-      } else {
-        vm.moveSelection(-1);
-      }
+      _releaseGrab();
+      vm.moveSelection(-1);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyJ) {
-      if (_grabbed) {
-        unawaited(vm.reorderSelected(1));
-        _armGrab();
-      } else {
-        vm.moveSelection(1);
-      }
+      _releaseGrab();
+      vm.moveSelection(1);
       return KeyEventResult.handled;
     }
     if (usesTerminalPresentation &&

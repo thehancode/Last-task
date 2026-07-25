@@ -223,7 +223,7 @@ abstract class AppLocalizations {
   /// Multiline desktop shortcut reference. Keep key glyphs and line breaks.
   ///
   /// In en, this message translates to:
-  /// **'↑/↓ or J/K   Move selection\n←/→   Switch task lists\nShift+←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nSpace then ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task title\nCtrl+Shift+C   Copy current section\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+A   Multi view\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
+  /// **'↑/↓ or J/K   Move selection\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task title\nCtrl+Shift+C   Copy current section\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+A   Multi view\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
   String get keyboardShortcutsHelp;
 
   /// Fallback workspace loading error.
@@ -415,7 +415,7 @@ abstract class AppLocalizations {
   /// Terminal footer status after pressing Space; preserve surrounding spaces.
   ///
   /// In en, this message translates to:
-  /// **' SPACE armed — F advance, ↑↓ reorder '**
+  /// **' SPACE armed — F advance '**
   String get spaceArmed;
 
   /// Terminal footer prefix before the daily-task completion glyphs.
@@ -427,7 +427,7 @@ abstract class AppLocalizations {
   /// Compact non-terminal footer shortcut reference.
   ///
   /// In en, this message translates to:
-  /// **'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+F advance   Space+↑↓ sort   ? help'**
+  /// **'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+F advance   Ctrl+↑↓ sort   ? help'**
   String get keyboardHint;
 
   /// Screen-reader label for a terminal command shortcut.
@@ -673,7 +673,7 @@ abstract class AppLocalizations {
   /// Tip explaining keyboard reordering.
   ///
   /// In en, this message translates to:
-  /// **'Press Space, then up or down, to reorder a task subtree.'**
+  /// **'Hold Ctrl and press up or down to reorder a task subtree.'**
   String get tipReorder;
 
   /// Tip explaining subtask creation.
