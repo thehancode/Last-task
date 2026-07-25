@@ -1,0 +1,629 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/ui_mode.dart';
+import '../../domain/models.dart';
+import '../../l10n/app_localizations.dart';
+import '../terminal_style.dart';
+import '../workspace_view_model.dart';
+import 'workspace_presenters.dart';
+import 'workspace_task_row.dart';
+
+TextStyle? _dialogInputStyle(BuildContext context) =>
+    usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
+
+class WorkspaceTaskPanel extends ConsumerWidget {
+  const WorkspaceTaskPanel({
+    super.key,
+    required this.state,
+    required this.background,
+    required this.backgroundConfigured,
+  });
+  final WorkspaceState state;
+  final Uint8List? background;
+  final bool backgroundConfigured;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appearance = state.deviceState.desktopAppearance;
+    final hasBackground = background != null;
+    final panelOpacity = backgroundConfigured ? 0.0 : 1.0;
+    final normalContent = switch (state.view) {
+      WorkspaceView.list => _ListContent(state: state),
+      WorkspaceView.focus => _FocusContent(state: state),
+      WorkspaceView.completed => _CompletedContent(state: state),
+      WorkspaceView.multi => _MultiContent(state: state),
+    };
+    final border = switch (state.view) {
+      WorkspaceView.list => TerminalPalette.of(context).accent,
+      WorkspaceView.focus => TerminalPalette.of(context).doing,
+      WorkspaceView.completed => TerminalPalette.of(context).done,
+      WorkspaceView.multi => TerminalPalette.of(context).accent,
+    };
+    final radius = usesTerminalPresentation
+        ? BorderRadius.circular(TerminalMetrics.panelRadius)
+        : BorderRadius.circular(12);
+    final content = state.search == null
+        ? normalContent
+        : Column(
+            children: [
+              const _SearchBar(),
+              Expanded(child: normalContent),
+            ],
+          );
+    return Container(
+      key: ValueKey('task-panel-${state.view.name}'),
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: TerminalPalette.of(
+          context,
+        ).panel.withValues(alpha: panelOpacity),
+        border: Border.all(color: border),
+        borderRadius: radius,
+      ),
+      child: hasBackground
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.memory(
+                  background!,
+                  fit: appearance.backgroundFit == DesktopBackgroundFit.cover
+                      ? BoxFit.cover
+                      : BoxFit.contain,
+                ),
+                ColoredBox(
+                  color: TerminalPalette.of(context).background.withValues(
+                    alpha: appearance.backgroundOverlayOpacity,
+                  ),
+                ),
+                content,
+              ],
+            )
+          : content,
+    );
+  }
+}
+
+class _SearchBar extends ConsumerStatefulWidget {
+  const _SearchBar();
+
+  @override
+  ConsumerState<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends ConsumerState<_SearchBar> {
+  final _controller = TextEditingController();
+  late final _navigationFocusNode = FocusNode(
+    debugLabel: 'workspace-search-navigation',
+    onKeyEvent: _onKey,
+  );
+  late final _fieldFocusNode = FocusNode(
+    debugLabel: 'workspace-search',
+    onKeyEvent: _onKey,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _fieldFocusNode.addListener(_restoreNavigationFocus);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fieldFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fieldFocusNode.removeListener(_restoreNavigationFocus);
+    _controller.dispose();
+    _navigationFocusNode.dispose();
+    _fieldFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _restoreNavigationFocus() {
+    if (_fieldFocusNode.hasFocus ||
+        !mounted ||
+        ref.read(workspaceViewModelProvider).search == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          !_fieldFocusNode.hasFocus &&
+          ref.read(workspaceViewModelProvider).search != null) {
+        _navigationFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _close() {
+    ref.read(workspaceViewModelProvider.notifier).closeSearch();
+  }
+
+  KeyEventResult _onKey(FocusNode _, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      vm.moveSearch(-1);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      vm.moveSearch(1);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      _close();
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _close();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final search = ref.watch(workspaceViewModelProvider).search!;
+    final current = search.matchIds.isEmpty ? 0 : search.currentIndex + 1;
+    return Focus(
+      focusNode: _navigationFocusNode,
+      onKeyEvent: _onKey,
+      child: Padding(
+        key: const ValueKey('workspace-search-line'),
+        padding: EdgeInsets.symmetric(
+          horizontal: TerminalMetrics.cell(context),
+          vertical: usesTerminalPresentation
+              ? TerminalMetrics.line(context) * .1
+              : 2,
+        ),
+        child: Row(
+          children: [
+            Text('${AppLocalizations.of(context)!.search}: '),
+            Expanded(
+              child: TextField(
+                key: const ValueKey('workspace-search-field'),
+                controller: _controller,
+                focusNode: _fieldFocusNode,
+                autofocus: true,
+                style: _dialogInputStyle(context),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  isCollapsed: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                ),
+                onChanged: ref
+                    .read(workspaceViewModelProvider.notifier)
+                    .updateSearch,
+                onSubmitted: (_) => _close(),
+                onTapOutside: (_) => _navigationFocusNode.requestFocus(),
+              ),
+            ),
+            Text('$current/${search.matchIds.length} '),
+            _SearchControl(
+              label: '△',
+              tooltip: AppLocalizations.of(context)!.previousMatch,
+              onTap: () =>
+                  ref.read(workspaceViewModelProvider.notifier).moveSearch(-1),
+            ),
+            _SearchControl(
+              label: '▽',
+              tooltip: AppLocalizations.of(context)!.nextMatch,
+              onTap: () =>
+                  ref.read(workspaceViewModelProvider.notifier).moveSearch(1),
+            ),
+            _SearchControl(
+              label: '⨯',
+              tooltip: AppLocalizations.of(context)!.closeSearch,
+              onTap: _close,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchControl extends StatelessWidget {
+  const _SearchControl({
+    required this.label,
+    required this.tooltip,
+    required this.onTap,
+  });
+  final String label;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: TerminalMetrics.cell(context) / 2,
+        ),
+        child: Text(label),
+      ),
+    ),
+  );
+}
+
+class _ListContent extends StatelessWidget {
+  const _ListContent({required this.state});
+  final WorkspaceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = visibleTreeTasks(
+      state.currentList,
+      revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+    );
+    return _TaskScrollView(
+      key: const ValueKey('task-scroll-list'),
+      eager: state.search != null,
+      indicatorColor: TerminalPalette.of(context).accent,
+      padding: usesTerminalPresentation
+          ? TerminalMetrics.panelPadding(context)
+          : const EdgeInsets.all(12),
+      children: [
+        for (final status in const [
+          TaskStatus.doing,
+          TaskStatus.pending,
+          TaskStatus.done,
+          TaskStatus.archived,
+        ])
+          _TaskSection(
+            state: state,
+            title: workspaceStatusLabel(status, AppLocalizations.of(context)!),
+            status: status,
+            tasks: visible
+                .where(
+                  (task) => taskRoot(state.currentList!, task).status == status,
+                )
+                .toList(),
+          ),
+      ],
+    );
+  }
+}
+
+class _FocusContent extends StatelessWidget {
+  const _FocusContent({required this.state});
+  final WorkspaceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final tasks = visibleTreeTasks(
+      state.currentList,
+      rootStatuses: const {TaskStatus.doing},
+      revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+    );
+    return _TaskScrollView(
+      key: const ValueKey('task-scroll-focus'),
+      eager: state.search != null,
+      indicatorColor: TerminalPalette.of(context).doing,
+      padding: usesTerminalPresentation
+          ? TerminalMetrics.panelPadding(context)
+          : const EdgeInsets.all(12),
+      children: [
+        if (tasks.isEmpty)
+          WorkspaceEmptyState(AppLocalizations.of(context)!.noDoingTasks),
+        for (final task in tasks) WorkspaceTaskRow(task: task, state: state),
+      ],
+    );
+  }
+}
+
+class _CompletedContent extends StatelessWidget {
+  const _CompletedContent({required this.state});
+  final WorkspaceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = completedTreeRows(
+      state.currentList,
+      revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+    );
+    if (rows.isEmpty) {
+      return WorkspaceEmptyState(
+        AppLocalizations.of(context)!.noCompletedTasks,
+      );
+    }
+    return _TaskScrollView(
+      key: const ValueKey('task-scroll-completed'),
+      eager: state.search != null,
+      indicatorColor: TerminalPalette.of(context).done,
+      padding: usesTerminalPresentation
+          ? TerminalMetrics.panelPadding(context)
+          : const EdgeInsets.all(12),
+      children: [
+        for (final row in rows)
+          WorkspaceTaskRow(
+            task: row.task,
+            state: state,
+            completedAt: row.completedAt,
+          ),
+      ],
+    );
+  }
+}
+
+class _MultiContent extends StatelessWidget {
+  const _MultiContent({required this.state});
+  final WorkspaceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    for (final list in state.lists) {
+      final searchMatchIds = state.search?.matchIds.toSet() ?? const <String>{};
+      final visible = visibleTreeTasks(
+        list,
+        rootStatuses: const {TaskStatus.doing, TaskStatus.pending},
+        revealTaskIds: searchMatchIds,
+      );
+      final matchingDoneRootIds = <String>{
+        for (final task in list.tasks)
+          if (searchMatchIds.contains(task.id) &&
+              taskRoot(list, task).status == TaskStatus.done)
+            taskRoot(list, task).id,
+      };
+      final matchingDoneTasks = matchingDoneRootIds.isEmpty
+          ? const <Task>[]
+          : visibleTreeTasks(
+                  list,
+                  rootStatuses: const {TaskStatus.done},
+                  revealTaskIds: searchMatchIds,
+                )
+                .where(
+                  (task) =>
+                      matchingDoneRootIds.contains(taskRoot(list, task).id),
+                )
+                .toList();
+      if (visible.isEmpty && matchingDoneTasks.isEmpty) continue;
+      children.add(
+        Padding(
+          padding: EdgeInsets.only(
+            top: usesTerminalPresentation ? 0 : 8,
+            bottom: usesTerminalPresentation ? 0 : 4,
+          ),
+          child: Text(
+            list.name.toUpperCase(),
+            style: TextStyle(
+              color: TerminalPalette.of(context).accent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+      for (final status in const [TaskStatus.doing, TaskStatus.pending]) {
+        final tasks = visible
+            .where((task) => taskRoot(list, task).status == status)
+            .toList();
+        if (tasks.isNotEmpty) {
+          children.add(
+            _TaskSection(
+              state: state,
+              title: workspaceStatusLabel(
+                status,
+                AppLocalizations.of(context)!,
+              ),
+              status: status,
+              tasks: tasks,
+            ),
+          );
+        }
+      }
+      if (matchingDoneTasks.isNotEmpty) {
+        children.add(
+          _TaskSection(
+            state: state,
+            title: workspaceStatusLabel(
+              TaskStatus.done,
+              AppLocalizations.of(context)!,
+            ),
+            status: TaskStatus.done,
+            tasks: matchingDoneTasks,
+          ),
+        );
+      }
+    }
+    return children.isEmpty
+        ? WorkspaceEmptyState(
+            AppLocalizations.of(context)!.noDoingOrPendingTasks,
+          )
+        : _TaskScrollView(
+            key: const ValueKey('task-scroll-multi'),
+            eager: state.search != null,
+            indicatorColor: TerminalPalette.of(context).accent,
+            padding: usesTerminalPresentation
+                ? TerminalMetrics.panelPadding(context)
+                : const EdgeInsets.all(12),
+            children: children,
+          );
+  }
+}
+
+class _TaskScrollView extends StatefulWidget {
+  const _TaskScrollView({
+    super.key,
+    required this.eager,
+    required this.indicatorColor,
+    required this.padding,
+    required this.children,
+  });
+
+  final bool eager;
+  final Color indicatorColor;
+  final EdgeInsetsGeometry padding;
+  final List<Widget> children;
+
+  @override
+  State<_TaskScrollView> createState() => _TaskScrollViewState();
+}
+
+class _TaskScrollViewState extends State<_TaskScrollView> {
+  final _controller = ScrollController();
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_updateIndicators);
+    _scheduleIndicatorUpdate();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TaskScrollView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _scheduleIndicatorUpdate();
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_updateIndicators)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _scheduleIndicatorUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateIndicators();
+    });
+  }
+
+  void _updateIndicators() {
+    if (!_controller.hasClients) return;
+    final position = _controller.position;
+    final canScrollUp = position.extentBefore > 0.5;
+    final canScrollDown = position.extentAfter > 0.5;
+    if (canScrollUp == _canScrollUp && canScrollDown == _canScrollDown) {
+      return;
+    }
+    setState(() {
+      _canScrollUp = canScrollUp;
+      _canScrollDown = canScrollDown;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewport = widget.eager
+        ? SingleChildScrollView(
+            key: const ValueKey('task-list-viewport'),
+            controller: _controller,
+            padding: widget.padding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: widget.children,
+            ),
+          )
+        : ListView(
+            key: const ValueKey('task-list-viewport'),
+            controller: _controller,
+            padding: widget.padding,
+            children: widget.children,
+          );
+    return Column(
+      children: [
+        if (_canScrollUp)
+          _TaskOverflowIndicator(
+            key: const ValueKey('task-overflow-up'),
+            glyph: '▲',
+            color: widget.indicatorColor,
+          ),
+        Expanded(child: viewport),
+        if (_canScrollDown)
+          _TaskOverflowIndicator(
+            key: const ValueKey('task-overflow-down'),
+            glyph: '▼',
+            color: widget.indicatorColor,
+          ),
+      ],
+    );
+  }
+}
+
+class _TaskOverflowIndicator extends StatelessWidget {
+  const _TaskOverflowIndicator({
+    super.key,
+    required this.glyph,
+    required this.color,
+  });
+
+  final String glyph;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Center(
+      child: Semantics(
+        label: glyph == '▲' ? 'More tasks above' : 'More tasks below',
+        child: Text(
+          glyph,
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        ),
+      ),
+    ),
+  );
+}
+
+class _TaskSection extends StatelessWidget {
+  const _TaskSection({
+    required this.state,
+    required this.title,
+    required this.status,
+    required this.tasks,
+  });
+  final WorkspaceState state;
+  final String title;
+  final TaskStatus status;
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: usesTerminalPresentation ? 0 : 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${workspaceStatusIcon(status)} $title (${tasks.where((task) => task.parentId == null).length})',
+            style: TextStyle(
+              color: workspaceStatusColor(context, status),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: usesTerminalPresentation ? 0 : 4),
+          if (tasks.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(
+                left: 8,
+                bottom: usesTerminalPresentation
+                    ? TerminalMetrics.line(context)
+                    : 0,
+              ),
+              child: Text(
+                '· ${AppLocalizations.of(context)!.empty}',
+                style: TextStyle(color: TerminalPalette.of(context).muted),
+              ),
+            )
+          else
+            for (final task in tasks)
+              WorkspaceTaskRow(task: task, state: state),
+        ],
+      ),
+    );
+  }
+}
