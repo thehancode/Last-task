@@ -121,7 +121,7 @@ void main() {
       addTearDown(container.dispose);
       final vm = await _ready(container);
 
-      await vm.createTask('New pending', false);
+      await vm.createTask('New pending');
 
       final saved = repository.lists.single;
       expect(saved.tasks.first.title, 'New pending');
@@ -132,6 +132,25 @@ void main() {
             .title,
         'New pending',
       );
+    },
+  );
+
+  test(
+    'habit-list root tasks are daily while subtasks inherit their reset',
+    () async {
+      final list = _list('habits', 'Habits', [], isHabit: true);
+      final repository = _TaskLists([list]);
+      final container = _container([list], repository: repository);
+      addTearDown(container.dispose);
+      final vm = await _ready(container);
+
+      await vm.createTask('Drink water');
+      final root = repository.lists.single.tasks.single;
+      expect(root.daily, isTrue);
+
+      vm.selectTask(root.id);
+      await vm.createSubtask('Fill bottle');
+      expect(repository.lists.single.tasks.last.daily, isFalse);
     },
   );
 
@@ -164,7 +183,7 @@ void main() {
       isNot(DateTime.utc(2026, 1, 1)),
     );
 
-    await vm.duplicateSelectedTask('Copy', false);
+    await vm.duplicateSelectedTask('Copy');
     expect(repository.lists.single.tasks.last.tags, [TaskTag.heart]);
   });
 
@@ -530,12 +549,14 @@ TaskList _list(
   String name,
   List<Task> tasks, {
   DateTime? createdAt,
+  bool isHabit = false,
 }) => TaskList(
   schemaVersion: 1,
   id: id,
   name: name,
   createdAt: createdAt ?? DateTime.utc(2026, 1, 1),
   tasks: tasks,
+  isHabit: isHabit,
 );
 
 Task _task(

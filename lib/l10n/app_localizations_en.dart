@@ -36,6 +36,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newTask => 'New task';
 
   @override
+  String get newDailyTask => 'Create new daily task';
+
+  @override
   String get newSubtask => 'New subtask';
 
   @override
@@ -90,6 +93,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dragWindow => 'Drag window';
+
+  @override
+  String get closeApp => 'Close app';
 
   @override
   String get newTaskTooltip => 'New task (N)';
@@ -260,7 +266,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskTitle => 'Task title';
 
   @override
-  String get dailyTask => 'Daily task';
+  String get habitList => 'Habit list (tasks in this list reset daily)';
 
   @override
   String get listName => 'List name';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -134,6 +135,10 @@ class WorkspaceHeader extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (usesFramelessDesktopWindow) ...[
+            SizedBox(width: TerminalMetrics.cell(context)),
+            const WorkspaceCloseButton(),
+          ],
           if (!terminal) ...[
             const SizedBox(width: 8),
             IconButton(
@@ -187,6 +192,53 @@ class WorkspaceHeader extends ConsumerWidget {
   }
 }
 
+class WorkspaceCloseButton extends StatefulWidget {
+  const WorkspaceCloseButton({super.key});
+
+  @override
+  State<WorkspaceCloseButton> createState() => _WorkspaceCloseButtonState();
+}
+
+class _WorkspaceCloseButtonState extends State<WorkspaceCloseButton> {
+  var _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = TerminalPalette.of(context);
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context)!.closeApp,
+      child: Tooltip(
+        message: AppLocalizations.of(context)!.closeApp,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            onTap: () {
+              SystemNavigator.pop();
+            },
+            child: Container(
+              key: const Key('workspace-close-button'),
+              width: 28,
+              height: TerminalMetrics.line(context),
+              alignment: Alignment.center,
+              color: _hovered ? palette.error : palette.muted,
+              child: Text(
+                '×',
+                style: TextStyle(
+                  color: palette.background,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class WorkspaceTabs extends ConsumerWidget {
   const WorkspaceTabs({super.key, required this.state});
   final WorkspaceState state;
@@ -198,6 +250,9 @@ class WorkspaceTabs extends ConsumerWidget {
       final list = state.lists[index];
       final selected =
           state.view != WorkspaceView.multi && list.id == state.currentListId;
+      final selectedColor = list.isHabit
+          ? TerminalPalette.of(context).doing
+          : TerminalPalette.of(context).accent;
       return Semantics(
         selected: selected,
         button: true,
@@ -212,7 +267,7 @@ class WorkspaceTabs extends ConsumerWidget {
                     border: Border(
                       bottom: BorderSide(
                         color: selected
-                            ? TerminalPalette.of(context).accent
+                            ? selectedColor
                             : TerminalPalette.of(context).muted,
                         width: selected ? 2 : 1,
                       ),
@@ -228,7 +283,7 @@ class WorkspaceTabs extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: selected
-                            ? TerminalPalette.of(context).accent
+                            ? selectedColor
                             : TerminalPalette.of(context).muted,
                         fontWeight: selected
                             ? FontWeight.bold
@@ -241,7 +296,7 @@ class WorkspaceTabs extends ConsumerWidget {
             : ChoiceChip(
                 selected: selected,
                 label: Text(list.name),
-                selectedColor: TerminalPalette.of(context).accent,
+                selectedColor: selectedColor,
                 onSelected: (_) => ref
                     .read(workspaceViewModelProvider.notifier)
                     .selectList(list.id),

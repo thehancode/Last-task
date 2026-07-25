@@ -36,6 +36,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get newDailyTask => 'Crear nueva tarea diaria';
+
+  @override
   String get newSubtask => 'Nueva subtarea';
 
   @override
@@ -90,6 +93,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dragWindow => 'Arrastrar ventana';
+
+  @override
+  String get closeApp => 'Cerrar aplicación';
 
   @override
   String get newTaskTooltip => 'Nueva tarea (N)';
@@ -260,7 +266,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get taskTitle => 'Título';
 
   @override
-  String get dailyTask => 'Diaria';
+  String get habitList => 'Lista de hábitos (las tareas se reinician cada día)';
 
   @override
   String get listName => 'Lista';
@@ -490,6 +496,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get newDailyTask => 'Crear nueva tarea diaria';
+
+  @override
   String get newSubtask => 'Nueva subtarea';
 
   @override
@@ -544,6 +553,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get dragWindow => 'Arrastrar ventana';
+
+  @override
+  String get closeApp => 'Cerrar aplicación';
 
   @override
   String get newTaskTooltip => 'Nueva tarea (N)';
@@ -711,7 +723,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get taskTitle => 'Título';
 
   @override
-  String get dailyTask => 'Diaria';
+  String get habitList => 'Lista de hábitos (las tareas se reinician cada día)';
 
   @override
   String get listName => 'Lista';
@@ -941,6 +953,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get newDailyTask => 'Crear nueva tarea diaria';
+
+  @override
   String get newSubtask => 'Nueva subtarea';
 
   @override
@@ -995,6 +1010,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get dragWindow => 'Arrastrar ventana';
+
+  @override
+  String get closeApp => 'Cerrar aplicación';
 
   @override
   String get newTaskTooltip => 'Nueva tarea (N)';
@@ -1162,7 +1180,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get taskTitle => 'Título';
 
   @override
-  String get dailyTask => 'Diaria';
+  String get habitList => 'Lista de hábitos (las tareas se reinician cada día)';
 
   @override
   String get listName => 'Lista';

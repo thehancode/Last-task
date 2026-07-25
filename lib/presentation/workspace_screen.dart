@@ -323,30 +323,29 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
             ? strings.duplicateTask
             : subtask
             ? strings.newSubtask
+            : state.currentList?.isHabit == true
+            ? strings.newDailyTask
             : strings.newTask,
         initialTitle: edit || duplicate ? selected?.title ?? '' : '',
-        initialDaily: subtask ? false : selected?.daily ?? false,
-        allowDaily:
-            !subtask && (!edit && !duplicate || selected?.parentId == null),
       ),
     );
     if (result == null) return;
     final vm = ref.read(workspaceViewModelProvider.notifier);
     if (edit) {
-      await vm.updateSelectedTask(result.title, result.daily);
+      await vm.updateSelectedTask(result.title);
     } else if (duplicate) {
-      await vm.duplicateSelectedTask(result.title, result.daily);
+      await vm.duplicateSelectedTask(result.title);
     } else if (subtask) {
       await vm.createSubtask(result.title);
     } else {
-      await vm.createTask(result.title, result.daily);
+      await vm.createTask(result.title);
     }
     _focusNode.requestFocus();
   }
 
   Future<void> _showListEditor({bool rename = false}) async {
     final state = ref.read(workspaceViewModelProvider);
-    final result = await showDialog<String>(
+    final result = await showDialog<WorkspaceListDraft>(
       context: context,
       builder: (_) => WorkspaceListEditorDialog(
         initial: rename ? state.currentList?.name ?? '' : '',
@@ -356,9 +355,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     if (result == null) return;
     final vm = ref.read(workspaceViewModelProvider.notifier);
     if (rename) {
-      await vm.renameCurrentList(result);
+      await vm.renameCurrentList(result.name);
     } else {
-      await vm.createList(result);
+      await vm.createList(result.name, isHabit: result.isHabit);
     }
     _focusNode.requestFocus();
   }

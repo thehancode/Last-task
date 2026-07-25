@@ -23,6 +23,13 @@ class LocalTaskListRepository implements TaskListRepository {
           continue;
         }
         var list = TaskList.fromJson(document.value);
+        final migratedDailyTasks =
+            !list.isHabit && list.tasks.any((task) => task.daily);
+        if (migratedDailyTasks) {
+          list = list.copyWith(
+            tasks: [for (final task in list.tasks) task.copyWith(daily: false)],
+          );
+        }
         list.validate();
         if (!ids.add(list.id)) {
           warnings.add(
@@ -38,7 +45,7 @@ class LocalTaskListRepository implements TaskListRepository {
           );
           list = list.copyWith(name: uniqueName);
         }
-        if (document.key != list.id || renamed) {
+        if (document.key != list.id || renamed || migratedDailyTasks) {
           await save(list);
           if (document.key != list.id) {
             await _store.deleteTaskList(document.key);

@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +48,59 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('terminal close button turns red on hover and closes the app', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    var popCalls = 0;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'SystemNavigator.pop') popCalls++;
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
+          settingsRepositoryProvider.overrideWithValue(_Settings()),
+        ],
+        child: const FocusListApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final button = find.byKey(const Key('workspace-close-button'));
+    expect(button, findsOneWidget);
+    final context = tester.element(button);
+    expect(
+      tester.widget<Container>(button).color,
+      TerminalPalette.of(context).muted,
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(button));
+    await tester.pump();
+    expect(
+      tester.widget<Container>(button).color,
+      TerminalPalette.of(context).error,
+    );
+
+    await tester.tap(button);
+    await tester.pump();
+    expect(popCalls, 1);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -470,10 +525,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final title = find.text('New task').last;
-    final body = find.text('Daily task');
     expect(title, findsOneWidget);
-    expect(body, findsOneWidget);
-    expect(tester.getSize(title).height, tester.getSize(body).height);
+    expect(find.text('Daily task'), findsNothing);
     final editable = tester.widget<EditableText>(find.byType(EditableText));
     final terminalBody = Theme.of(
       tester.element(find.byType(EditableText)),

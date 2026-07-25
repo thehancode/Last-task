@@ -154,6 +154,12 @@ abstract class AppLocalizations {
   /// **'New task'**
   String get newTask;
 
+  /// Dialog title for creating a root task in a habit list.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new daily task'**
+  String get newDailyTask;
+
   /// Action and dialog title for creating a nested task.
   ///
   /// In en, this message translates to:
@@ -249,6 +255,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drag window'**
   String get dragWindow;
+
+  /// Tooltip and accessibility label for the desktop window close control.
+  ///
+  /// In en, this message translates to:
+  /// **'Close app'**
+  String get closeApp;
 
   /// Tooltip for the Android new-task icon.
   ///
@@ -562,11 +574,11 @@ abstract class AppLocalizations {
   /// **'Task title'**
   String get taskTitle;
 
-  /// Toggle label marking a task as daily.
+  /// New-list option that makes root tasks reset daily.
   ///
   /// In en, this message translates to:
-  /// **'Daily task'**
-  String get dailyTask;
+  /// **'Habit list (tasks in this list reset daily)'**
+  String get habitList;
 
   /// Floating label for the task-list name input.
   ///

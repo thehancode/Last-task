@@ -35,12 +35,15 @@ class WorkspaceTaskPanel extends ConsumerWidget {
       WorkspaceView.completed => _CompletedContent(state: state),
       WorkspaceView.multi => _MultiContent(state: state),
     };
-    final border = switch (state.view) {
-      WorkspaceView.list => TerminalPalette.of(context).accent,
-      WorkspaceView.focus => TerminalPalette.of(context).doing,
-      WorkspaceView.completed => TerminalPalette.of(context).done,
-      WorkspaceView.multi => TerminalPalette.of(context).accent,
-    };
+    final border =
+        state.view != WorkspaceView.multi && state.currentList?.isHabit == true
+        ? TerminalPalette.of(context).doing
+        : switch (state.view) {
+            WorkspaceView.list => TerminalPalette.of(context).accent,
+            WorkspaceView.focus => TerminalPalette.of(context).doing,
+            WorkspaceView.completed => TerminalPalette.of(context).done,
+            WorkspaceView.multi => TerminalPalette.of(context).accent,
+          };
     final radius = usesTerminalPresentation
         ? BorderRadius.circular(TerminalMetrics.panelRadius)
         : BorderRadius.circular(12);

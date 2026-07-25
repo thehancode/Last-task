@@ -359,6 +359,7 @@ class TaskList {
     required this.name,
     required this.createdAt,
     required List<Task> tasks,
+    this.isHabit = false,
     this.sortIndex,
   }) : tasks = UnmodifiableListView<Task>(tasks);
 
@@ -367,11 +368,13 @@ class TaskList {
   final String name;
   final DateTime createdAt;
   final UnmodifiableListView<Task> tasks;
+  final bool isHabit;
   final int? sortIndex;
 
   TaskList copyWith({
     String? name,
     List<Task>? tasks,
+    bool? isHabit,
     int? sortIndex,
     bool clearSortIndex = false,
   }) => TaskList(
@@ -380,6 +383,7 @@ class TaskList {
     name: name ?? this.name,
     createdAt: createdAt,
     tasks: tasks ?? this.tasks,
+    isHabit: isHabit ?? this.isHabit,
     sortIndex: clearSortIndex ? null : (sortIndex ?? this.sortIndex),
   );
 
@@ -388,6 +392,7 @@ class TaskList {
     'id': id,
     'name': name,
     'created_at': createdAt.toUtc().toIso8601String(),
+    if (isHabit) 'habit': true,
     if (sortIndex != null) 'sort_index': sortIndex,
     'tasks': tasks.map((task) => task.toJson()).toList(growable: false),
   };
@@ -399,6 +404,7 @@ class TaskList {
     id: _string(json['id'], 'task-list.id'),
     name: _string(json['name'], 'task-list.name'),
     createdAt: _date(json['created_at'], 'task-list.created_at'),
+    isHabit: json['habit'] as bool? ?? false,
     sortIndex: _optionalNonNegativeInt(
       json['sort_index'],
       'task-list.sort_index',
@@ -478,6 +484,11 @@ class TaskList {
       }
       if (task.daily && task.parentId != null) {
         throw FormatException('Subtask ${task.id} cannot be daily');
+      }
+      if (task.parentId == null && task.daily != isHabit) {
+        throw FormatException(
+          'Root task ${task.id} daily state must match its list type',
+        );
       }
     }
   }

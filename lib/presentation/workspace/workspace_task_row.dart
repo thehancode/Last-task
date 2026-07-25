@@ -618,18 +618,16 @@ Future<void> _handleTaskAction(
           ? AppLocalizations.of(context)!.newSubtask
           : AppLocalizations.of(context)!.duplicateTask,
       initialTitle: action == 'subtask' ? '' : task.title,
-      initialDaily: action == 'subtask' ? false : task.daily,
-      allowDaily: action != 'subtask' && task.parentId == null,
     ),
   );
   if (draft == null) return;
   if (action == 'edit') {
-    await vm.updateSelectedTask(draft.title, draft.daily);
+    await vm.updateSelectedTask(draft.title);
     return;
   }
   if (action == 'subtask') {
     await vm.createSubtask(draft.title);
     return;
   }
-  await vm.createTask(draft.title, draft.daily);
+  await vm.duplicateSelectedTask(draft.title);
 }

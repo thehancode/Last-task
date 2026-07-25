@@ -203,55 +203,12 @@ class _WorkspaceThemePickerDialogState
 }
 
 class WorkspaceTaskDraft {
-  const WorkspaceTaskDraft(this.title, this.daily);
+  const WorkspaceTaskDraft(this.title);
   final String title;
-  final bool daily;
-}
-
-class _ToggleDailyIntent extends Intent {
-  const _ToggleDailyIntent();
 }
 
 class _SaveTaskIntent extends Intent {
   const _SaveTaskIntent();
-}
-
-class _TaskEditorTerminalToggle extends StatelessWidget {
-  const _TaskEditorTerminalToggle({
-    required this.value,
-    required this.label,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final String label;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    toggled: value,
-    button: true,
-    label: label,
-    child: InkWell(
-      onTap: () => onChanged(!value),
-      child: SizedBox(
-        height: TerminalMetrics.line(context),
-        child: Row(
-          children: [
-            Text(
-              value ? '[x]' : '[ ]',
-              style: TextStyle(
-                color: TerminalPalette.of(context).accent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: TerminalMetrics.cell(context)),
-            Text(label),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class WorkspaceTaskEditorDialog extends StatefulWidget {
@@ -259,13 +216,9 @@ class WorkspaceTaskEditorDialog extends StatefulWidget {
     super.key,
     required this.title,
     required this.initialTitle,
-    required this.initialDaily,
-    this.allowDaily = true,
   });
   final String title;
   final String initialTitle;
-  final bool initialDaily;
-  final bool allowDaily;
   @override
   State<WorkspaceTaskEditorDialog> createState() =>
       _WorkspaceTaskEditorDialogState();
@@ -275,31 +228,21 @@ class _WorkspaceTaskEditorDialogState extends State<WorkspaceTaskEditorDialog> {
   late final TextEditingController _controller = TextEditingController(
     text: widget.initialTitle,
   );
-  late bool _daily = widget.initialDaily;
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  void _save() =>
-      Navigator.pop(context, WorkspaceTaskDraft(_controller.text, _daily));
+  void _save() => Navigator.pop(context, WorkspaceTaskDraft(_controller.text));
 
   @override
   Widget build(BuildContext context) => Shortcuts(
     shortcuts: const {
-      SingleActivator(LogicalKeyboardKey.tab): _ToggleDailyIntent(),
       SingleActivator(LogicalKeyboardKey.enter): _SaveTaskIntent(),
     },
     child: Actions(
       actions: {
-        _ToggleDailyIntent: CallbackAction<_ToggleDailyIntent>(
-          onInvoke: (_) {
-            if (!widget.allowDaily) return null;
-            setState(() => _daily = !_daily);
-            return null;
-          },
-        ),
         _SaveTaskIntent: CallbackAction<_SaveTaskIntent>(
           onInvoke: (_) {
             _save();
@@ -330,18 +273,6 @@ class _WorkspaceTaskEditorDialogState extends State<WorkspaceTaskEditorDialog> {
                   labelText: AppLocalizations.of(context)!.taskTitle,
                 ),
               ),
-              if (widget.allowDaily && usesTerminalPresentation)
-                _TaskEditorTerminalToggle(
-                  value: _daily,
-                  label: AppLocalizations.of(context)!.dailyTask,
-                  onChanged: (value) => setState(() => _daily = value),
-                )
-              else if (widget.allowDaily)
-                SwitchListTile(
-                  value: _daily,
-                  onChanged: (value) => setState(() => _daily = value),
-                  title: Text(AppLocalizations.of(context)!.dailyTask),
-                ),
             ],
           ),
         ),
@@ -358,6 +289,13 @@ class _WorkspaceTaskEditorDialogState extends State<WorkspaceTaskEditorDialog> {
       ),
     ),
   );
+}
+
+class WorkspaceListDraft {
+  const WorkspaceListDraft(this.name, this.isHabit);
+
+  final String name;
+  final bool isHabit;
 }
 
 class WorkspaceListEditorDialog extends StatefulWidget {
@@ -383,7 +321,10 @@ class _WorkspaceListEditorDialogState extends State<WorkspaceListEditorDialog> {
     super.dispose();
   }
 
-  void _save() => Navigator.pop(context, _controller.text);
+  var _isHabit = false;
+
+  void _save() =>
+      Navigator.pop(context, WorkspaceListDraft(_controller.text, _isHabit));
 
   @override
   Widget build(BuildContext context) => AlertDialog(
@@ -396,18 +337,62 @@ class _WorkspaceListEditorDialogState extends State<WorkspaceListEditorDialog> {
     ),
     content: SizedBox(
       width: 380,
-      child: TextField(
-        controller: _controller,
-        autofocus: true,
-        style: _dialogInputStyle(context),
-        cursorHeight: usesTerminalPresentation
-            ? TerminalMetrics.renderedFontSize(context)
-            : null,
-        cursorWidth: usesTerminalPresentation ? 1 : 2,
-        onSubmitted: (_) => _save(),
-        decoration: InputDecoration(
-          labelText: AppLocalizations.of(context)!.listName,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            style: _dialogInputStyle(context),
+            cursorHeight: usesTerminalPresentation
+                ? TerminalMetrics.renderedFontSize(context)
+                : null,
+            cursorWidth: usesTerminalPresentation ? 1 : 2,
+            onSubmitted: (_) => _save(),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.listName,
+            ),
+          ),
+          if (!widget.rename)
+            usesTerminalPresentation
+                ? Semantics(
+                    toggled: _isHabit,
+                    button: true,
+                    label: AppLocalizations.of(context)!.habitList,
+                    child: InkWell(
+                      onTap: () => setState(() => _isHabit = !_isHabit),
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: TerminalMetrics.line(context) * .25,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              _isHabit ? '[x]' : '[ ]',
+                              style: TextStyle(
+                                color: TerminalPalette.of(context).accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: TerminalMetrics.cell(context)),
+                            Expanded(
+                              child: Text(
+                                AppLocalizations.of(context)!.habitList,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                : CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _isHabit,
+                    onChanged: (value) =>
+                        setState(() => _isHabit = value ?? false),
+                    title: Text(AppLocalizations.of(context)!.habitList),
+                  ),
+        ],
       ),
     ),
     actions: [

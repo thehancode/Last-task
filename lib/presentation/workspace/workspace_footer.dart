@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/ui_mode.dart';
+import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
@@ -26,6 +27,10 @@ class WorkspaceFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final terminal = usesTerminalPresentation;
+    final commandAccent =
+        state.view != WorkspaceView.multi && state.currentList?.isHabit == true
+        ? TerminalPalette.of(context).doing
+        : TerminalPalette.of(context).accent;
     final activity = state.notice != null
         ? Text(
             ' ${state.notice!.text} ',
@@ -102,6 +107,7 @@ class WorkspaceFooter extends StatelessWidget {
           lineKey: const Key('terminal-footer-primary'),
           children: [
             _TerminalCommand(
+              accent: commandAccent,
               keys: 'ctrl+n',
               label: AppLocalizations.of(context)!.commandNewList,
               semanticsLabel: AppLocalizations.of(
@@ -111,6 +117,7 @@ class WorkspaceFooter extends StatelessWidget {
             ),
             const _TerminalSeparator(),
             _TerminalCommand(
+              accent: commandAccent,
               keys: 'n',
               label: AppLocalizations.of(context)!.commandNew,
               semanticsLabel: AppLocalizations.of(context)!.commandNewLegacy,
@@ -118,12 +125,14 @@ class WorkspaceFooter extends StatelessWidget {
             ),
             const _TerminalSeparator(),
             _TerminalCommand(
+              accent: commandAccent,
               keys: '↑↓←→',
               label: AppLocalizations.of(context)!.commandMove,
               semanticsLabel: AppLocalizations.of(context)!.commandMoveLegacy,
             ),
             const _TerminalSeparator(),
             _TerminalCommand(
+              accent: commandAccent,
               keys: 'w',
               label: AppLocalizations.of(context)!.commandTags,
               semanticsLabel: AppLocalizations.of(context)!.commandTagsLegacy,
@@ -134,6 +143,7 @@ class WorkspaceFooter extends StatelessWidget {
           lineKey: const Key('terminal-footer-secondary'),
           children: [
             _TerminalCommand(
+              accent: commandAccent,
               keys: 'g',
               label: AppLocalizations.of(context)!.commandSettings,
               semanticsLabel: AppLocalizations.of(
@@ -143,6 +153,7 @@ class WorkspaceFooter extends StatelessWidget {
             ),
             const _TerminalSeparator(),
             _TerminalCommand(
+              accent: commandAccent,
               keys: '?',
               label: AppLocalizations.of(context)!.commandHelp,
               semanticsLabel: AppLocalizations.of(context)!.commandHelpLegacy,
@@ -189,11 +200,13 @@ class _TerminalSeparator extends StatelessWidget {
 
 class _TerminalCommand extends StatelessWidget {
   const _TerminalCommand({
+    required this.accent,
     required this.keys,
     required this.label,
     this.semanticsLabel,
     this.onTap,
   });
+  final Color accent;
   final String keys;
   final String label;
   final String? semanticsLabel;
@@ -214,10 +227,7 @@ class _TerminalCommand extends StatelessWidget {
           children: [
             Text(
               keys,
-              style: TextStyle(
-                color: TerminalPalette.of(context).accent,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: accent, fontWeight: FontWeight.bold),
             ),
             SizedBox(width: TerminalMetrics.cell(context)),
             Text(

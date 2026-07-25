@@ -61,6 +61,27 @@ void main() {
     expect((tasks.last as Map)['parent_id'], 'root');
   });
 
+  test('repository clears legacy daily flags from normal lists', () async {
+    final store = _MemoryStore([
+      StoredDocument(
+        key: 'legacy',
+        value: {
+          ..._listJson('legacy', 'Legacy', '2026-01-01T00:00:00Z'),
+          'tasks': [
+            {..._taskJson('task'), 'daily': true},
+          ],
+        },
+      ),
+    ]);
+
+    final loaded = await LocalTaskListRepository(store).loadAll();
+
+    expect(loaded.lists.single.isHabit, isFalse);
+    expect(loaded.lists.single.tasks.single.daily, isFalse);
+    final task = (store.documents['legacy']!['tasks']! as List).single as Map;
+    expect(task.containsKey('daily'), isFalse);
+  });
+
   test('device state persists independently from portable settings', () async {
     final store = _MemoryStore(const []);
     final repository = LocalDeviceStateRepository(store);

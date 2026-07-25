@@ -31,6 +31,34 @@ void main() {
     expect(list.validate, throwsFormatException);
   });
 
+  test('habit-list type round-trips and enforces root daily state', () {
+    final habit = TaskList.fromJson({
+      'schema_version': currentSchemaVersion,
+      'id': 'habit',
+      'name': 'Habits',
+      'created_at': '2026-01-01T00:00:00Z',
+      'habit': true,
+      'tasks': [
+        {..._taskJson(), 'daily': true},
+      ],
+    });
+    expect(habit.isHabit, isTrue);
+    expect(habit.toJson()['habit'], isTrue);
+    expect(habit.validate, returnsNormally);
+
+    final normal = TaskList.fromJson({
+      'schema_version': currentSchemaVersion,
+      'id': 'normal',
+      'name': 'Normal',
+      'created_at': '2026-01-01T00:00:00Z',
+      'tasks': [
+        {..._taskJson(), 'daily': true},
+      ],
+    });
+    expect(normal.isHabit, isFalse);
+    expect(normal.validate, throwsFormatException);
+  });
+
   test('nested task fields round-trip with backward-compatible defaults', () {
     final oldTask = Task.fromJson(_taskJson());
     expect(oldTask.parentId, isNull);

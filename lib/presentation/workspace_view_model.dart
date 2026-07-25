@@ -166,12 +166,13 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     }
   }
 
-  TaskList _newList(String name) => TaskList(
+  TaskList _newList(String name, {bool isHabit = false}) => TaskList(
     schemaVersion: currentSchemaVersion,
     id: _uuid.v4(),
     name: name,
     createdAt: DateTime.now().toUtc(),
     tasks: const [],
+    isHabit: isHabit,
     sortIndex:
         state.lists.isNotEmpty &&
             state.lists.every((list) => list.sortIndex != null)
@@ -403,7 +404,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     _scheduleDeviceSave();
   }
 
-  Future<bool> createList(String input) async {
+  Future<bool> createList(String input, {bool isHabit = false}) async {
     final name = normalizeName(input);
     if (name.isEmpty) return _error('A list name cannot be empty');
     if (state.lists.any(
@@ -411,7 +412,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     )) {
       return _error('A list with that name already exists');
     }
-    final list = _newList(name);
+    final list = _newList(name, isHabit: isHabit);
     final before = _captureHistory();
     try {
       await _lists.save(list);
@@ -482,12 +483,12 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     }
   }
 
-  Future<bool> createTask(String input, bool daily) async {
+  Future<bool> createTask(String input) async {
     final title = normalizeName(input);
     if (title.isEmpty) return _error('A name cannot be empty');
     final list = state.currentList;
     if (list == null) return false;
-    final task = _newTask(title, daily);
+    final task = _newTask(title, list.isHabit);
     return _saveList(
       list.copyWith(tasks: [task, ...list.tasks]),
       success: 'Task added',
@@ -539,7 +540,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     );
   }
 
-  Future<bool> updateSelectedTask(String input, bool daily) async {
+  Future<bool> updateSelectedTask(String input) async {
     final title = normalizeName(input);
     if (title.isEmpty) return _error('A name cannot be empty');
     final list = state.selectedTaskList;
@@ -553,7 +554,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
             if (task.id == id)
               task.copyWith(
                 title: title,
-                daily: task.parentId == null ? daily : false,
+                daily: task.parentId == null ? list.isHabit : false,
                 updatedAt: now,
               )
             else
@@ -564,7 +565,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     );
   }
 
-  Future<bool> duplicateSelectedTask(String input, bool daily) async {
+  Future<bool> duplicateSelectedTask(String input) async {
     final title = normalizeName(input);
     if (title.isEmpty) return _error('A name cannot be empty');
     final list = state.selectedTaskList;
@@ -575,7 +576,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     }
     final task = _newTask(
       title,
-      selected.parentId == null ? daily : false,
+      selected.parentId == null ? list.isHabit : false,
       tags: selected.tags,
       parentId: selected.parentId,
     );
