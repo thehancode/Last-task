@@ -3,6 +3,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_app/domain/models.dart';
 
 void main() {
+  test('tutorial and onboarding fields round-trip with legacy defaults', () {
+    final legacyList = TaskList.fromJson({
+      'schema_version': 1,
+      'id': 'legacy',
+      'name': 'Legacy',
+      'created_at': '2026-01-01T00:00:00Z',
+      'tasks': <Object?>[],
+    });
+    final legacyDevice = DeviceWorkspaceState.fromJson(const {});
+
+    expect(legacyList.isTutorial, isFalse);
+    expect(legacyDevice.terminalLaunchCount, 0);
+    expect(legacyDevice.themesUnlocked, isFalse);
+    expect(legacyDevice.tutorialAwardEarned, isFalse);
+
+    final tutorial = legacyList.copyWith(isTutorial: true);
+    final device = legacyDevice.copyWith(
+      terminalLaunchCount: 2,
+      themesUnlocked: true,
+      tutorialAwardEarned: true,
+    );
+
+    expect(TaskList.fromJson(tutorial.toJson()).isTutorial, isTrue);
+    final restoredDevice = DeviceWorkspaceState.fromJson(device.toJson());
+    expect(restoredDevice.terminalLaunchCount, 2);
+    expect(restoredDevice.themesUnlocked, isTrue);
+    expect(restoredDevice.tutorialAwardEarned, isTrue);
+  });
+
   test('task tags round-trip while old tasks default to no tags', () {
     final oldTask = Task.fromJson(_taskJson());
     expect(oldTask.tags, isEmpty);

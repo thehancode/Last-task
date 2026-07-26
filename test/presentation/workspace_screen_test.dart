@@ -12,6 +12,7 @@ import 'package:flutter_app/data/providers.dart';
 import 'package:flutter_app/domain/models.dart';
 import 'package:flutter_app/domain/repositories.dart';
 import 'package:flutter_app/presentation/terminal_style.dart';
+import 'package:flutter_app/presentation/workspace_view_model.dart';
 
 void main() {
   testWidgets('workspace loads its default list and exposes pointer commands', (
@@ -34,7 +35,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     expect(find.textContaining('LAST TASK'), findsOneWidget);
-    expect(find.textContaining('Tasks'), findsOneWidget);
+    expect(find.text('Tutorial'), findsOneWidget);
+    expect(find.text(tutorialTaskTitles.first), findsOneWidget);
     final dragArea = find.byKey(const Key('desktop-window-drag-area'));
     expect(dragArea, findsOneWidget);
     expect(
@@ -48,6 +50,9 @@ void main() {
     );
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await tester.pumpAndSettle();
+    expect(find.text('Themes'), findsNothing);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -701,6 +706,63 @@ void main() {
     expect(find.text('▲'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  testWidgets(
+    'completed tutorial startup reveals Themes, its award, and title star',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(1000, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final now = DateTime.utc(2026, 1, 1);
+      final tutorial = TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'tutorial',
+        name: 'Tutorial',
+        createdAt: now,
+        isTutorial: true,
+        tasks: [
+          for (var index = 0; index < tutorialTaskIds.length; index++)
+            Task(
+              id: tutorialTaskIds[index],
+              title: tutorialTaskTitles[index],
+              status: TaskStatus.done,
+              createdAt: now,
+              updatedAt: now,
+              completedAt: now,
+              daily: false,
+              completionHistory: const [],
+            ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists([tutorial])),
+            settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(
+        find.textContaining('Congratulations, Themes have been unlocked'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('✪'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
+      await tester.pumpAndSettle();
+      expect(find.text('Themes'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('terminal nested rows indent and H persists collapsed children', (
     tester,

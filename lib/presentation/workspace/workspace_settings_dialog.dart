@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 
@@ -66,7 +67,8 @@ class _WorkspaceSettingsDialogState
     final tabs = [
       SettingsTab.config,
       if (_supportsDesktopBackground) SettingsTab.background,
-      if (usesTerminalPresentation) SettingsTab.themes,
+      if (usesTerminalPresentation && state.deviceState.themesUnlocked)
+        SettingsTab.themes,
     ];
     final selectedTab = tabs.contains(_selectedTab)
         ? _selectedTab
@@ -323,26 +325,44 @@ class _ThemeSettings extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = ref.watch(themeCatalogProvider);
     final selected = catalog.byId(themeId);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 7, child: WorkspaceThemePreview(theme: selected)),
-        SizedBox(width: TerminalMetrics.cell(context)),
-        Expanded(
-          flex: 3,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final theme in catalog.themes)
-                _ThemeChoice(
-                  theme: theme,
-                  selected: theme.id == themeId,
-                  onTap: () => onSelect(theme.id),
-                ),
-            ],
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final delta = switch (event.logicalKey) {
+          LogicalKeyboardKey.arrowLeft => -1,
+          LogicalKeyboardKey.arrowRight => 1,
+          _ => 0,
+        };
+        if (delta == 0) return KeyEventResult.ignored;
+        final current = catalog.themes.indexWhere(
+          (theme) => theme.id == selected.id,
+        );
+        final index = (current + delta) % catalog.themes.length;
+        onSelect(catalog.themes[index].id);
+        return KeyEventResult.handled;
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 7, child: WorkspaceThemePreview(theme: selected)),
+          SizedBox(width: TerminalMetrics.cell(context)),
+          Expanded(
+            flex: 3,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final theme in catalog.themes)
+                  _ThemeChoice(
+                    theme: theme,
+                    selected: theme.id == themeId,
+                    onTap: () => onSelect(theme.id),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

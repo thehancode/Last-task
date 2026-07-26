@@ -99,11 +99,7 @@ extension RewardDurationX on RewardDuration {
   };
 }
 
-enum AppFontFamily {
-  ubuntuMonoNerd,
-  comicShannsMonoNerd,
-  goMonoNerd,
-}
+enum AppFontFamily { ubuntuMonoNerd, comicShannsMonoNerd, goMonoNerd }
 
 extension AppFontFamilyX on AppFontFamily {
   String get wireName => switch (this) {
@@ -195,6 +191,9 @@ class DeviceWorkspaceState {
     this.soundEnabled = true,
     this.seenTipIds = const {},
     this.desktopAppearance = const DesktopAppearance(),
+    this.terminalLaunchCount = 0,
+    this.themesUnlocked = false,
+    this.tutorialAwardEarned = false,
   });
 
   final WorkspaceView view;
@@ -203,6 +202,9 @@ class DeviceWorkspaceState {
   final bool soundEnabled;
   final Set<String> seenTipIds;
   final DesktopAppearance desktopAppearance;
+  final int terminalLaunchCount;
+  final bool themesUnlocked;
+  final bool tutorialAwardEarned;
 
   DeviceWorkspaceState copyWith({
     WorkspaceView? view,
@@ -211,6 +213,9 @@ class DeviceWorkspaceState {
     bool? soundEnabled,
     Set<String>? seenTipIds,
     DesktopAppearance? desktopAppearance,
+    int? terminalLaunchCount,
+    bool? themesUnlocked,
+    bool? tutorialAwardEarned,
   }) => DeviceWorkspaceState(
     view: view ?? this.view,
     currentListId: currentListId ?? this.currentListId,
@@ -218,6 +223,9 @@ class DeviceWorkspaceState {
     soundEnabled: soundEnabled ?? this.soundEnabled,
     seenTipIds: seenTipIds ?? this.seenTipIds,
     desktopAppearance: desktopAppearance ?? this.desktopAppearance,
+    terminalLaunchCount: terminalLaunchCount ?? this.terminalLaunchCount,
+    themesUnlocked: themesUnlocked ?? this.themesUnlocked,
+    tutorialAwardEarned: tutorialAwardEarned ?? this.tutorialAwardEarned,
   );
 
   Map<String, Object?> toJson() => {
@@ -227,6 +235,9 @@ class DeviceWorkspaceState {
     'sound_enabled': soundEnabled,
     'seen_tips': seenTipIds.toList()..sort(),
     'desktop_appearance': desktopAppearance.toJson(),
+    'terminal_launch_count': terminalLaunchCount,
+    'themes_unlocked': themesUnlocked,
+    'tutorial_award_earned': tutorialAwardEarned,
   };
 
   factory DeviceWorkspaceState.fromJson(Map<String, Object?> json) {
@@ -246,7 +257,13 @@ class DeviceWorkspaceState {
             ? null
             : Map<String, Object?>.from(json['desktop_appearance']! as Map),
       ),
+      terminalLaunchCount: json['terminal_launch_count'] as int? ?? 0,
+      themesUnlocked: json['themes_unlocked'] as bool? ?? false,
+      tutorialAwardEarned: json['tutorial_award_earned'] as bool? ?? false,
     );
+    if (state.terminalLaunchCount < 0) {
+      throw const FormatException('terminal_launch_count must not be negative');
+    }
     state.desktopAppearance.validate();
     return state;
   }
@@ -361,6 +378,7 @@ class TaskList {
     required List<Task> tasks,
     this.isHabit = false,
     this.sortIndex,
+    this.isTutorial = false,
   }) : tasks = UnmodifiableListView<Task>(tasks);
 
   final int schemaVersion;
@@ -370,6 +388,7 @@ class TaskList {
   final UnmodifiableListView<Task> tasks;
   final bool isHabit;
   final int? sortIndex;
+  final bool isTutorial;
 
   TaskList copyWith({
     String? name,
@@ -377,6 +396,7 @@ class TaskList {
     bool? isHabit,
     int? sortIndex,
     bool clearSortIndex = false,
+    bool? isTutorial,
   }) => TaskList(
     schemaVersion: schemaVersion,
     id: id,
@@ -385,6 +405,7 @@ class TaskList {
     tasks: tasks ?? this.tasks,
     isHabit: isHabit ?? this.isHabit,
     sortIndex: clearSortIndex ? null : (sortIndex ?? this.sortIndex),
+    isTutorial: isTutorial ?? this.isTutorial,
   );
 
   Map<String, Object?> toJson() => {
@@ -393,6 +414,7 @@ class TaskList {
     'name': name,
     'created_at': createdAt.toUtc().toIso8601String(),
     if (isHabit) 'habit': true,
+    if (isTutorial) 'tutorial': true,
     if (sortIndex != null) 'sort_index': sortIndex,
     'tasks': tasks.map((task) => task.toJson()).toList(growable: false),
   };
@@ -405,6 +427,7 @@ class TaskList {
     name: _string(json['name'], 'task-list.name'),
     createdAt: _date(json['created_at'], 'task-list.created_at'),
     isHabit: json['habit'] as bool? ?? false,
+    isTutorial: json['tutorial'] as bool? ?? false,
     sortIndex: _optionalNonNegativeInt(
       json['sort_index'],
       'task-list.sort_index',

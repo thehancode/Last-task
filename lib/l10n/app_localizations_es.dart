@@ -461,6 +461,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get clear => 'Quitar';
 
   @override
+  String get tutorialUnlockAward =>
+      'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
+
+  @override
+  String get tutorialAwardBadge => 'Tutorial completado';
+
+  @override
   String get languageName => 'Español';
 }
 
@@ -918,6 +925,13 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get clear => 'Quitar';
 
   @override
+  String get tutorialUnlockAward =>
+      'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
+
+  @override
+  String get tutorialAwardBadge => 'Tutorial completado';
+
+  @override
   String get languageName => 'Español Latino';
 }
 
@@ -1373,6 +1387,13 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get clear => 'Quitar';
+
+  @override
+  String get tutorialUnlockAward =>
+      'Enhorabuena, se han desbloqueado los temas. Puedes cambiarlos pulsando G y entrando en la pestaña Temas';
+
+  @override
+  String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
   String get languageName => 'Español (España)';

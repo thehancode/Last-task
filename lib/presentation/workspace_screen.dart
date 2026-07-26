@@ -573,10 +573,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
               Positioned.fill(
                 child: IgnorePointer(
                   child: WorkspaceRewardOverlay(
-                    text: _rewardText(
-                      AppLocalizations.of(context)!,
-                      state.reward!.messageIndex,
-                    ),
+                    text: state.reward!.tutorialUnlock
+                        ? AppLocalizations.of(context)!.tutorialUnlockAward
+                        : _rewardText(
+                            AppLocalizations.of(context)!,
+                            state.reward!.messageIndex,
+                          ),
                   ),
                 ),
               ),

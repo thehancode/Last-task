@@ -928,6 +928,18 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clear;
 
+  /// One-time terminal award shown after completing every original tutorial task.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab'**
+  String get tutorialUnlockAward;
+
+  /// Accessible label for the star shown beside the product title after tutorial completion.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial completed'**
+  String get tutorialAwardBadge;
+
   /// Native name of this locale, shown in the language selector.
   ///
   /// In en, this message translates to:

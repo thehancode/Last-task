@@ -137,5 +137,7 @@
   "noImageSelected": "Sin imagen seleccionada",
   "none": "Ninguna",
   "clear": "Quitar",
+  "tutorialUnlockAward": "Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas",
+  "tutorialAwardBadge": "Tutorial completado",
   "languageName": "Español"
 }

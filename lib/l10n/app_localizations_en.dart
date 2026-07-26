@@ -459,5 +459,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clear => 'Clear';
 
   @override
+  String get tutorialUnlockAward =>
+      'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab';
+
+  @override
+  String get tutorialAwardBadge => 'Tutorial completed';
+
+  @override
   String get languageName => 'English';
 }

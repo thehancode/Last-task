@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../app/ui_mode.dart';
 import '../data/providers.dart';
 import '../domain/models.dart';
 import '../domain/repositories.dart';
@@ -17,6 +18,24 @@ final workspaceViewModelProvider =
     );
 
 final workspaceRandomProvider = Provider<Random>((ref) => Random());
+
+const tutorialTaskIds = [
+  'tutorial-navigation',
+  'tutorial-new-task',
+  'tutorial-advance-status',
+  'tutorial-complete-task',
+  'tutorial-new-list',
+  'tutorial-surprise',
+];
+
+const tutorialTaskTitles = [
+  'Try moving with the Up/Down Arrow keys',
+  'Press N to create a new task (press Enter to save it)',
+  'Space then F moves a task from Pending to Doing to Done',
+  'Space then Space moves a task directly to Done',
+  'Ctrl+N creates a new list',
+  'Completing every task on this list might unlock a surprise.',
+];
 
 class WorkspaceViewModel extends Notifier<WorkspaceState> {
   final _uuid = const Uuid();
@@ -58,12 +77,38 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         device = const DeviceWorkspaceState();
       }
       var lists = List<TaskList>.from(loaded.lists);
+      final hadPersistedLists = lists.isNotEmpty;
       if (lists.isEmpty) {
-        final list = _newList('Tasks');
+        final list = usesTerminalPresentation
+            ? _newTutorialList()
+            : _newList('Tasks');
         await _lists.save(list);
         lists = [list];
       }
       lists = await _resetExpiredDailyTasks(lists);
+      var showTutorialAward = false;
+      if (usesTerminalPresentation) {
+        final launchCount = device.terminalLaunchCount + 1;
+        final tutorialComplete = _tutorialIsComplete(lists);
+        final existingInstallation =
+            hadPersistedLists && !lists.any((list) => list.isTutorial);
+        showTutorialAward = tutorialComplete && !device.tutorialAwardEarned;
+        device = device.copyWith(
+          terminalLaunchCount: launchCount,
+          themesUnlocked:
+              device.themesUnlocked ||
+              tutorialComplete ||
+              launchCount >= 2 ||
+              existingInstallation,
+          tutorialAwardEarned: device.tutorialAwardEarned || tutorialComplete,
+        );
+        try {
+          await _device.save(device);
+        } on Object {
+          // The in-memory launch still works. A later state save or launch
+          // retries persistence.
+        }
+      }
       final restoredList = lists.any((list) => list.id == device.currentListId)
           ? device.currentListId
           : lists.first.id;
@@ -94,6 +139,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       state = restoredSelection
           ? initial.copyWith(selectedTaskId: device.selectedTaskId)
           : _withFirstVisibleSelected(initial);
+      if (showTutorialAward) _showTutorialAward();
       _showEntranceTipIfNeeded();
       if (loaded.warnings.isNotEmpty) _expireNotice(const Duration(seconds: 8));
     } on Object catch (error) {
@@ -183,6 +229,30 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
               1
         : null,
   );
+
+  TaskList _newTutorialList() {
+    final now = DateTime.now().toUtc();
+    return TaskList(
+      schemaVersion: currentSchemaVersion,
+      id: _uuid.v4(),
+      name: 'Tutorial',
+      createdAt: now,
+      tasks: [
+        for (var index = 0; index < tutorialTaskIds.length; index++)
+          Task(
+            id: tutorialTaskIds[index],
+            title: tutorialTaskTitles[index],
+            status: TaskStatus.pending,
+            createdAt: now,
+            updatedAt: now,
+            completedAt: null,
+            daily: false,
+            completionHistory: const [],
+          ),
+      ],
+      isTutorial: true,
+    );
+  }
 
   Task _newTask(
     String title,
@@ -777,7 +847,13 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     if (success && view == WorkspaceView.multi && to == TaskStatus.done) {
       state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
     }
-    if (success && to == TaskStatus.done) _maybeShowReward(selected.id);
+    final tutorialUnlocked =
+        success &&
+        to == TaskStatus.done &&
+        await _unlockThemesForCompletedTutorialIfNeeded();
+    if (success && to == TaskStatus.done && !tutorialUnlocked) {
+      _maybeShowReward(selected.id);
+    }
     return success;
   }
 
@@ -837,7 +913,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       if (!state.visibleTaskIds.contains(state.selectedTaskId)) {
         state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
       }
-      _maybeShowReward(selected.id);
+      final tutorialUnlocked =
+          await _unlockThemesForCompletedTutorialIfNeeded();
+      if (!tutorialUnlocked) _maybeShowReward(selected.id);
     }
     return success;
   }
@@ -1240,6 +1318,49 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     if (_random.nextDouble() >= .2) return;
     final reward = RewardState(_random.nextInt(6), taskId);
     state = state.copyWith(reward: reward);
+    _rewardTimer?.cancel();
+    _rewardTimer = Timer(state.settings.rewardDuration.duration, () {
+      state = state.copyWith(clearReward: true);
+    });
+  }
+
+  bool _tutorialIsComplete(List<TaskList> lists) {
+    TaskList? tutorial;
+    for (final list in lists) {
+      if (list.isTutorial) {
+        tutorial = list;
+        break;
+      }
+    }
+    if (tutorial == null) return false;
+    final tasksById = {for (final task in tutorial.tasks) task.id: task};
+    return tutorialTaskIds.every(
+      (id) => tasksById[id]?.status == TaskStatus.done,
+    );
+  }
+
+  Future<bool> _unlockThemesForCompletedTutorialIfNeeded() async {
+    if (state.deviceState.tutorialAwardEarned ||
+        !_tutorialIsComplete(state.lists)) {
+      return false;
+    }
+    final device = _currentDeviceState().copyWith(
+      themesUnlocked: true,
+      tutorialAwardEarned: true,
+    );
+    try {
+      await _device.save(device);
+      state = state.copyWith(deviceState: device);
+      _showTutorialAward();
+      return true;
+    } on Object catch (error) {
+      _error('Tutorial unlock save failed: $error');
+      return false;
+    }
+  }
+
+  void _showTutorialAward() {
+    state = state.copyWith(reward: const RewardState.tutorial());
     _rewardTimer?.cancel();
     _rewardTimer = Timer(state.settings.rewardDuration.duration, () {
       state = state.copyWith(clearReward: true);

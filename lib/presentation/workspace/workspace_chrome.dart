@@ -107,27 +107,38 @@ class WorkspaceHeader extends ConsumerWidget {
     return SizedBox(
       child: Row(
         children: [
-          Container(
-            color: terminal
-                ? TerminalPalette.of(context).accent
-                : Colors.transparent,
-            padding: EdgeInsets.symmetric(
-              horizontal: terminal ? 8 : 0,
-              vertical: terminal ? 1 : 0,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              strings.workspaceTitle,
-              style: TextStyle(
-                color: terminal
-                    ? TerminalPalette.of(context).background
-                    : TerminalPalette.of(context).accent,
-                fontWeight: FontWeight.bold,
-                fontSize: terminal ? null : 20,
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  color: terminal
+                      ? TerminalPalette.of(context).accent
+                      : Colors.transparent,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: terminal ? 8 : 0,
+                    vertical: terminal ? 1 : 0,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${strings.workspaceTitle}'
+                    '${state.deviceState.tutorialAwardEarned ? ' ✪' : ''}',
+                    semanticsLabel: state.deviceState.tutorialAwardEarned
+                        ? '${strings.workspaceTitle}, ${strings.tutorialAwardBadge}'
+                        : strings.workspaceTitle,
+                    style: TextStyle(
+                      color: terminal
+                          ? TerminalPalette.of(context).background
+                          : TerminalPalette.of(context).accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: terminal ? null : 20,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-          const Spacer(),
           Text(
             _viewLabel(state.view, strings),
             style: TextStyle(

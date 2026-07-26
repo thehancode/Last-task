@@ -41,9 +41,16 @@ class WorkspaceSearchState {
 }
 
 class RewardState {
-  const RewardState(this.messageIndex, this.taskId);
+  const RewardState(this.messageIndex, this.taskId) : tutorialUnlock = false;
+
+  const RewardState.tutorial()
+    : messageIndex = 0,
+      taskId = null,
+      tutorialUnlock = true;
+
   final int messageIndex;
-  final String taskId;
+  final String? taskId;
+  final bool tutorialUnlock;
 }
 
 class WorkspaceState {
