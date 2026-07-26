@@ -753,9 +753,16 @@ void main() {
         find.textContaining('Congratulations, Themes have been unlocked'),
         findsOneWidget,
       );
+      expect(find.text('< Great >'), findsOneWidget);
       expect(find.textContaining('✪'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 1));
+      expect(find.text('< Great >'), findsOneWidget);
+
+      await tester.tap(find.text('< Great >'));
+      await tester.pump();
+      expect(find.text('< Great >'), findsNothing);
+
       await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
       await tester.pumpAndSettle();
       expect(find.text('Themes'), findsOneWidget);
@@ -1502,10 +1509,19 @@ void main() {
     expect(find.text('Background'), findsOneWidget);
     expect(find.text('Long-title mode'), findsOneWidget);
     expect(find.text('Marquee speed'), findsOneWidget);
+    expect(find.text('< Wrap selected >'), findsOneWidget);
     expect(find.text('< Normal >'), findsOneWidget);
     expect(find.text('23pt'), findsOneWidget);
     expect(find.text('Tag names'), findsNothing);
     expect(find.byKey(const ValueKey('tag-name-heart')), findsNothing);
+
+    await tester.tap(find.text('< Wrap selected >'));
+    await tester.pump();
+    expect(find.text('< Wrap all >'), findsOneWidget);
+
+    await tester.tap(find.text('< Wrap all >'));
+    await tester.pump();
+    expect(find.text('< Marquee >'), findsOneWidget);
 
     await tester.tap(find.text('< Normal >'));
     await tester.pump();

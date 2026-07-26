@@ -463,6 +463,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab';
 
   @override
+  String get great => 'Great';
+
+  @override
   String get tutorialAwardBadge => 'Tutorial completed';
 
   @override

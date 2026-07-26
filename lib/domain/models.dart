@@ -73,7 +73,8 @@ extension LongTitleDisplayX on LongTitleDisplay {
       LongTitleDisplay.values[(index + 1) % LongTitleDisplay.values.length];
 
   static LongTitleDisplay fromWireName(Object? value) => switch (value) {
-    null || 'marquee' => LongTitleDisplay.marquee,
+    null => LongTitleDisplay.wrapSelected,
+    'marquee' => LongTitleDisplay.marquee,
     'wrap' || 'wrapAll' => LongTitleDisplay.wrapAll,
     'wrapSelected' => LongTitleDisplay.wrapSelected,
     'slidingWindow' => LongTitleDisplay.marquee,
@@ -575,7 +576,7 @@ class TagNames {
 class AppSettings {
   const AppSettings({
     this.marqueeSpeedMs = defaultMarqueeSpeedMs,
-    this.longTitleDisplay = LongTitleDisplay.marquee,
+    this.longTitleDisplay = LongTitleDisplay.wrapSelected,
     this.fontFamily = AppFontFamily.ubuntuMonoNerd,
     this.nativeFontSize = 23,
     this.tagNames = const TagNames(),

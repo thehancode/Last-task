@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -30,8 +29,15 @@ class WorkspaceTransientBanner extends StatelessWidget {
 }
 
 class WorkspaceRewardOverlay extends StatelessWidget {
-  const WorkspaceRewardOverlay({super.key, required this.text});
+  const WorkspaceRewardOverlay({
+    super.key,
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+  });
   final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) => ColoredBox(
@@ -47,12 +53,39 @@ class WorkspaceRewardOverlay extends StatelessWidget {
             horizontal: TerminalMetrics.cell(context) * 3,
             vertical: TerminalMetrics.line(context),
           ),
-          child: Text(
-            '✦  $text  ✦',
-            style: TextStyle(
-              color: TerminalPalette.of(context).done,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '✦  $text  ✦',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: TerminalPalette.of(context).done,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (actionLabel != null && onAction != null)
+                Semantics(
+                  button: true,
+                  label: actionLabel,
+                  child: InkWell(
+                    onTap: onAction,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: TerminalMetrics.cell(context),
+                        vertical: TerminalMetrics.line(context) * .1,
+                      ),
+                      child: Text(
+                        '< $actionLabel >',
+                        style: TextStyle(
+                          color: TerminalPalette.of(context).accent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

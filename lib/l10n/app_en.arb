@@ -278,6 +278,8 @@
   "@clear": {"description": "Button that removes the selected background image."},
   "tutorialUnlockAward": "Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab",
   "@tutorialUnlockAward": {"description": "One-time terminal award shown after completing every original tutorial task."},
+  "great": "Great",
+  "@great": {"description": "Button that dismisses the tutorial completion award."},
   "tutorialAwardBadge": "Tutorial completed",
   "@tutorialAwardBadge": {"description": "Accessible label for the star shown beside the product title after tutorial completion."},
   "languageName": "English",

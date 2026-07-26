@@ -465,6 +465,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
 
   @override
+  String get great => 'Genial';
+
+  @override
   String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
@@ -929,6 +932,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
       'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
 
   @override
+  String get great => 'Genial';
+
+  @override
   String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
@@ -1391,6 +1397,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   @override
   String get tutorialUnlockAward =>
       'Enhorabuena, se han desbloqueado los temas. Puedes cambiarlos pulsando G y entrando en la pestaña Temas';
+
+  @override
+  String get great => 'Genial';
 
   @override
   String get tutorialAwardBadge => 'Tutorial completado';

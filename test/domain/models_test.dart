@@ -212,6 +212,10 @@ void main() {
   test('new settings preserve legacy long-title values and defaults', () {
     final legacyWrap = AppSettings.fromJson({'long_title_display': 'wrap'});
     expect(legacyWrap.longTitleDisplay, LongTitleDisplay.wrapAll);
+    expect(
+      AppSettings.fromJson(const {}).longTitleDisplay,
+      LongTitleDisplay.wrapSelected,
+    );
     expect(legacyWrap.tipsEnabled, isFalse);
     expect(legacyWrap.rewardDuration, RewardDuration.medium);
 

@@ -934,6 +934,12 @@ abstract class AppLocalizations {
   /// **'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab'**
   String get tutorialUnlockAward;
 
+  /// Button that dismisses the tutorial completion award.
+  ///
+  /// In en, this message translates to:
+  /// **'Great'**
+  String get great;
+
   /// Accessible label for the star shown beside the product title after tutorial completion.
   ///
   /// In en, this message translates to:

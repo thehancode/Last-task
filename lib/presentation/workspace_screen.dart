@@ -570,6 +570,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
             if (terminal && state.reward != null)
               Positioned.fill(
                 child: IgnorePointer(
+                  ignoring: !state.reward!.tutorialUnlock,
                   child: WorkspaceRewardOverlay(
                     text: state.reward!.tutorialUnlock
                         ? AppLocalizations.of(context)!.tutorialUnlockAward
@@ -577,6 +578,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                             AppLocalizations.of(context)!,
                             state.reward!.messageIndex,
                           ),
+                    actionLabel: state.reward!.tutorialUnlock
+                        ? AppLocalizations.of(context)!.great
+                        : null,
+                    onAction: state.reward!.tutorialUnlock
+                        ? ref
+                              .read(workspaceViewModelProvider.notifier)
+                              .dismissReward
+                        : null,
                   ),
                 ),
               ),

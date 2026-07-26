@@ -277,6 +277,11 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   void dismissNotice() => state = state.copyWith(clearNotice: true);
 
+  void dismissReward() {
+    _rewardTimer?.cancel();
+    state = state.copyWith(clearReward: true);
+  }
+
   void showNotice(String message, {bool usesDoingColor = false}) =>
       _showNotice(NoticeState(message, usesDoingColor: usesDoingColor));
 
@@ -1319,9 +1324,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     final reward = RewardState(_random.nextInt(6), taskId);
     state = state.copyWith(reward: reward);
     _rewardTimer?.cancel();
-    _rewardTimer = Timer(state.settings.rewardDuration.duration, () {
-      state = state.copyWith(clearReward: true);
-    });
+    _rewardTimer = Timer(state.settings.rewardDuration.duration, dismissReward);
   }
 
   bool _tutorialIsComplete(List<TaskList> lists) {
@@ -1362,9 +1365,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   void _showTutorialAward() {
     state = state.copyWith(reward: const RewardState.tutorial());
     _rewardTimer?.cancel();
-    _rewardTimer = Timer(state.settings.rewardDuration.duration, () {
-      state = state.copyWith(clearReward: true);
-    });
   }
 
   _HistoryEntry _captureHistory() => _HistoryEntry(
