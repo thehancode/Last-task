@@ -192,6 +192,8 @@
   "@languageValue": {"description": "Terminal settings control showing the selected display language.", "placeholders": {"language": {}}},
   "showTips": "Show entrance tips",
   "@showTips": {"description": "Setting that enables brief startup tips."},
+  "useBackend": "Use Backend",
+  "@useBackend": {"description": "Settings toggle that switches task persistence to the local development backend."},
   "rewardDuration": "Reward duration",
   "@rewardDuration": {"description": "Setting that controls how long completion rewards remain visible."},
   "tipsTitle": "Tips",

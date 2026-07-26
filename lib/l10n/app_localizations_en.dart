@@ -323,6 +323,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showTips => 'Show entrance tips';
 
   @override
+  String get useBackend => 'Use Backend';
+
+  @override
   String get rewardDuration => 'Reward duration';
 
   @override

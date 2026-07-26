@@ -584,6 +584,7 @@ class AppSettings {
     this.themeId = 'classic',
     this.tipsEnabled = false,
     this.rewardDuration = RewardDuration.medium,
+    this.useBackend = false,
   });
 
   final int marqueeSpeedMs;
@@ -599,6 +600,9 @@ class AppSettings {
   final bool tipsEnabled;
   final RewardDuration rewardDuration;
 
+  /// Uses the local development backend instead of file/IndexedDB storage.
+  final bool useBackend;
+
   AppSettings copyWith({
     int? marqueeSpeedMs,
     LongTitleDisplay? longTitleDisplay,
@@ -609,6 +613,7 @@ class AppSettings {
     String? themeId,
     bool? tipsEnabled,
     RewardDuration? rewardDuration,
+    bool? useBackend,
   }) => AppSettings(
     marqueeSpeedMs: marqueeSpeedMs ?? this.marqueeSpeedMs,
     longTitleDisplay: longTitleDisplay ?? this.longTitleDisplay,
@@ -619,6 +624,7 @@ class AppSettings {
     themeId: themeId ?? this.themeId,
     tipsEnabled: tipsEnabled ?? this.tipsEnabled,
     rewardDuration: rewardDuration ?? this.rewardDuration,
+    useBackend: useBackend ?? this.useBackend,
   );
 
   Map<String, Object?> toJson() => {
@@ -631,6 +637,7 @@ class AppSettings {
     'theme': themeId,
     'tips_enabled': tipsEnabled,
     'reward_duration': rewardDuration.wireName,
+    'use_backend': useBackend,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
@@ -649,6 +656,7 @@ class AppSettings {
     themeId: json['theme'] as String? ?? 'classic',
     tipsEnabled: json['tips_enabled'] as bool? ?? false,
     rewardDuration: RewardDurationX.fromWireName(json['reward_duration']),
+    useBackend: json['use_backend'] as bool? ?? false,
   );
 
   void validate() {

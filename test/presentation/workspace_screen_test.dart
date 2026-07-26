@@ -56,58 +56,61 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('terminal close button turns red on hover and closes the window', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    var closeCalls = 0;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('window_manager'),
-      (call) async {
-        if (call.method == 'close') closeCalls++;
-        return null;
-      },
-    );
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+  testWidgets(
+    'terminal close button turns red on hover and closes the window',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      var closeCalls = 0;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         const MethodChannel('window_manager'),
-        null,
-      ),
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
-          taskListRepositoryProvider.overrideWithValue(_Lists()),
-          settingsRepositoryProvider.overrideWithValue(_Settings()),
-        ],
-        child: const LastTaskApp(),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 20));
+        (call) async {
+          if (call.method == 'close') closeCalls++;
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('window_manager'),
+          null,
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists()),
+            settingsRepositoryProvider.overrideWithValue(_Settings()),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
 
-    final button = find.byKey(const Key('workspace-close-button'));
-    expect(button, findsOneWidget);
-    final context = tester.element(button);
-    expect(
-      tester.widget<Container>(button).color,
-      TerminalPalette.of(context).muted,
-    );
-    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await mouse.addPointer(location: Offset.zero);
-    await mouse.moveTo(tester.getCenter(button));
-    await tester.pump();
-    expect(
-      tester.widget<Container>(button).color,
-      TerminalPalette.of(context).error,
-    );
+      final button = find.byKey(const Key('workspace-close-button'));
+      expect(button, findsOneWidget);
+      final context = tester.element(button);
+      expect(
+        tester.widget<Container>(button).color,
+        TerminalPalette.of(context).muted,
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(button));
+      await tester.pump();
+      expect(
+        tester.widget<Container>(button).color,
+        TerminalPalette.of(context).error,
+      );
 
-    await tester.tap(button);
-    await tester.pump();
-    expect(closeCalls, 1);
-    debugDefaultTargetPlatformOverride = null;
-  });
+      await tester.tap(button);
+      await tester.pump();
+      expect(closeCalls, 1);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('terminal footer uses two right-aligned command lines', (
     tester,
@@ -1606,7 +1609,8 @@ void main() {
 
     expect(find.text('Long-title mode'), findsOneWidget);
     expect(find.text('Marquee speed'), findsOneWidget);
-    expect(find.byType(Switch), findsOneWidget);
+    expect(find.byType(Switch), findsNWidgets(2));
+    expect(find.text('Use Backend'), findsOneWidget);
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsNothing);
     expect(find.text('Tag names'), findsNothing);

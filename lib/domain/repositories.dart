@@ -21,6 +21,13 @@ abstract interface class TaskListRepository {
   Future<void> commit(TaskListChangeSet changes);
 }
 
+/// Optional capability for repositories that can explicitly move a workspace
+/// between local storage and a remote backend without silently merging data.
+abstract interface class PersistenceModeRepository {
+  Future<void> enableBackend(List<TaskList> lists);
+  Future<void> disableBackend(List<TaskList> lists);
+}
+
 abstract interface class DeviceStateRepository {
   Future<DeviceWorkspaceState> load();
   Future<void> save(DeviceWorkspaceState state);

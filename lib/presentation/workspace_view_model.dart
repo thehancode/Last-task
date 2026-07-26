@@ -1079,6 +1079,15 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   Future<void> updateSettings(AppSettings next) async {
     try {
+      if (next.useBackend != state.settings.useBackend &&
+          _lists is PersistenceModeRepository) {
+        final repository = _lists as PersistenceModeRepository;
+        if (next.useBackend) {
+          await repository.enableBackend(state.lists);
+        } else {
+          await repository.disableBackend(state.lists);
+        }
+      }
       await _settings.save(next);
       state = state.copyWith(
         settings: next,

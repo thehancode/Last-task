@@ -95,6 +95,7 @@
   "language": "Idioma",
   "languageValue": "Idioma: {language}",
   "showTips": "Mostrar consejos al inicio",
+  "useBackend": "Usar servidor",
   "rewardDuration": "Duración de recompensa",
   "tipsTitle": "Consejos",
   "tipNavigation": "Usa izquierda y derecha para cambiar de lista.",

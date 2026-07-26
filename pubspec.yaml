@@ -45,6 +45,7 @@ dependencies:
   intl: any
   characters: any
   file_picker: ^10.3.10
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

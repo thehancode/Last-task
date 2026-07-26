@@ -177,6 +177,13 @@ class _ConfigSettings extends StatelessWidget {
             onChanged: (value) =>
                 onUpdate(settings.copyWith(tipsEnabled: value)),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.useBackend),
+            value: settings.useBackend,
+            onChanged: (value) =>
+                onUpdate(settings.copyWith(useBackend: value)),
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(strings.rewardDuration),
@@ -227,6 +234,14 @@ class _ConfigSettings extends StatelessWidget {
                 longTitleDisplay: settings.longTitleDisplay.next,
               ),
             ),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.useBackend,
+          control: _ToggleButton(
+            value: settings.useBackend,
+            onChanged: (value) =>
+                onUpdate(settings.copyWith(useBackend: value)),
           ),
         ),
         _SettingsRow(

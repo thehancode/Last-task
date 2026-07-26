@@ -324,6 +324,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
+  String get useBackend => 'Usar servidor';
+
+  @override
   String get rewardDuration => 'Duración de recompensa';
 
   @override
@@ -791,6 +794,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
+  String get useBackend => 'Usar servidor';
+
+  @override
   String get rewardDuration => 'Duración de recompensa';
 
   @override
@@ -1256,6 +1262,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get showTips => 'Mostrar consejos al inicio';
+
+  @override
+  String get useBackend => 'Usar servidor';
 
   @override
   String get rewardDuration => 'Duración de recompensa';

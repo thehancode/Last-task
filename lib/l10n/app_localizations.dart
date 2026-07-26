@@ -676,6 +676,12 @@ abstract class AppLocalizations {
   /// **'Show entrance tips'**
   String get showTips;
 
+  /// Settings toggle that switches task persistence to the local development backend.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Backend'**
+  String get useBackend;
+
   /// Setting that controls how long completion rewards remain visible.
   ///
   /// In en, this message translates to:

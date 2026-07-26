@@ -158,6 +158,7 @@ void main() {
     () {
       final defaults = AppSettings.fromJson(const {});
       expect(defaults.languageLocale, 'en');
+      expect(defaults.useBackend, isFalse);
       expect(defaults.themeId, 'classic');
       expect(defaults.marqueeSpeedMs, normalMarqueeSpeedMs);
       expect(defaults.fontFamily, AppFontFamily.ubuntuMonoNerd);
@@ -200,6 +201,9 @@ void main() {
 
       final latinAmerican = AppSettings.fromJson({'language': 'es_419'});
       expect(latinAmerican.languageLocale, 'es_419');
+
+      final backend = AppSettings.fromJson({'use_backend': true});
+      expect(backend.useBackend, isTrue);
       expect(latinAmerican.toJson()['language'], 'es_419');
     },
   );
