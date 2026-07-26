@@ -14,15 +14,24 @@ class _IoLocalStore implements PlatformLocalStore {
 
   Future<Directory> _root() async {
     if (Platform.isLinux) {
-      final dataHome =
-          Platform.environment['XDG_DATA_HOME'] ??
-          path.join(Platform.environment['HOME'] ?? '', '.local', 'share');
-      // Using the existing Rust location makes migration seamless. Do not run
-      // both applications concurrently because they cannot coordinate writes.
-      return Directory(path.join(dataHome, 'tui-kanban', 'tasklists'));
+      return Directory(
+        ioLocalStoreRootPath(
+          isLinux: true,
+          isWindows: false,
+          applicationSupportPath: '',
+          environment: Platform.environment,
+        ),
+      );
     }
     final support = await getApplicationSupportDirectory();
-    return Directory(path.join(support.path, 'focus-list', 'tasklists'));
+    return Directory(
+      ioLocalStoreRootPath(
+        isLinux: false,
+        isWindows: Platform.isWindows,
+        applicationSupportPath: support.path,
+        environment: Platform.environment,
+      ),
+    );
   }
 
   Future<File> _settingsFile() async {
@@ -118,4 +127,27 @@ class _IoLocalStore implements PlatformLocalStore {
       throw FormatException('Invalid JSON in $location: $error');
     }
   }
+}
+
+String ioLocalStoreRootPath({
+  required bool isLinux,
+  required bool isWindows,
+  required String applicationSupportPath,
+  required Map<String, String> environment,
+}) {
+  final platformPath = path.Context(
+    style: isWindows ? path.Style.windows : path.Style.posix,
+  );
+  if (isLinux) {
+    final dataHome =
+        environment['XDG_DATA_HOME'] ??
+        platformPath.join(environment['HOME'] ?? '', '.local', 'share');
+    // Using the existing Rust location makes migration seamless. Do not run
+    // both applications concurrently because they cannot coordinate writes.
+    return platformPath.join(dataHome, 'tui-kanban', 'tasklists');
+  }
+  if (isWindows) {
+    return platformPath.join(applicationSupportPath, 'tasklists');
+  }
+  return platformPath.join(applicationSupportPath, 'focus-list', 'tasklists');
 }

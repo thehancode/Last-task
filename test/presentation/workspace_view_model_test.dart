@@ -498,8 +498,8 @@ void main() {
     expect(reward.taskId, 'task');
   });
 
-  test('fresh terminal launch seeds and persists the tutorial', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+  test('fresh Windows launch seeds and persists the tutorial', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final repository = _TaskLists([]);
     final device = _RecordingDeviceState(const DeviceWorkspaceState());

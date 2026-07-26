@@ -83,10 +83,7 @@ class _WorkspaceMarqueeTextState extends State<WorkspaceMarqueeText> {
       )..layout();
       if (textPainter.width <= _controller.position.viewportDimension) return;
       final loopPainter = TextPainter(
-        text: TextSpan(
-          text: '${widget.text}$_separator',
-          style: widget.style,
-        ),
+        text: TextSpan(text: '${widget.text}$_separator', style: widget.style),
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,

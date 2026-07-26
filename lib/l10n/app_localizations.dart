@@ -850,19 +850,19 @@ abstract class AppLocalizations {
   /// **'Long'**
   String get longDuration;
 
-  /// Linux setting and dialog title for a workspace background image.
+  /// Desktop setting and dialog title for a workspace background image.
   ///
   /// In en, this message translates to:
   /// **'Background image'**
   String get backgroundImage;
 
-  /// Linux background overlay opacity label.
+  /// Desktop background overlay opacity label.
   ///
   /// In en, this message translates to:
   /// **'Background color opacity'**
   String get backgroundOpacity;
 
-  /// Linux background transparency stepper label.
+  /// Desktop background transparency stepper label.
   ///
   /// In en, this message translates to:
   /// **'Background transparency'**
@@ -892,7 +892,7 @@ abstract class AppLocalizations {
   /// **'Increase'**
   String get increase;
 
-  /// Linux background image fitting control.
+  /// Desktop background image fitting control.
   ///
   /// In en, this message translates to:
   /// **'Image fit'**
@@ -910,7 +910,7 @@ abstract class AppLocalizations {
   /// **'Contain'**
   String get contain;
 
-  /// Linux background dialog state with no selected image.
+  /// Desktop background dialog state with no selected image.
   ///
   /// In en, this message translates to:
   /// **'No image selected'**

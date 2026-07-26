@@ -5,10 +5,11 @@ updated as phases are completed or implementation discoveries change a detail.
 
 ## Targets and verification
 
-- Terminal features target Linux and web. Android keeps its current UI while
-  sharing domain models, repositories, projections, and business actions.
-- Background images target Linux only; the boundary must remain suitable for a
-  later Windows implementation.
+- Terminal features target Linux, Windows, and web. Android keeps its current
+  UI while sharing domain models, repositories, projections, and business
+  actions.
+- Background images target Linux and Windows through the shared desktop
+  background boundary.
 - Full Flutter command output goes to ignored `.buildlog/*.log` files. Poll the
   command and inspect summaries instead of printing whole logs.
 - Run focused tests while developing, one analyze/test checkpoint after phase
@@ -31,8 +32,9 @@ updated as phases are completed or implementation discoveries change a detail.
   automatic resets, search, and transient effects are excluded. No redo.
 - Device state stores view, list, selection, sound, seen tips, and desktop
   appearance separately from task data and portable settings.
-- Linux background selection uses a native picker and remembers the absolute
-  source path. Fit modes are Cover and Contain; missing files fall back safely.
+- Linux and Windows background selection use a native picker and remember the
+  absolute source path. Fit modes are Cover and Contain; missing files fall
+  back safely.
 - At most one unseen tip appears per launch for three seconds. Tips can be
   disabled and remain browseable from Help.
 - Completion rewards have 0.2 probability, are nonblocking, use varied
@@ -49,7 +51,7 @@ updated as phases are completed or implementation discoveries change a detail.
 - [x] Phase 2: long-title modes
 - [x] Phase 3: commands, copying, completion, and undo
 - [x] Intermediate analyze/test checkpoint
-- [x] Phase 4: device state and Linux background
+- [x] Phase 4: device state and desktop background
 - [x] Phase 5: tips and completion rewards
 - [x] Phase 6: search
 - [x] Final analyze/test and Linux/web builds

@@ -11,14 +11,14 @@ DesktopBackgroundService createDesktopBackgroundService() =>
 class _IoDesktopBackgroundService implements DesktopBackgroundService {
   @override
   Future<String?> pickImagePath() async {
-    if (!Platform.isLinux) return null;
+    if (!Platform.isLinux && !Platform.isWindows) return null;
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     return result?.files.single.path;
   }
 
   @override
   Future<Uint8List?> loadImageBytes(String path) async {
-    if (!Platform.isLinux) return null;
+    if (!Platform.isLinux && !Platform.isWindows) return null;
     final file = File(path);
     if (!await file.exists()) return null;
     try {

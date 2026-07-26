@@ -56,22 +56,22 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('terminal close button turns red on hover and closes the app', (
+  testWidgets('terminal close button turns red on hover and closes the window', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    var popCalls = 0;
+    var closeCalls = 0;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
+      const MethodChannel('window_manager'),
       (call) async {
-        if (call.method == 'SystemNavigator.pop') popCalls++;
+        if (call.method == 'close') closeCalls++;
         return null;
       },
     );
     addTearDown(
       () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
+        const MethodChannel('window_manager'),
         null,
       ),
     );
@@ -105,7 +105,7 @@ void main() {
 
     await tester.tap(button);
     await tester.pump();
-    expect(popCalls, 1);
+    expect(closeCalls, 1);
     debugDefaultTargetPlatformOverride = null;
   });
 

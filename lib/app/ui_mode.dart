@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// The browser and Linux build mirror the Rust terminal application.
+/// The browser, Linux, and Windows builds mirror the terminal application.
 /// Other Flutter targets retain the touch-oriented Material presentation.
 bool get usesTerminalPresentation =>
     usesTerminalPresentationFor(isWeb: kIsWeb, platform: defaultTargetPlatform);
@@ -8,7 +8,24 @@ bool get usesTerminalPresentation =>
 bool usesTerminalPresentationFor({
   required bool isWeb,
   required TargetPlatform platform,
-}) => isWeb || platform == TargetPlatform.linux;
+}) =>
+    isWeb ||
+    platform == TargetPlatform.linux ||
+    platform == TargetPlatform.windows;
+
+/// Native desktop backgrounds are available where an IO image picker and
+/// filesystem-backed image loading are supported.
+bool get supportsDesktopBackground => supportsDesktopBackgroundFor(
+  isWeb: kIsWeb,
+  platform: defaultTargetPlatform,
+);
+
+bool supportsDesktopBackgroundFor({
+  required bool isWeb,
+  required TargetPlatform platform,
+}) =>
+    !isWeb &&
+    (platform == TargetPlatform.linux || platform == TargetPlatform.windows);
 
 /// Linux and Windows use a frameless native window, so Flutter provides the
 /// replacement drag area.

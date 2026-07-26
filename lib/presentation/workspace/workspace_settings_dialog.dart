@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,9 +18,6 @@ EdgeInsetsGeometry? get _dialogTitlePadding =>
 
 EdgeInsetsGeometry? get _dialogContentPadding =>
     usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : null;
-
-bool get _supportsDesktopBackground =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
 
 class WorkspaceSettingsDialog extends ConsumerStatefulWidget {
   const WorkspaceSettingsDialog({
@@ -66,7 +62,7 @@ class _WorkspaceSettingsDialogState
     final vm = ref.read(workspaceViewModelProvider.notifier);
     final tabs = [
       SettingsTab.config,
-      if (_supportsDesktopBackground) SettingsTab.background,
+      if (supportsDesktopBackground) SettingsTab.background,
       if (usesTerminalPresentation && state.deviceState.themesUnlocked)
         SettingsTab.themes,
     ];

@@ -227,7 +227,10 @@ class _WorkspaceCloseButtonState extends State<WorkspaceCloseButton> {
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
             onTap: () {
-              SystemNavigator.pop();
+              // This replaces the native caption button in our frameless
+              // desktop window, so close the host window rather than only
+              // dismissing Flutter's navigation stack.
+              windowManager.close();
             },
             child: Container(
               key: const Key('workspace-close-button'),

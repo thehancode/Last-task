@@ -15,8 +15,6 @@ WindowPositionPersistence createWindowPositionPersistence() =>
 class _DesktopWindowPositionPersistence
     with WindowListener
     implements WindowPositionPersistence {
-  static const _fileName = 'window-position.json';
-
   Timer? _debounce;
   Future<void> _writes = Future.value();
   bool _listening = false;
@@ -108,12 +106,48 @@ class _DesktopWindowPositionPersistence
 
   Future<File> _file() async {
     if (Platform.isLinux) {
-      final stateHome =
-          Platform.environment['XDG_STATE_HOME'] ??
-          path.join(Platform.environment['HOME'] ?? '', '.local', 'state');
-      return File(path.join(stateHome, 'tui-kanban', _fileName));
+      return File(
+        windowPositionFilePath(
+          isLinux: true,
+          isWindows: false,
+          applicationSupportPath: '',
+          environment: Platform.environment,
+        ),
+      );
     }
     final support = await getApplicationSupportDirectory();
-    return File(path.join(support.path, 'focus-list', _fileName));
+    return File(
+      windowPositionFilePath(
+        isLinux: false,
+        isWindows: Platform.isWindows,
+        applicationSupportPath: support.path,
+        environment: Platform.environment,
+      ),
+    );
   }
+}
+
+String windowPositionFilePath({
+  required bool isLinux,
+  required bool isWindows,
+  required String applicationSupportPath,
+  required Map<String, String> environment,
+}) {
+  final platformPath = path.Context(
+    style: isWindows ? path.Style.windows : path.Style.posix,
+  );
+  if (isLinux) {
+    final stateHome =
+        environment['XDG_STATE_HOME'] ??
+        platformPath.join(environment['HOME'] ?? '', '.local', 'state');
+    return platformPath.join(stateHome, 'tui-kanban', 'window-position.json');
+  }
+  if (isWindows) {
+    return platformPath.join(applicationSupportPath, 'window-position.json');
+  }
+  return platformPath.join(
+    applicationSupportPath,
+    'focus-list',
+    'window-position.json',
+  );
 }

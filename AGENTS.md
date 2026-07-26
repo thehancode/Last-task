@@ -11,7 +11,7 @@ All normal feature work must consider these Flutter targets:
 
 - Android
 - Web (Chrome/browser)
-- Desktop (currently Linux)
+- Desktop (Linux and Windows)
 
 Implement shared behavior once. Use platform-specific code only for storage,
 OS integration, or intentionally different presentation. Do not silently make
@@ -93,10 +93,10 @@ do not create generic utility files containing unrelated helpers.
 
 ## Platform behavior
 
-Android uses the touch-oriented Material presentation. Web and Linux use the
-terminal presentation. Preserve this split unless the user requests a design
-change. If Windows or macOS runners are added later, update `ui_mode.dart` and
-its tests explicitly rather than assuming a presentation mode.
+Android uses the touch-oriented Material presentation. Web, Linux, and Windows
+use the terminal presentation. Preserve this split unless the user requests a
+design change. If a macOS runner is added later, update `ui_mode.dart` and its
+tests explicitly rather than assuming a presentation mode.
 
 Platform-independent features must work through the same domain models,
 repositories, and view model on all targets. Keep platform branching near the
@@ -109,10 +109,10 @@ boundary:
 - do not use `dart:io` in code compiled for web.
 
 Linux and the legacy Rust app currently share the existing JSON data location.
-Android uses application-support storage and web uses IndexedDB. Preserve
-schema compatibility and backward-compatible defaults when changing
-persistence. Do not change `schema_version`, stored field names, or migration
-behavior without explicit tests and user approval.
+Windows and Android use their platform-specific application-support storage,
+and web uses IndexedDB. Preserve schema compatibility and backward-compatible
+defaults when changing persistence. Do not change `schema_version`, stored
+field names, or migration behavior without explicit tests and user approval.
 
 ## UI rules
 
