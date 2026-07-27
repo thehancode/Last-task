@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -1149,6 +1150,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   }
 
   bool _error(String message) {
+    debugPrint('Last Task error: $message');
     _showNotice(NoticeState(message, error: true));
     return false;
   }

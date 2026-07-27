@@ -120,6 +120,10 @@ class BackendTaskListRepository implements TaskListRepository {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response;
     }
+    debugPrint(
+      'Backend API error: $method ${request.url} '
+      'returned ${response.statusCode}: ${response.body}',
+    );
     throw BackendRequestException(response.statusCode, response.body);
   }
 
@@ -135,6 +139,10 @@ class BackendTaskListRepository implements TaskListRepository {
       }),
     );
     if (response.statusCode != 201) {
+      debugPrint(
+        'Backend authentication error: POST ${response.request?.url} '
+        'returned ${response.statusCode}: ${response.body}',
+      );
       throw BackendRequestException(response.statusCode, response.body);
     }
     _accessToken = _object(response.body)['access_token']! as String;
