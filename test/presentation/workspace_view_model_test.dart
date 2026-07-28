@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,49 @@ import 'package:flutter_app/domain/repositories.dart';
 import 'package:flutter_app/presentation/workspace_view_model.dart';
 
 void main() {
+  test('exports all task lists as a portable JSON document', () async {
+    final first = _list('personal', 'Personal', [_task('one', 'One')]);
+    final second = _list('work', 'Work', [_task('two', 'Two')]);
+    final container = _container([first, second]);
+    addTearDown(container.dispose);
+    final vm = await _ready(container);
+
+    final exported = Map<String, Object?>.from(
+      jsonDecode(vm.exportDataJson()) as Map,
+    );
+
+    expect(exported['schema_version'], currentSchemaVersion);
+    expect(exported['lists'], hasLength(2));
+  });
+
+  test('imports a batch with fresh IDs and -1 list name collisions', () async {
+    final existing = _list('existing', 'Projects', [
+      _task('current', 'Current'),
+    ]);
+    final repository = _TaskLists([existing]);
+    final container = _container([existing], repository: repository);
+    addTearDown(container.dispose);
+    final vm = await _ready(container);
+    final imported = _list('existing', 'Projects', [
+      _task('root', 'Imported root'),
+      _task('child', 'Imported child', parentId: 'root'),
+    ]);
+    final source = jsonEncode({
+      'schema_version': currentSchemaVersion,
+      'lists': [imported.toJson()],
+    });
+
+    expect(await vm.importDataJson(source), isTrue);
+
+    expect(repository.lists, hasLength(2));
+    final restored = repository.lists.singleWhere(
+      (list) => list.name == 'Projects-1',
+    );
+    expect(restored.id, isNot(imported.id));
+    expect(restored.tasks.map((task) => task.id), isNot(contains('root')));
+    expect(restored.tasks[1].parentId, restored.tasks[0].id);
+  });
+
   test('Multi view follows pending to Focus and Done back to Multi', () async {
     final first = _list('personal', 'Personal', [
       _task('personal-pending', 'Personal task'),

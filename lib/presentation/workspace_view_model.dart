@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -1099,6 +1100,120 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     } on Object catch (error) {
       _error('Settings save failed: $error');
     }
+  }
+
+  /// Produces a portable snapshot containing every task list in the workspace.
+  /// Settings and device state deliberately remain local to the device.
+  String exportDataJson() => jsonEncode({
+    'schema_version': currentSchemaVersion,
+    'lists': state.lists.map((list) => list.toJson()).toList(growable: false),
+  });
+
+  /// Adds the task lists in an exported snapshot without replacing existing
+  /// lists. Imported identifiers are regenerated so an import can never turn
+  /// into an upsert of an existing list or task.
+  Future<bool> importDataJson(String source) async {
+    if (state.phase != WorkspacePhase.ready) return false;
+    final before = _captureHistory();
+    try {
+      final document = Map<String, Object?>.from(jsonDecode(source) as Map);
+      if (document['schema_version'] != currentSchemaVersion) {
+        throw FormatException(
+          'Unsupported export schema version ${document['schema_version']}',
+        );
+      }
+      final rawLists = document['lists'];
+      if (rawLists is! List) {
+        throw const FormatException('Export is missing its task lists');
+      }
+      final imported = <TaskList>[];
+      final names = state.lists.map((list) => list.name).toSet();
+      for (final value in rawLists) {
+        final list = TaskList.fromJson(Map<String, Object?>.from(value as Map));
+        list.validate();
+        final name = _uniqueImportedListName(list.name, names);
+        names.add(name);
+        imported.add(_copyImportedList(list, name));
+      }
+      if (imported.isEmpty) {
+        return _error('The export contains no task lists');
+      }
+      final ordered = _appendImportedLists(imported);
+      await _lists.commit(TaskListChangeSet(upserts: ordered));
+      state = state.copyWith(
+        lists: [...state.lists, ...ordered],
+        notice: NoticeState(
+          '${ordered.length} task ${ordered.length == 1 ? 'list' : 'lists'} imported',
+        ),
+      );
+      _expireNotice(const Duration(seconds: 3));
+      _pushHistory(before);
+      _scheduleDeviceSave();
+      return true;
+    } on Object catch (error) {
+      return _error('Import failed: $error');
+    }
+  }
+
+  String _uniqueImportedListName(String requested, Set<String> existing) {
+    final normalized = requested.toLowerCase();
+    if (!existing.any((name) => name.toLowerCase() == normalized)) {
+      return requested;
+    }
+    for (var suffix = 1; ; suffix++) {
+      final candidate = '$requested-$suffix';
+      if (!existing.any(
+        (name) => name.toLowerCase() == candidate.toLowerCase(),
+      )) {
+        return candidate;
+      }
+    }
+  }
+
+  TaskList _copyImportedList(TaskList source, String name) {
+    final taskIds = <String, String>{
+      for (final task in source.tasks) task.id: _uuid.v4(),
+    };
+    return TaskList(
+      schemaVersion: source.schemaVersion,
+      id: _uuid.v4(),
+      name: name,
+      createdAt: source.createdAt,
+      isHabit: source.isHabit,
+      isTutorial: source.isTutorial,
+      sortIndex: source.sortIndex,
+      tasks: [
+        for (final task in source.tasks)
+          Task(
+            id: taskIds[task.id]!,
+            title: task.title,
+            status: task.status,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+            completedAt: task.completedAt,
+            daily: task.daily,
+            completionHistory: task.completionHistory,
+            tags: task.tags,
+            parentId: task.parentId == null ? null : taskIds[task.parentId],
+            collapsed: task.collapsed,
+          ),
+      ],
+    );
+  }
+
+  List<TaskList> _appendImportedLists(List<TaskList> imported) {
+    if (!state.lists.every((list) => list.sortIndex != null)) {
+      return [for (final list in imported) list.copyWith(clearSortIndex: true)];
+    }
+    var nextSortIndex =
+        state.lists.fold<int>(
+          -1,
+          (highest, list) => max(highest, list.sortIndex!),
+        ) +
+        1;
+    return [
+      for (final list in imported) list.copyWith(sortIndex: nextSortIndex++),
+    ];
   }
 
   Future<bool> _saveList(

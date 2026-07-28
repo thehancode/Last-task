@@ -103,6 +103,8 @@
   "languageValue": "Idioma: {language}",
   "showTips": "Mostrar consejos al inicio",
   "useBackend": "Usar servidor",
+  "exportData": "Exportar datos",
+  "importData": "Cargar datos",
   "rewardDuration": "Duración de recompensa",
   "tipsTitle": "Consejos",
   "tipNavigation": "Usa izquierda y derecha para cambiar de lista.",

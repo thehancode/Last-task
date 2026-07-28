@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 
 import '../../app/desktop_background.dart';
@@ -38,6 +41,45 @@ enum SettingsTab { config, background, themes }
 class _WorkspaceSettingsDialogState
     extends ConsumerState<WorkspaceSettingsDialog> {
   late var _selectedTab = widget.initialTab;
+
+  Future<void> _exportData() async {
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    try {
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Last Task data',
+        fileName: 'last-task-export.json',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        bytes: Uint8List.fromList(utf8.encode(vm.exportDataJson())),
+      );
+      if (result != null) vm.showNotice('Data exported');
+    } on Object catch (error) {
+      vm.showNotice('Export failed: $error');
+    }
+  }
+
+  Future<void> _importData() async {
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        withData: true,
+      );
+      if (result == null) return;
+      final bytes = result.files.single.bytes;
+      if (bytes == null) {
+        vm.showNotice(
+          'Could not read the selected file',
+          usesDoingColor: false,
+        );
+        return;
+      }
+      await vm.importDataJson(utf8.decode(bytes));
+    } on Object catch (error) {
+      vm.showNotice('Import failed: $error');
+    }
+  }
 
   Future<void> _pickBackground() async {
     final selectedPath = await ref
@@ -110,6 +152,8 @@ class _WorkspaceSettingsDialogState
                         settings: settings,
                         onUpdate: vm.updateSettings,
                         onLogOut: logOut,
+                        onExportData: _exportData,
+                        onImportData: _importData,
                       ),
                       SettingsTab.background => _BackgroundSettings(
                         appearance: state.deviceState.desktopAppearance,
@@ -143,11 +187,15 @@ class _ConfigSettings extends StatelessWidget {
     required this.settings,
     required this.onUpdate,
     required this.onLogOut,
+    required this.onExportData,
+    required this.onImportData,
   });
 
   final AppSettings settings;
   final ValueChanged<AppSettings> onUpdate;
   final Future<void> Function() onLogOut;
+  final Future<void> Function() onExportData;
+  final Future<void> Function() onImportData;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +285,20 @@ class _ConfigSettings extends StatelessWidget {
               ),
             ),
           ),
+          if (usesTerminalPresentation) ...[
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.exportData),
+              trailing: const Icon(Icons.download),
+              onTap: onExportData,
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.importData),
+              trailing: const Icon(Icons.upload),
+              onTap: onImportData,
+            ),
+          ],
         ],
       );
     }
@@ -341,6 +403,22 @@ class _ConfigSettings extends StatelessWidget {
                 languageLocale: _nextLanguageLocale(settings.languageLocale),
               ),
             ),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.exportData,
+          control: _TextAction(
+            value: strings.exportData,
+            onTap: onExportData,
+            fillWidth: true,
+          ),
+        ),
+        _SettingsRow(
+          label: strings.importData,
+          control: _TextAction(
+            value: strings.importData,
+            onTap: onImportData,
+            fillWidth: true,
           ),
         ),
       ],

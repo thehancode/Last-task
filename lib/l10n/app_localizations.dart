@@ -724,6 +724,18 @@ abstract class AppLocalizations {
   /// **'Use Backend'**
   String get useBackend;
 
+  /// Settings action that downloads all task lists as a JSON export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export data'**
+  String get exportData;
+
+  /// Settings action that loads task lists from a JSON export.
+  ///
+  /// In en, this message translates to:
+  /// **'Load data'**
+  String get importData;
+
   /// Setting that controls how long completion rewards remain visible.
   ///
   /// In en, this message translates to:

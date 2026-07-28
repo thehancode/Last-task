@@ -347,6 +347,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useBackend => 'Use Backend';
 
   @override
+  String get exportData => 'Export data';
+
+  @override
+  String get importData => 'Load data';
+
+  @override
   String get rewardDuration => 'Reward duration';
 
   @override
