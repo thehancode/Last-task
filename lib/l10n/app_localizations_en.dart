@@ -122,9 +122,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
-  String get createAccount => 'Create account';
-
-  @override
   String get logIn => 'Log in';
 
   @override
@@ -137,10 +134,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get password => 'Password';
 
   @override
-  String get confirmPassword => 'Confirm password';
+  String get administration => 'Administration';
 
   @override
-  String get passwordsDoNotMatch => 'Passwords do not match';
+  String get createUser => 'Create user';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get displayName => 'Display name';
+
+  @override
+  String get administrator => 'Administrator';
+
+  @override
+  String get noUsers => 'No users found';
+
+  @override
+  String get deleteUser => 'Delete user';
+
+  @override
+  String get deleteUserTitle => 'Delete user?';
+
+  @override
+  String deleteUserBody(Object userName) {
+    return 'Delete $userName and all of their data? This cannot be undone.';
+  }
 
   @override
   String get themes => 'Themes';

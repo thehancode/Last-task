@@ -1897,5 +1897,5 @@ class ProviderScope extends StatelessWidget {
 
 class _SignedInAuthViewModel extends AuthViewModel {
   @override
-  AuthState build() => const AuthState.signedIn('hancode');
+  AuthState build() => const AuthState.signedIn('hancode', isAdmin: false);
 }

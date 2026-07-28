@@ -14,24 +14,30 @@ class AuthState {
   const AuthState._({
     required this.phase,
     this.username,
+    this.userId,
+    this.isAdmin = false,
     this.error,
-    this.preferLogin = false,
   });
 
   const AuthState.loading() : this._(phase: AuthPhase.loading);
-  const AuthState.signedOut({String? error, bool preferLogin = false})
-    : this._(
-        phase: AuthPhase.signedOut,
-        error: error,
-        preferLogin: preferLogin,
-      );
-  const AuthState.signedIn(String username)
-    : this._(phase: AuthPhase.signedIn, username: username);
+  const AuthState.signedOut({String? error})
+    : this._(phase: AuthPhase.signedOut, error: error);
+  const AuthState.signedIn(
+    String username, {
+    required bool isAdmin,
+    String? userId,
+  }) : this._(
+         phase: AuthPhase.signedIn,
+         username: username,
+         isAdmin: isAdmin,
+         userId: userId,
+       );
 
   final AuthPhase phase;
   final String? username;
+  final String? userId;
+  final bool isAdmin;
   final String? error;
-  final bool preferLogin;
 
   bool get isSignedIn => phase == AuthPhase.signedIn;
 }
@@ -45,21 +51,14 @@ class AuthViewModel extends Notifier<AuthState> {
     return const AuthState.loading();
   }
 
-  Future<void> register(String username, String password) => _authenticate(
-    () => _session.register(username, password),
-    preferLogin: false,
-  );
-
-  Future<void> logIn(String username, String password) => _authenticate(
-    () => _session.logIn(username, password),
-    preferLogin: true,
-  );
+  Future<void> logIn(String username, String password) =>
+      _authenticate(() => _session.logIn(username, password));
 
   Future<void> logOut() async {
     try {
       await _session.logOut();
     } finally {
-      state = const AuthState.signedOut(preferLogin: true);
+      state = const AuthState.signedOut();
     }
   }
 
@@ -68,16 +67,19 @@ class AuthViewModel extends Notifier<AuthState> {
       final user = await _session.restore();
       state = user == null
           ? const AuthState.signedOut()
-          : AuthState.signedIn(user.username);
+          : AuthState.signedIn(
+              user.username,
+              isAdmin: user.isAdmin,
+              userId: user.id,
+            );
     } on Object {
       state = const AuthState.signedOut();
     }
   }
 
   Future<void> _authenticate(
-    Future<AuthenticatedUser> Function() action, {
-    required bool preferLogin,
-  }) async {
+    Future<AuthenticatedUser> Function() action,
+  ) async {
     state = const AuthState.loading();
     try {
       final user = await action();
@@ -86,19 +88,19 @@ class AuthViewModel extends Notifier<AuthState> {
       // cleared session and preserve that failure for the next login.
       ref.invalidate(taskListRepositoryProvider);
       ref.invalidate(workspaceViewModelProvider);
-      state = AuthState.signedIn(user.username);
-    } on BackendRequestException catch (error) {
-      state = AuthState.signedOut(
-        error: _message(error),
-        preferLogin: preferLogin,
+      state = AuthState.signedIn(
+        user.username,
+        isAdmin: user.isAdmin,
+        userId: user.id,
       );
+    } on BackendRequestException catch (error) {
+      state = AuthState.signedOut(error: _message(error));
     } on Object {
-      state = AuthState.signedOut(preferLogin: preferLogin);
+      state = const AuthState.signedOut();
     }
   }
 
   String _message(BackendRequestException error) {
-    if (error.statusCode == 409) return 'That username is already in use.';
     if (error.statusCode == 401) return 'Invalid username or password.';
     return 'Could not contact the server. Try again.';
   }

@@ -122,9 +122,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings => 'Ajustes';
 
   @override
-  String get createAccount => 'Crear cuenta';
-
-  @override
   String get logIn => 'Iniciar sesión';
 
   @override
@@ -137,10 +134,33 @@ class AppLocalizationsEs extends AppLocalizations {
   String get password => 'Contraseña';
 
   @override
-  String get confirmPassword => 'Confirmar contraseña';
+  String get administration => 'Administración';
 
   @override
-  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
+  String get createUser => 'Crear usuario';
+
+  @override
+  String get email => 'Correo electrónico';
+
+  @override
+  String get displayName => 'Nombre visible';
+
+  @override
+  String get administrator => 'Administrador';
+
+  @override
+  String get noUsers => 'No se encontraron usuarios';
+
+  @override
+  String get deleteUser => 'Eliminar usuario';
+
+  @override
+  String get deleteUserTitle => '¿Eliminar usuario?';
+
+  @override
+  String deleteUserBody(Object userName) {
+    return '¿Eliminar a $userName y todos sus datos? Esta acción no se puede deshacer.';
+  }
 
   @override
   String get themes => 'Temas';
@@ -622,9 +642,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get settings => 'Ajustes';
 
   @override
-  String get createAccount => 'Crear cuenta';
-
-  @override
   String get logIn => 'Iniciar sesión';
 
   @override
@@ -637,10 +654,33 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get password => 'Contraseña';
 
   @override
-  String get confirmPassword => 'Confirmar contraseña';
+  String get administration => 'Administración';
 
   @override
-  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
+  String get createUser => 'Crear usuario';
+
+  @override
+  String get email => 'Correo electrónico';
+
+  @override
+  String get displayName => 'Nombre visible';
+
+  @override
+  String get administrator => 'Administrador';
+
+  @override
+  String get noUsers => 'No se encontraron usuarios';
+
+  @override
+  String get deleteUser => 'Eliminar usuario';
+
+  @override
+  String get deleteUserTitle => '¿Eliminar usuario?';
+
+  @override
+  String deleteUserBody(Object userName) {
+    return '¿Eliminar a $userName y todos sus datos? Esta acción no se puede deshacer.';
+  }
 
   @override
   String get themes => 'Temas';
@@ -1113,9 +1153,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get settings => 'Ajustes';
 
   @override
-  String get createAccount => 'Crear cuenta';
-
-  @override
   String get logIn => 'Iniciar sesión';
 
   @override
@@ -1128,10 +1165,33 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get password => 'Contraseña';
 
   @override
-  String get confirmPassword => 'Confirmar contraseña';
+  String get administration => 'Administración';
 
   @override
-  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
+  String get createUser => 'Crear usuario';
+
+  @override
+  String get email => 'Correo electrónico';
+
+  @override
+  String get displayName => 'Nombre visible';
+
+  @override
+  String get administrator => 'Administrador';
+
+  @override
+  String get noUsers => 'No se encontraron usuarios';
+
+  @override
+  String get deleteUser => 'Eliminar usuario';
+
+  @override
+  String get deleteUserTitle => '¿Eliminar usuario?';
+
+  @override
+  String deleteUserBody(Object userName) {
+    return '¿Eliminar a $userName y todos sus datos? Esta acción no se puede deshacer.';
+  }
 
   @override
   String get themes => 'Temas';

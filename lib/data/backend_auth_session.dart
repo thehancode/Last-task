@@ -23,9 +23,39 @@ class BackendRequestException implements Exception {
 }
 
 class AuthenticatedUser {
-  const AuthenticatedUser({required this.username});
+  const AuthenticatedUser({
+    required this.username,
+    required this.isAdmin,
+    this.id,
+  });
 
   final String username;
+  final bool isAdmin;
+  final String? id;
+}
+
+class AdminUser {
+  const AdminUser({
+    required this.id,
+    required this.username,
+    required this.email,
+    required this.displayName,
+    required this.isAdmin,
+  });
+
+  final String id;
+  final String? username;
+  final String email;
+  final String displayName;
+  final bool isAdmin;
+
+  factory AdminUser.fromJson(Map<String, Object?> json) => AdminUser(
+    id: json['id']! as String,
+    username: json['username'] as String?,
+    email: json['email']! as String,
+    displayName: json['display_name']! as String,
+    isAdmin: json['is_admin']! as bool,
+  );
 }
 
 class BackendAuthSession {
@@ -55,11 +85,42 @@ class BackendAuthSession {
     }
   }
 
-  Future<AuthenticatedUser> register(String username, String password) =>
-      _credentials('/v1/auth/register', username, password);
-
   Future<AuthenticatedUser> logIn(String username, String password) =>
       _credentials('/v1/auth/login', username, password);
+
+  Future<List<AdminUser>> listAdminUsers() async {
+    final response = await request('GET', '/v1/admin/users');
+    final body = _object(response.body);
+    return (body['users']! as List)
+        .cast<Map>()
+        .map((value) => AdminUser.fromJson(Map<String, Object?>.from(value)))
+        .toList(growable: false);
+  }
+
+  Future<AdminUser> createAdminUser({
+    required String username,
+    required String password,
+    required String email,
+    required String displayName,
+    required bool isAdmin,
+  }) async {
+    final response = await request(
+      'POST',
+      '/v1/admin/users',
+      body: {
+        'username': username,
+        'password': password,
+        'email': email,
+        'display_name': displayName,
+        'is_admin': isAdmin,
+      },
+    );
+    return AdminUser.fromJson(_object(response.body));
+  }
+
+  Future<void> deleteAdminUser(String userId) async {
+    await request('DELETE', '/v1/admin/users/$userId');
+  }
 
   Future<http.Response> request(
     String method,
@@ -149,7 +210,11 @@ class BackendAuthSession {
     _accessToken = body['access_token']! as String;
     _refreshToken = body['refresh_token'] as String? ?? _refreshToken;
     final user = Map<String, Object?>.from(body['user']! as Map);
-    _user = AuthenticatedUser(username: user['display_name']! as String);
+    _user = AuthenticatedUser(
+      username: user['display_name']! as String,
+      isAdmin: await _isAdmin(),
+      id: user['id'] as String?,
+    );
     if (!kIsWeb && _refreshToken != null) {
       await _store.writeAuthSession({'refresh_token': _refreshToken});
     }
@@ -164,4 +229,14 @@ class BackendAuthSession {
 
   Map<String, Object?> _object(String value) =>
       Map<String, Object?>.from(jsonDecode(value) as Map);
+
+  Future<bool> _isAdmin() async {
+    try {
+      await request('GET', '/v1/admin/users');
+      return true;
+    } on BackendRequestException catch (error) {
+      if (error.statusCode == 403) return false;
+      rethrow;
+    }
+  }
 }

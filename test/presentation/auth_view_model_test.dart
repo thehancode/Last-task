@@ -7,7 +7,7 @@ import 'package:flutter_app/data/providers.dart';
 import 'package:flutter_app/presentation/auth_view_model.dart';
 
 void main() {
-  test('logout prefers login and a subsequent login succeeds', () async {
+  test('logout and a subsequent login succeed', () async {
     final session = _FakeAuthSession();
     final container = ProviderContainer(
       overrides: [backendAuthSessionProvider.overrideWithValue(session)],
@@ -20,9 +20,7 @@ void main() {
     expect(container.read(authViewModelProvider).username, 'hancode');
 
     await auth.logOut();
-    final signedOut = container.read(authViewModelProvider);
-    expect(signedOut.phase, AuthPhase.signedOut);
-    expect(signedOut.preferLogin, isTrue);
+    expect(container.read(authViewModelProvider).phase, AuthPhase.signedOut);
 
     await auth.logIn('hancode', 'password');
     expect(container.read(authViewModelProvider).username, 'hancode');
@@ -51,7 +49,7 @@ class _FakeAuthSession extends BackendAuthSession {
   @override
   Future<AuthenticatedUser> logIn(String username, String password) async {
     loginCalls++;
-    return AuthenticatedUser(username: username);
+    return AuthenticatedUser(username: username, isAdmin: false);
   }
 
   @override

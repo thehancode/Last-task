@@ -310,12 +310,6 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
-  /// Authentication tab and action for registering a new account.
-  ///
-  /// In en, this message translates to:
-  /// **'Create account'**
-  String get createAccount;
-
   /// Authentication tab and action for an existing account.
   ///
   /// In en, this message translates to:
@@ -340,17 +334,59 @@ abstract class AppLocalizations {
   /// **'Password'**
   String get password;
 
-  /// Label for the repeated password field during account creation.
+  /// Title of the administrator user-management screen.
   ///
   /// In en, this message translates to:
-  /// **'Confirm password'**
-  String get confirmPassword;
+  /// **'Administration'**
+  String get administration;
 
-  /// Validation shown when account-creation passwords differ.
+  /// Action that opens the administrator user-creation form.
   ///
   /// In en, this message translates to:
-  /// **'Passwords do not match'**
-  String get passwordsDoNotMatch;
+  /// **'Create user'**
+  String get createUser;
+
+  /// Label for an account email address.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// Label for an account display name.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get displayName;
+
+  /// Role label and selection for administrator accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get administrator;
+
+  /// Empty state for the administrator user list.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get noUsers;
+
+  /// Action that permanently deletes an administrator-managed account.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete user'**
+  String get deleteUser;
+
+  /// Confirmation title for permanently deleting an account.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete user?'**
+  String get deleteUserTitle;
+
+  /// Warning shown before permanently deleting an account.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {userName} and all of their data? This cannot be undone.'**
+  String deleteUserBody(Object userName);
 
   /// Settings tab for selecting the terminal color theme.
   ///

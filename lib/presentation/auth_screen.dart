@@ -13,23 +13,14 @@ class AuthScreen extends ConsumerStatefulWidget {
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends ConsumerState<AuthScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(
-    length: 2,
-    initialIndex: ref.read(authViewModelProvider).preferLogin ? 1 : 0,
-    vsync: this,
-  );
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _username = TextEditingController();
   final _password = TextEditingController();
-  final _confirmation = TextEditingController();
 
   @override
   void dispose() {
-    _tabs.dispose();
     _username.dispose();
     _password.dispose();
-    _confirmation.dispose();
     super.dispose();
   }
 
@@ -56,25 +47,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 SizedBox(height: TerminalMetrics.line(context)),
-                TabBar(
-                  controller: _tabs,
-                  tabs: [
-                    Tab(text: strings.createAccount),
-                    Tab(text: strings.logIn),
-                  ],
-                ),
-                SizedBox(height: TerminalMetrics.line(context)),
-                AnimatedBuilder(
-                  animation: _tabs,
-                  builder: (context, _) => _CredentialsForm(
-                    createAccount: _tabs.index == 0,
-                    username: _username,
-                    password: _password,
-                    confirmation: _confirmation,
-                    busy: busy,
-                    error: state.error,
-                    onSubmit: _submit,
-                  ),
+                _CredentialsForm(
+                  username: _username,
+                  password: _password,
+                  busy: busy,
+                  error: state.error,
+                  onSubmit: _submit,
                 ),
               ],
             ),
@@ -84,44 +62,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Future<void> _submit(bool createAccount) async {
-    final strings = AppLocalizations.of(context)!;
-    if (createAccount && _password.text != _confirmation.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(strings.passwordsDoNotMatch)));
-      return;
-    }
-    if (createAccount) {
-      await ref
-          .read(authViewModelProvider.notifier)
-          .register(_username.text, _password.text);
-    } else {
-      await ref
-          .read(authViewModelProvider.notifier)
-          .logIn(_username.text, _password.text);
-    }
-  }
+  Future<void> _submit() => ref
+      .read(authViewModelProvider.notifier)
+      .logIn(_username.text, _password.text);
 }
 
 class _CredentialsForm extends StatelessWidget {
   const _CredentialsForm({
-    required this.createAccount,
     required this.username,
     required this.password,
-    required this.confirmation,
     required this.busy,
     required this.error,
     required this.onSubmit,
   });
 
-  final bool createAccount;
   final TextEditingController username;
   final TextEditingController password;
-  final TextEditingController confirmation;
   final bool busy;
   final String? error;
-  final ValueChanged<bool> onSubmit;
+  final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -144,21 +103,9 @@ class _CredentialsForm extends StatelessWidget {
           obscureText: true,
           enableSuggestions: false,
           autocorrect: false,
-          onSubmitted: (_) => onSubmit(createAccount),
+          onSubmitted: (_) => onSubmit(),
           decoration: InputDecoration(labelText: strings.password),
         ),
-        if (createAccount) ...[
-          SizedBox(height: TerminalMetrics.line(context) * .6),
-          TextField(
-            controller: confirmation,
-            enabled: !busy,
-            obscureText: true,
-            enableSuggestions: false,
-            autocorrect: false,
-            onSubmitted: (_) => onSubmit(true),
-            decoration: InputDecoration(labelText: strings.confirmPassword),
-          ),
-        ],
         if (error != null) ...[
           SizedBox(height: TerminalMetrics.line(context) * .6),
           Text(
@@ -168,13 +115,13 @@ class _CredentialsForm extends StatelessWidget {
         ],
         SizedBox(height: TerminalMetrics.line(context)),
         FilledButton(
-          onPressed: busy ? null : () => onSubmit(createAccount),
+          onPressed: busy ? null : onSubmit,
           child: busy
               ? const SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(createAccount ? strings.createAccount : strings.logIn),
+              : Text(strings.logIn),
         ),
       ],
     );

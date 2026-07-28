@@ -27,6 +27,9 @@ void main() {
           200,
         );
       }
+      if (request.url.path == '/v1/admin/users') {
+        return http.Response('{"users":[]}', 403);
+      }
       if (request.method == 'DELETE' &&
           request.url.path == '/v1/auth/session') {
         expect(request.headers['authorization'], 'Bearer access-token-1');
@@ -47,8 +50,10 @@ void main() {
     expect(user.username, 'hancode');
     expect(requests.map((request) => request.url.path), [
       '/v1/auth/login',
+      '/v1/admin/users',
       '/v1/auth/session',
       '/v1/auth/login',
+      '/v1/admin/users',
     ]);
   });
 
@@ -67,6 +72,9 @@ void main() {
             }),
             200,
           );
+        }
+        if (request.url.path == '/v1/admin/users') {
+          return http.Response('{"users":[]}', 403);
         }
         expect(request.headers['authorization'], 'Bearer access-token');
         if (request.method == 'PUT') {
@@ -110,6 +118,7 @@ void main() {
 
       expect(requests.map((request) => request.url.path), [
         '/v1/auth/login',
+        '/v1/admin/users',
         '/v1/task-lists/list-1',
       ]);
     },

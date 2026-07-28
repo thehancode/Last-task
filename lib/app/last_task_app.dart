@@ -6,6 +6,7 @@ import '../presentation/workspace_screen.dart';
 import '../presentation/workspace_view_model.dart';
 import '../presentation/auth_screen.dart';
 import '../presentation/auth_view_model.dart';
+import '../presentation/admin_screen.dart';
 import '../presentation/terminal_style.dart';
 import '../l10n/app_localizations.dart';
 import 'ui_mode.dart';
@@ -163,7 +164,8 @@ class LastTaskApp extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         ),
         AuthPhase.signedOut => const AuthScreen(),
-        AuthPhase.signedIn => const WorkspaceScreen(),
+        AuthPhase.signedIn =>
+          auth.isAdmin ? const AdminScreen() : const WorkspaceScreen(),
       },
     );
   }
