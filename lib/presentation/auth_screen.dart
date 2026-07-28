@@ -15,7 +15,11 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final TabController _tabs = TabController(
+    length: 2,
+    initialIndex: ref.read(authViewModelProvider).preferLogin ? 1 : 0,
+    vsync: this,
+  );
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _confirmation = TextEditingController();

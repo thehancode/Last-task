@@ -11,6 +11,47 @@ import 'package:flutter_app/domain/models.dart';
 import 'package:flutter_app/domain/repositories.dart';
 
 void main() {
+  test('can log in again after logging out', () async {
+    var loginCount = 0;
+    final requests = <http.Request>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.url.path == '/v1/auth/login') {
+        loginCount++;
+        return http.Response(
+          jsonEncode({
+            'access_token': 'access-token-$loginCount',
+            'refresh_token': 'refresh-token-$loginCount',
+            'user': {'display_name': 'hancode'},
+          }),
+          200,
+        );
+      }
+      if (request.method == 'DELETE' &&
+          request.url.path == '/v1/auth/session') {
+        expect(request.headers['authorization'], 'Bearer access-token-1');
+        return http.Response('', 204);
+      }
+      throw StateError('Unexpected ${request.method} ${request.url}');
+    });
+    final session = BackendAuthSession(
+      _AuthStore(),
+      client: client,
+      baseUri: Uri.parse('http://server.test:8080'),
+    );
+
+    await session.logIn('hancode', '43214321');
+    await session.logOut();
+    final user = await session.logIn('hancode', '43214321');
+
+    expect(user.username, 'hancode');
+    expect(requests.map((request) => request.url.path), [
+      '/v1/auth/login',
+      '/v1/auth/session',
+      '/v1/auth/login',
+    ]);
+  });
+
   test(
     'uses a credential session to save a versioned task-list aggregate',
     () async {

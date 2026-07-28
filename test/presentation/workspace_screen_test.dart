@@ -3,7 +3,7 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_app/app/last_task_app.dart';
@@ -11,6 +11,7 @@ import 'package:flutter_app/app/theme_catalog.dart';
 import 'package:flutter_app/data/providers.dart';
 import 'package:flutter_app/domain/models.dart';
 import 'package:flutter_app/domain/repositories.dart';
+import 'package:flutter_app/presentation/auth_view_model.dart';
 import 'package:flutter_app/presentation/terminal_style.dart';
 import 'package:flutter_app/presentation/workspace_view_model.dart';
 
@@ -35,6 +36,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     expect(find.textContaining('LAST TASK'), findsOneWidget);
+    expect(find.byKey(const Key('workspace-account-name')), findsOneWidget);
+    expect(find.text('hancode'), findsOneWidget);
     expect(find.text('Tutorial'), findsOneWidget);
     expect(find.text(tutorialTaskTitles.first), findsOneWidget);
     final dragArea = find.byKey(const Key('desktop-window-drag-area'));
@@ -1867,4 +1870,32 @@ class _DeviceState implements DeviceStateRepository {
 
   @override
   Future<void> save(DeviceWorkspaceState state) async {}
+}
+
+/// Workspace widget tests exercise the signed-in product surface. Keeping the
+/// authentication override here prevents every individual ProviderScope from
+/// having to repeat the same setup.
+class ProviderScope extends StatelessWidget {
+  const ProviderScope({
+    super.key,
+    required this.overrides,
+    required this.child,
+  });
+
+  final dynamic overrides;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => riverpod.ProviderScope(
+    overrides: [
+      authViewModelProvider.overrideWith(_SignedInAuthViewModel.new),
+      ...overrides,
+    ],
+    child: child,
+  );
+}
+
+class _SignedInAuthViewModel extends AuthViewModel {
+  @override
+  AuthState build() => const AuthState.signedIn('hancode');
 }

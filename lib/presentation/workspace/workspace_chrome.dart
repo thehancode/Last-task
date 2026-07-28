@@ -5,6 +5,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../app/ui_mode.dart';
 import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth_view_model.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 
@@ -137,6 +138,7 @@ class WorkspaceHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final terminal = usesTerminalPresentation;
     final strings = AppLocalizations.of(context)!;
+    final username = ref.watch(authViewModelProvider).username;
     return SizedBox(
       child: Row(
         children: [
@@ -145,29 +147,44 @@ class WorkspaceHeader extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Container(
-                  color: terminal
-                      ? TerminalPalette.of(context).accent
-                      : Colors.transparent,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: terminal ? 8 : 0,
-                    vertical: terminal ? 1 : 0,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${strings.workspaceTitle}'
-                    '${state.deviceState.tutorialAwardEarned ? ' ✪' : ''}',
-                    semanticsLabel: state.deviceState.tutorialAwardEarned
-                        ? '${strings.workspaceTitle}, ${strings.tutorialAwardBadge}'
-                        : strings.workspaceTitle,
-                    style: TextStyle(
+                child: Row(
+                  children: [
+                    Container(
                       color: terminal
-                          ? TerminalPalette.of(context).background
-                          : TerminalPalette.of(context).accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: terminal ? null : 20,
+                          ? TerminalPalette.of(context).accent
+                          : Colors.transparent,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: terminal ? 8 : 0,
+                        vertical: terminal ? 1 : 0,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${strings.workspaceTitle}'
+                        '${state.deviceState.tutorialAwardEarned ? ' ✪' : ''}',
+                        semanticsLabel: state.deviceState.tutorialAwardEarned
+                            ? '${strings.workspaceTitle}, ${strings.tutorialAwardBadge}'
+                            : strings.workspaceTitle,
+                        style: TextStyle(
+                          color: terminal
+                              ? TerminalPalette.of(context).background
+                              : TerminalPalette.of(context).accent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: terminal ? null : 20,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (username != null) ...[
+                      SizedBox(width: TerminalMetrics.cell(context)),
+                      Text(
+                        username,
+                        key: const Key('workspace-account-name'),
+                        style: TextStyle(
+                          color: TerminalPalette.of(context).muted,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
