@@ -122,6 +122,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get createAccount => 'Create account';
+
+  @override
+  String get logIn => 'Log in';
+
+  @override
+  String get logOut => 'Log out';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
   String get themes => 'Themes';
 
   @override

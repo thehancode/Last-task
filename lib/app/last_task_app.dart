@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models.dart';
 import '../presentation/workspace_screen.dart';
 import '../presentation/workspace_view_model.dart';
+import '../presentation/auth_screen.dart';
+import '../presentation/auth_view_model.dart';
 import '../presentation/terminal_style.dart';
 import '../l10n/app_localizations.dart';
 import 'ui_mode.dart';
@@ -14,12 +16,13 @@ class LastTaskApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(workspaceViewModelProvider);
-    final fontScale = state.settings.nativeFontSize / 16;
-    final fontFamily = state.settings.fontFamily.flutterFamily;
-    final palette = ref
-        .watch(themeCatalogProvider)
-        .byId(state.settings.themeId);
+    final auth = ref.watch(authViewModelProvider);
+    final settings = auth.isSignedIn
+        ? ref.watch(workspaceViewModelProvider).settings
+        : const AppSettings();
+    final fontScale = settings.nativeFontSize / 16;
+    final fontFamily = settings.fontFamily.flutterFamily;
+    final palette = ref.watch(themeCatalogProvider).byId(settings.themeId);
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -38,9 +41,7 @@ class LastTaskApp extends ConsumerWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      locale: _supportedLocale(
-        ref.watch(workspaceViewModelProvider).settings.languageLocale,
-      ),
+      locale: _supportedLocale(settings.languageLocale),
       debugShowCheckedModeBanner: false,
       theme: base.copyWith(
         textTheme: terminal
@@ -157,7 +158,13 @@ class LastTaskApp extends ConsumerWidget {
         ).copyWith(textScaler: TextScaler.linear(fontScale)),
         child: child!,
       ),
-      home: const WorkspaceScreen(),
+      home: switch (auth.phase) {
+        AuthPhase.loading => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        AuthPhase.signedOut => const AuthScreen(),
+        AuthPhase.signedIn => const WorkspaceScreen(),
+      },
     );
   }
 }

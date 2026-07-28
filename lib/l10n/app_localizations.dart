@@ -310,6 +310,48 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// Authentication tab and action for registering a new account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get createAccount;
+
+  /// Authentication tab and action for an existing account.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get logIn;
+
+  /// Settings action that ends the current account session.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logOut;
+
+  /// Label for the account username field.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// Label for the account password field.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// Label for the repeated password field during account creation.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmPassword;
+
+  /// Validation shown when account-creation passwords differ.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
   /// Settings tab for selecting the terminal color theme.
   ///
   /// In en, this message translates to:

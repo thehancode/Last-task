@@ -122,6 +122,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings => 'Ajustes';
 
   @override
+  String get createAccount => 'Crear cuenta';
+
+  @override
+  String get logIn => 'Iniciar sesión';
+
+  @override
+  String get logOut => 'Cerrar sesión';
+
+  @override
+  String get username => 'Usuario';
+
+  @override
+  String get password => 'Contraseña';
+
+  @override
+  String get confirmPassword => 'Confirmar contraseña';
+
+  @override
+  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
+
+  @override
   String get themes => 'Temas';
 
   @override
@@ -595,6 +616,27 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get settings => 'Ajustes';
 
   @override
+  String get createAccount => 'Crear cuenta';
+
+  @override
+  String get logIn => 'Iniciar sesión';
+
+  @override
+  String get logOut => 'Cerrar sesión';
+
+  @override
+  String get username => 'Usuario';
+
+  @override
+  String get password => 'Contraseña';
+
+  @override
+  String get confirmPassword => 'Confirmar contraseña';
+
+  @override
+  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
+
+  @override
   String get themes => 'Temas';
 
   @override
@@ -1063,6 +1105,27 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get settings => 'Ajustes';
+
+  @override
+  String get createAccount => 'Crear cuenta';
+
+  @override
+  String get logIn => 'Iniciar sesión';
+
+  @override
+  String get logOut => 'Cerrar sesión';
+
+  @override
+  String get username => 'Usuario';
+
+  @override
+  String get password => 'Contraseña';
+
+  @override
+  String get confirmPassword => 'Confirmar contraseña';
+
+  @override
+  String get passwordsDoNotMatch => 'Las contraseñas no coinciden';
 
   @override
   String get themes => 'Temas';

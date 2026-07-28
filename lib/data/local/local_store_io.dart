@@ -11,6 +11,7 @@ PlatformLocalStore createPlatformLocalStore() => _IoLocalStore();
 class _IoLocalStore implements PlatformLocalStore {
   static const _settingsRelativePath = 'config/settings.json';
   static const _deviceStateRelativePath = 'config/device-state.json';
+  static const _authSessionRelativePath = 'config/auth-session.json';
 
   Future<Directory> _root() async {
     if (Platform.isLinux) {
@@ -42,6 +43,24 @@ class _IoLocalStore implements PlatformLocalStore {
   Future<File> _deviceStateFile() async {
     final root = await _root();
     return File(path.join(root.path, _deviceStateRelativePath));
+  }
+
+  Future<File> _authSessionFile() async {
+    final root = await _root();
+    return File(path.join(root.path, _authSessionRelativePath));
+  }
+
+  @override
+  Future<void> deleteAuthSession() async {
+    final file = await _authSessionFile();
+    if (await file.exists()) await file.delete();
+  }
+
+  @override
+  Future<Map<String, Object?>?> readAuthSession() async {
+    final file = await _authSessionFile();
+    if (!await file.exists()) return null;
+    return _decode(await file.readAsString(), file.path);
   }
 
   @override
@@ -98,6 +117,11 @@ class _IoLocalStore implements PlatformLocalStore {
   @override
   Future<void> writeDeviceState(Map<String, Object?> value) async {
     await _writeAtomically(await _deviceStateFile(), value);
+  }
+
+  @override
+  Future<void> writeAuthSession(Map<String, Object?> value) async {
+    await _writeAtomically(await _authSessionFile(), value);
   }
 
   @override

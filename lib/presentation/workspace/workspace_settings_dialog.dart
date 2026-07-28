@@ -10,6 +10,7 @@ import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
+import '../auth_view_model.dart';
 import 'workspace_dialog_tabs.dart';
 import 'workspace_theme_preview.dart';
 
@@ -60,6 +61,11 @@ class _WorkspaceSettingsDialogState
     final state = ref.watch(workspaceViewModelProvider);
     final settings = state.settings;
     final vm = ref.read(workspaceViewModelProvider.notifier);
+    Future<void> logOut() async {
+      Navigator.pop(context);
+      await ref.read(authViewModelProvider.notifier).logOut();
+    }
+
     final tabs = [
       SettingsTab.config,
       if (supportsDesktopBackground) SettingsTab.background,
@@ -103,6 +109,7 @@ class _WorkspaceSettingsDialogState
                       SettingsTab.config => _ConfigSettings(
                         settings: settings,
                         onUpdate: vm.updateSettings,
+                        onLogOut: logOut,
                       ),
                       SettingsTab.background => _BackgroundSettings(
                         appearance: state.deviceState.desktopAppearance,
@@ -132,10 +139,15 @@ class _WorkspaceSettingsDialogState
 }
 
 class _ConfigSettings extends StatelessWidget {
-  const _ConfigSettings({required this.settings, required this.onUpdate});
+  const _ConfigSettings({
+    required this.settings,
+    required this.onUpdate,
+    required this.onLogOut,
+  });
 
   final AppSettings settings;
   final ValueChanged<AppSettings> onUpdate;
+  final Future<void> Function() onLogOut;
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +167,12 @@ class _ConfigSettings extends StatelessWidget {
                 longTitleDisplay: settings.longTitleDisplay.next,
               ),
             ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.logOut),
+            trailing: const Icon(Icons.logout),
+            onTap: onLogOut,
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -235,6 +253,10 @@ class _ConfigSettings extends StatelessWidget {
               ),
             ),
           ),
+        ),
+        _SettingsRow(
+          label: strings.logOut,
+          control: TextButton(onPressed: onLogOut, child: Text(strings.logOut)),
         ),
         _SettingsRow(
           label: strings.useBackend,

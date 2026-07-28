@@ -134,9 +134,16 @@ class _MemoryStore implements PlatformLocalStore {
   final Map<String, Map<String, Object?>> documents = {};
   Map<String, Object?>? settings;
   Map<String, Object?>? deviceState;
+  Map<String, Object?>? authSession;
 
   @override
   Future<void> deleteTaskList(String id) async => documents.remove(id);
+
+  @override
+  Future<void> deleteAuthSession() async => authSession = null;
+
+  @override
+  Future<Map<String, Object?>?> readAuthSession() async => authSession;
 
   @override
   Future<Map<String, Object?>?> readSettings() async => settings;
@@ -162,6 +169,11 @@ class _MemoryStore implements PlatformLocalStore {
   @override
   Future<void> writeDeviceState(Map<String, Object?> value) async {
     deviceState = Map<String, Object?>.from(value);
+  }
+
+  @override
+  Future<void> writeAuthSession(Map<String, Object?> value) async {
+    authSession = Map<String, Object?>.from(value);
   }
 
   @override

@@ -65,6 +65,29 @@ class _WebLocalStore implements PlatformLocalStore {
   }
 
   @override
+  Future<void> deleteAuthSession() async {
+    final transaction = (await _open()).transaction(
+      _settingsStore,
+      idbModeReadWrite,
+    );
+    await transaction.objectStore(_settingsStore).delete('auth_session');
+    await transaction.completed;
+  }
+
+  @override
+  Future<Map<String, Object?>?> readAuthSession() async {
+    final transaction = (await _open()).transaction(
+      _settingsStore,
+      idbModeReadOnly,
+    );
+    final value = await transaction
+        .objectStore(_settingsStore)
+        .getObject('auth_session');
+    await transaction.completed;
+    return value == null ? null : Map<String, Object?>.from(value as Map);
+  }
+
+  @override
   Future<List<StoredDocument>> readTaskLists() async {
     final transaction = (await _open()).transaction(
       _listsStore,
@@ -105,6 +128,16 @@ class _WebLocalStore implements PlatformLocalStore {
       idbModeReadWrite,
     );
     await transaction.objectStore(_settingsStore).put(value, 'device_state');
+    await transaction.completed;
+  }
+
+  @override
+  Future<void> writeAuthSession(Map<String, Object?> value) async {
+    final transaction = (await _open()).transaction(
+      _settingsStore,
+      idbModeReadWrite,
+    );
+    await transaction.objectStore(_settingsStore).put(value, 'auth_session');
     await transaction.completed;
   }
 

@@ -16,4 +16,7 @@ abstract interface class PlatformLocalStore {
   Future<void> writeSettings(Map<String, Object?> value);
   Future<Map<String, Object?>?> readDeviceState();
   Future<void> writeDeviceState(Map<String, Object?> value);
+  Future<Map<String, Object?>?> readAuthSession();
+  Future<void> writeAuthSession(Map<String, Object?> value);
+  Future<void> deleteAuthSession();
 }
