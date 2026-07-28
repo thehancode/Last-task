@@ -4,6 +4,7 @@
 # Optional overrides:
 #   LAST_TASK_INSTALL_DIR=/somewhere scripts/install-linux.sh
 #   LAST_TASK_BIN_DIR=/somewhere/bin scripts/install-linux.sh
+#   scripts/install-linux.sh --production
 
 set -euo pipefail
 
@@ -20,6 +21,24 @@ desktop_dir="$data_dir/applications"
 icon_dir="$data_dir/icons/hicolor/scalable/apps"
 desktop_file="$desktop_dir/last-task.desktop"
 autostart_file="$HOME/.config/autostart/last-task.desktop"
+build_environment="$repo_root/env/development.json"
+
+case "${1:-}" in
+  '')
+    ;;
+  --production|-p)
+    build_environment="$repo_root/env/production.json"
+    ;;
+  --help|-h)
+    echo "Usage: scripts/install-linux.sh [--production]"
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1" >&2
+    echo "Usage: scripts/install-linux.sh [--production]" >&2
+    exit 2
+    ;;
+esac
 
 case "$install_dir" in
   /|"$HOME"|"$HOME/.local"|"$HOME/.local/opt")
@@ -35,7 +54,12 @@ if [[ ! -f "$logo_source" ]]; then
   exit 1
 fi
 
-flutter build linux --release
+if [[ ! -f "$build_environment" ]]; then
+  echo "Build environment file is missing: $build_environment" >&2
+  exit 1
+fi
+
+flutter build linux --release --dart-define-from-file="$build_environment"
 
 if [[ ! -x "$bundle_dir/$binary_name" ]]; then
   echo "Release bundle is missing $binary_name: $bundle_dir" >&2

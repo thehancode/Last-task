@@ -13,6 +13,20 @@ flutter run -d chrome
 flutter run -d android
 ```
 
+## Backend build environments
+
+`env/development.json` targets the local backend (`localhost:8080`; Android
+emulators use `10.0.2.2:8080`). `env/production.json` targets
+`https://lasttask-api.hancode.ai` on every supported platform.
+
+Use the matching file whenever building or running with the backend:
+
+```sh
+flutter run -d linux --dart-define-from-file=env/development.json
+flutter build web --dart-define-from-file=env/production.json
+scripts/install-linux.sh --production
+```
+
 ## Local data
 
 Linux deliberately uses the existing Rust location:

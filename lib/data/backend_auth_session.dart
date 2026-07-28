@@ -4,13 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'backend_http_client_factory.dart';
+import 'backend_configuration.dart';
 import 'local/local_store.dart';
 
-Uri localBackendUri() => Uri.parse(
-  !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-      ? 'http://10.0.2.2:8080'
-      : 'http://localhost:8080',
-);
+Uri localBackendUri() => BackendConfiguration.baseUri;
 
 class BackendRequestException implements Exception {
   const BackendRequestException(this.statusCode, this.body);
