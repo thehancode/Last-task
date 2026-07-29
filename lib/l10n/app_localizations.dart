@@ -754,12 +754,6 @@ abstract class AppLocalizations {
   /// **'Show entrance tips'**
   String get showTips;
 
-  /// Settings toggle that switches task persistence to the local development backend.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Backend'**
-  String get useBackend;
-
   /// Settings action that downloads all task lists as a JSON export.
   ///
   /// In en, this message translates to:
@@ -1041,6 +1035,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tutorial completed'**
   String get tutorialAwardBadge;
+
+  /// Title shown after login when a separate guest workspace exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Import local tasks?'**
+  String get guestImportTitle;
+
+  /// Explains the one-time guest workspace import choice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has guest task lists. Import a copy into this account or keep them separate.'**
+  String get guestImportMessage;
+
+  /// Button that copies guest task lists into the signed-in account.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importTasks;
+
+  /// Button that leaves guest task lists outside the signed-in account.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep separate'**
+  String get keepSeparate;
 
   /// Native name of this locale, shown in the language selector.
   ///

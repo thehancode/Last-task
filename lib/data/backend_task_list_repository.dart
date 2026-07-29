@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -112,49 +113,73 @@ class BackendTaskListRepository implements TaskListRepository {
       Map<String, Object?>.from(jsonDecode(value) as Map);
 }
 
-class SwitchingTaskListRepository
-    implements TaskListRepository, PersistenceModeRepository {
-  SwitchingTaskListRepository(this._local, this._backend, this._settings);
+/// Persists task lists locally before mirroring each change to the backend.
+///
+/// Backend operations are serialized so versioned writes retain their order.
+/// They deliberately do not delay or fail the local operation.
+class LocalFirstTaskListRepository
+    implements TaskListRepository, BackgroundSyncRepository {
+  LocalFirstTaskListRepository(this._local, this._backend);
 
   final TaskListRepository _local;
   final TaskListRepository _backend;
-  final SettingsRepository _settings;
-
-  Future<TaskListRepository> get _active async =>
-      (await _settings.load()).useBackend ? _backend : _local;
-
-  @override
-  Future<void> commit(TaskListChangeSet changes) async =>
-      (await _active).commit(changes);
+  Future<void> _backendQueue = Future<void>.value();
+  final StreamController<Object> _syncErrors =
+      StreamController<Object>.broadcast(sync: true);
+  bool _backendInitialized = false;
 
   @override
-  Future<void> delete(String listId) async => (await _active).delete(listId);
+  Stream<Object> get syncErrors => _syncErrors.stream;
 
   @override
-  Future<TaskListLoadResult> loadAll() async => (await _active).loadAll();
+  Stream<void> get remoteChanges => const Stream<void>.empty();
 
   @override
-  Future<void> save(TaskList list) async => (await _active).save(list);
+  Future<void> synchronize({bool force = false}) => flushBackendWrites();
 
   @override
-  Future<void> enableBackend(List<TaskList> lists) async {
-    final remote = await _backend.loadAll();
-    if (remote.lists.isNotEmpty) {
-      throw StateError(
-        'The backend already contains task lists. Clear it or use a merge flow before switching.',
-      );
-    }
-    await _backend.commit(TaskListChangeSet(upserts: lists));
+  Future<void> commit(TaskListChangeSet changes) async {
+    await _local.commit(changes);
+    _scheduleBackendWrite(() => _backend.commit(changes));
   }
 
   @override
-  Future<void> disableBackend(List<TaskList> lists) async {
-    final local = await _local.loadAll();
-    await _local.commit(
-      TaskListChangeSet(
-        upserts: lists,
-        deletes: [for (final list in local.lists) list.id],
-      ),
-    );
+  Future<void> delete(String listId) async {
+    await _local.delete(listId);
+    _scheduleBackendWrite(() => _backend.delete(listId));
   }
+
+  @override
+  Future<TaskListLoadResult> loadAll() => _local.loadAll();
+
+  @override
+  Future<void> save(TaskList list) async {
+    await _local.save(list);
+    _scheduleBackendWrite(() => _backend.save(list));
+  }
+
+  void _scheduleBackendWrite(Future<void> Function() write) {
+    _backendQueue = _backendQueue
+        .then((_) async {
+          if (!_backendInitialized) {
+            await _backend.loadAll();
+            _backendInitialized = true;
+          }
+          await write();
+        })
+        // A backend outage must not surface as an unhandled asynchronous error
+        // or prevent later writes from being attempted.
+        .catchError((Object error, StackTrace _) {
+          if (!_syncErrors.isClosed) _syncErrors.add(error);
+        });
+    unawaited(_backendQueue);
+  }
+
+  /// Waits until already-scheduled backend work settles.
+  ///
+  /// Production writes do not await this; it exists for lifecycle coordination
+  /// and deterministic tests.
+  Future<void> flushBackendWrites() => _backendQueue;
+
+  Future<void> dispose() => _syncErrors.close();
 }

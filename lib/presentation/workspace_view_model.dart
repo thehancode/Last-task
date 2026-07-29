@@ -47,6 +47,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   Timer? _highlightTimer;
   Timer? _tipTimer;
   Timer? _rewardTimer;
+  StreamSubscription<Object>? _syncErrorSubscription;
+  StreamSubscription<void>? _remoteChangeSubscription;
+  Object? _pendingSyncError;
   final List<_HistoryEntry> _history = [];
 
   TaskListRepository get _lists => ref.read(taskListRepositoryProvider);
@@ -56,6 +59,14 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   @override
   WorkspaceState build() {
+    final repository = _lists;
+    if (repository is BackgroundSyncRepository) {
+      final background = repository as BackgroundSyncRepository;
+      _syncErrorSubscription = background.syncErrors.listen(_handleSyncError);
+      _remoteChangeSubscription = background.remoteChanges.listen(
+        (_) => unawaited(_reloadRemoteChanges()),
+      );
+    }
     ref.onDispose(() {
       _noticeTimer?.cancel();
       _animationTimer?.cancel();
@@ -63,9 +74,39 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       _highlightTimer?.cancel();
       _tipTimer?.cancel();
       _rewardTimer?.cancel();
+      unawaited(_syncErrorSubscription?.cancel());
+      unawaited(_remoteChangeSubscription?.cancel());
     });
     Future<void>.microtask(initialize);
     return const WorkspaceState.loading();
+  }
+
+  Future<void> _reloadRemoteChanges() async {
+    if (state.phase != WorkspacePhase.ready) return;
+    try {
+      final loaded = await _lists.loadAll();
+      if (loaded.lists.isEmpty) return;
+      final listIds = loaded.lists.map((list) => list.id).toSet();
+      final taskIds = {
+        for (final list in loaded.lists)
+          for (final task in list.tasks) task.id,
+      };
+      final currentListId = listIds.contains(state.currentListId)
+          ? state.currentListId
+          : loaded.lists.first.id;
+      state = state.copyWith(
+        lists: loaded.lists,
+        currentListId: currentListId,
+        clearSelection:
+            state.selectedTaskId != null &&
+            !taskIds.contains(state.selectedTaskId),
+        multiSelectedTaskIds: state.multiSelectedTaskIds
+            .where(taskIds.contains)
+            .toSet(),
+      );
+    } on Object catch (error) {
+      _handleSyncError(error);
+    }
   }
 
   Future<void> initialize() async {
@@ -141,6 +182,11 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       state = restoredSelection
           ? initial.copyWith(selectedTaskId: device.selectedTaskId)
           : _withFirstVisibleSelected(initial);
+      final pendingSyncError = _pendingSyncError;
+      if (pendingSyncError != null) {
+        _pendingSyncError = null;
+        _handleSyncError(pendingSyncError);
+      }
       if (showTutorialAward) _showTutorialAward();
       _showEntranceTipIfNeeded();
       if (loaded.warnings.isNotEmpty) _expireNotice(const Duration(seconds: 8));
@@ -153,6 +199,15 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         error: 'Could not load Last Task: $error',
       );
     }
+  }
+
+  void _handleSyncError(Object error) {
+    if (state.phase != WorkspacePhase.ready) {
+      _pendingSyncError = error;
+      return;
+    }
+    _showNotice(NoticeState('Backend sync failed: $error', error: true));
+    _expireNotice(const Duration(seconds: 8));
   }
 
   Future<List<TaskList>> _resetExpiredDailyTasks(List<TaskList> lists) async {
@@ -1081,15 +1136,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   Future<void> updateSettings(AppSettings next) async {
     try {
-      if (next.useBackend != state.settings.useBackend &&
-          _lists is PersistenceModeRepository) {
-        final repository = _lists as PersistenceModeRepository;
-        if (next.useBackend) {
-          await repository.enableBackend(state.lists);
-        } else {
-          await repository.disableBackend(state.lists);
-        }
-      }
       await _settings.save(next);
       state = state.copyWith(
         settings: next,

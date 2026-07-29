@@ -218,8 +218,6 @@
   "@languageValue": {"description": "Terminal settings control showing the selected display language.", "placeholders": {"language": {}}},
   "showTips": "Show entrance tips",
   "@showTips": {"description": "Setting that enables brief startup tips."},
-  "useBackend": "Use Backend",
-  "@useBackend": {"description": "Settings toggle that switches task persistence to the local development backend."},
   "exportData": "Export data",
   "@exportData": {"description": "Settings action that downloads all task lists as a JSON export."},
   "importData": "Load data",
@@ -314,6 +312,14 @@
   "@great": {"description": "Button that dismisses the tutorial completion award."},
   "tutorialAwardBadge": "Tutorial completed",
   "@tutorialAwardBadge": {"description": "Accessible label for the star shown beside the product title after tutorial completion."},
+  "guestImportTitle": "Import local tasks?",
+  "@guestImportTitle": {"description": "Title shown after login when a separate guest workspace exists."},
+  "guestImportMessage": "This device has guest task lists. Import a copy into this account or keep them separate.",
+  "@guestImportMessage": {"description": "Explains the one-time guest workspace import choice."},
+  "importTasks": "Import",
+  "@importTasks": {"description": "Button that copies guest task lists into the signed-in account."},
+  "keepSeparate": "Keep separate",
+  "@keepSeparate": {"description": "Button that leaves guest task lists outside the signed-in account."},
   "languageName": "English",
   "@languageName": {"description": "Native name of this locale, shown in the language selector."}
 }

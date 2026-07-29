@@ -108,7 +108,6 @@
   "language": "Idioma",
   "languageValue": "Idioma: {language}",
   "showTips": "Mostrar consejos al inicio",
-  "useBackend": "Usar servidor",
   "exportData": "Exportar datos",
   "importData": "Cargar datos",
   "rewardDuration": "Duración de recompensa",
@@ -156,5 +155,10 @@
   "tutorialUnlockAward": "Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas",
   "tutorialAwardBadge": "Tutorial completado",
   "great": "Genial",
+  "guestImportTitle": "¿Importar tareas locales?",
+  "guestImportMessage": "Este dispositivo tiene listas de invitado. Importa una copia a esta cuenta o mantenlas separadas.",
+  "importTasks": "Importar",
+  "keepSeparate": "Separar",
+  "archived": "Archivadas",
   "languageName": "Español"
 }

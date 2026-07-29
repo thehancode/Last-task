@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -124,21 +125,41 @@ void main() {
     },
   );
 
-  test('switching to a non-empty backend does not overwrite it', () async {
+  test('writes locally before syncing to the backend in background', () async {
+    final backendSave = Completer<void>();
     final local = _Lists();
-    final backend = _Lists(
-      TaskListLoadResult(lists: [_list()], warnings: const []),
-    );
-    final repository = SwitchingTaskListRepository(
-      local,
-      backend,
-      _Settings(const AppSettings()),
-    );
+    final backend = _Lists(saveGate: backendSave);
+    final repository = LocalFirstTaskListRepository(local, backend);
 
-    await expectLater(
-      repository.enableBackend([_list()]),
-      throwsA(isA<StateError>()),
-    );
+    await repository.save(_list());
+
+    expect(local.events, ['save:list']);
+    expect(backend.events, isEmpty);
+
+    await Future<void>.delayed(Duration.zero);
+    expect(backend.events, ['load', 'save:list']);
+
+    backendSave.complete();
+    await repository.flushBackendWrites();
+  });
+
+  test('serializes background writes after loading backend versions', () async {
+    final firstSave = Completer<void>();
+    final local = _Lists();
+    final backend = _Lists(saveGate: firstSave);
+    final repository = LocalFirstTaskListRepository(local, backend);
+
+    await repository.save(_list());
+    await repository.save(_list().copyWith(name: 'Updated'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(local.events, ['save:list', 'save:list']);
+    expect(backend.events, ['load', 'save:list']);
+
+    firstSave.complete();
+    await repository.flushBackendWrites();
+
+    expect(backend.events, ['load', 'save:list', 'save:list']);
   });
 }
 
@@ -151,33 +172,33 @@ TaskList _list() => TaskList(
 );
 
 class _Lists implements TaskListRepository {
-  _Lists([this.result = const TaskListLoadResult(lists: [], warnings: [])]);
+  _Lists({this.saveGate});
 
-  final TaskListLoadResult result;
-
-  @override
-  Future<void> commit(TaskListChangeSet changes) async {}
-
-  @override
-  Future<void> delete(String listId) async {}
+  final Completer<void>? saveGate;
+  final List<String> events = [];
+  var _saveCount = 0;
 
   @override
-  Future<TaskListLoadResult> loadAll() async => result;
+  Future<void> commit(TaskListChangeSet changes) async {
+    events.add('commit');
+  }
 
   @override
-  Future<void> save(TaskList list) async {}
-}
-
-class _Settings implements SettingsRepository {
-  const _Settings(this.value);
-
-  final AppSettings value;
+  Future<void> delete(String listId) async {
+    events.add('delete:$listId');
+  }
 
   @override
-  Future<AppSettings> load() async => value;
+  Future<TaskListLoadResult> loadAll() async {
+    events.add('load');
+    return const TaskListLoadResult(lists: [], warnings: []);
+  }
 
   @override
-  Future<void> save(AppSettings settings) async {}
+  Future<void> save(TaskList list) async {
+    events.add('save:${list.id}');
+    if (_saveCount++ == 0 && saveGate != null) await saveGate!.future;
+  }
 }
 
 class _AuthStore implements PlatformLocalStore {

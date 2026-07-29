@@ -364,9 +364,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showTips => 'Show entrance tips';
 
   @override
-  String get useBackend => 'Use Backend';
-
-  @override
   String get exportData => 'Export data';
 
   @override
@@ -517,6 +514,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialAwardBadge => 'Tutorial completed';
+
+  @override
+  String get guestImportTitle => 'Import local tasks?';
+
+  @override
+  String get guestImportMessage =>
+      'This device has guest task lists. Import a copy into this account or keep them separate.';
+
+  @override
+  String get importTasks => 'Import';
+
+  @override
+  String get keepSeparate => 'Keep separate';
 
   @override
   String get languageName => 'English';

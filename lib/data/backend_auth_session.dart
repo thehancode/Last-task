@@ -68,6 +68,12 @@ class BackendAuthSession {
   AuthenticatedUser? _user;
 
   AuthenticatedUser? get user => _user;
+  Uri get baseUri => _baseUri;
+
+  Future<String> accessToken({bool refresh = false}) async {
+    if (refresh || _accessToken == null) await _refresh();
+    return _accessToken!;
+  }
 
   Future<AuthenticatedUser?> restore() async {
     final stored = await _store.readAuthSession();
@@ -151,6 +157,9 @@ class BackendAuthSession {
     _refreshToken = null;
     _user = null;
     await _store.deleteAuthSession();
+    if (_store case final PlatformScopedStore scoped) {
+      scoped.setAccountScope(null);
+    }
   }
 
   Future<AuthenticatedUser> _credentials(
@@ -212,6 +221,9 @@ class BackendAuthSession {
       isAdmin: await _isAdmin(),
       id: user['id'] as String?,
     );
+    if (_store case final PlatformScopedStore scoped) {
+      scoped.setAccountScope(_user!.id);
+    }
     if (!kIsWeb && _refreshToken != null) {
       await _store.writeAuthSession({'refresh_token': _refreshToken});
     }

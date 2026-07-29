@@ -1612,8 +1612,8 @@ void main() {
 
     expect(find.text('Long-title mode'), findsOneWidget);
     expect(find.text('Marquee speed'), findsOneWidget);
-    expect(find.byType(Switch), findsNWidgets(2));
-    expect(find.text('Use Backend'), findsOneWidget);
+    expect(find.byType(Switch), findsOneWidget);
+    expect(find.text('Use Backend'), findsNothing);
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsNothing);
     expect(find.text('Tag names'), findsNothing);

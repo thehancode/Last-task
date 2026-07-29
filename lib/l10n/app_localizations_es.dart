@@ -192,7 +192,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get done => 'Hecha';
 
   @override
-  String get archived => 'Archived';
+  String get archived => 'Archivadas';
 
   @override
   String get noDoingTasks => 'No hay tareas en curso';
@@ -365,9 +365,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
-  String get useBackend => 'Usar servidor';
-
-  @override
   String get exportData => 'Exportar datos';
 
   @override
@@ -519,6 +516,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tutorialAwardBadge => 'Tutorial completado';
+
+  @override
+  String get guestImportTitle => '¿Importar tareas locales?';
+
+  @override
+  String get guestImportMessage =>
+      'Este dispositivo tiene listas de invitado. Importa una copia a esta cuenta o mantenlas separadas.';
+
+  @override
+  String get importTasks => 'Importar';
+
+  @override
+  String get keepSeparate => 'Separar';
 
   @override
   String get languageName => 'Español';
@@ -712,6 +722,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get done => 'Completada';
 
   @override
+  String get archived => 'Archivadas';
+
+  @override
   String get noDoingTasks => 'No hay tareas en curso';
 
   @override
@@ -882,7 +895,10 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
-  String get useBackend => 'Usar servidor';
+  String get exportData => 'Exportar datos';
+
+  @override
+  String get importData => 'Importar datos';
 
   @override
   String get rewardDuration => 'Duración de recompensa';
@@ -1030,6 +1046,19 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get tutorialAwardBadge => 'Tutorial completado';
+
+  @override
+  String get guestImportTitle => '¿Importar tareas locales?';
+
+  @override
+  String get guestImportMessage =>
+      'Este dispositivo tiene listas de invitado. Importa una copia a esta cuenta o mantenlas separadas.';
+
+  @override
+  String get importTasks => 'Importar';
+
+  @override
+  String get keepSeparate => 'Separar';
 
   @override
   String get languageName => 'Español Latino';
@@ -1223,6 +1252,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get done => 'Hecha';
 
   @override
+  String get archived => 'Archivadas';
+
+  @override
   String get noDoingTasks => 'No hay tareas en curso';
 
   @override
@@ -1393,7 +1425,10 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
-  String get useBackend => 'Usar servidor';
+  String get exportData => 'Exportar datos';
+
+  @override
+  String get importData => 'Importar datos';
 
   @override
   String get rewardDuration => 'Duración de recompensa';
@@ -1541,6 +1576,19 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get tutorialAwardBadge => 'Tutorial completado';
+
+  @override
+  String get guestImportTitle => '¿Importar tareas locales?';
+
+  @override
+  String get guestImportMessage =>
+      'Este dispositivo tiene listas de invitado. Importa una copia a esta cuenta o mantenlas separadas.';
+
+  @override
+  String get importTasks => 'Importar';
+
+  @override
+  String get keepSeparate => 'Separar';
 
   @override
   String get languageName => 'Español (España)';

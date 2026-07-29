@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../app/ui_mode.dart';
 import '../app/desktop_background.dart';
+import '../data/providers.dart';
 import '../domain/models.dart';
+import '../domain/repositories.dart';
 import '../l10n/app_localizations.dart';
 import 'terminal_style.dart';
 import 'workspace_view_model.dart';
@@ -34,6 +37,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   final _focusNode = FocusNode(debugLabel: 'workspace');
   Timer? _grabTimer;
   Timer? _dailyRefreshTimer;
+  Timer? _syncTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _grabbed = false;
 
   @override
@@ -45,6 +50,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         ref.read(workspaceViewModelProvider.notifier).refreshDailyTasks(),
       );
     });
+    _setSyncInterval(const Duration(seconds: 15));
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      if (results.any((result) => result != ConnectivityResult.none)) {
+        _synchronize(force: true);
+      }
+    });
+    _synchronize(force: true);
   }
 
   @override
@@ -53,6 +67,26 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       unawaited(
         ref.read(workspaceViewModelProvider.notifier).refreshDailyTasks(),
       );
+      _setSyncInterval(const Duration(seconds: 15));
+      _synchronize(force: true);
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
+      _setSyncInterval(const Duration(seconds: 90));
+    }
+  }
+
+  void _setSyncInterval(Duration interval) {
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(interval, (_) => _synchronize());
+  }
+
+  void _synchronize({bool force = false}) {
+    final repository = ref.read(taskListRepositoryProvider);
+    if (repository is BackgroundSyncRepository) {
+      unawaited(
+        (repository as BackgroundSyncRepository).synchronize(force: force),
+      );
     }
   }
 
@@ -60,6 +94,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   void dispose() {
     _grabTimer?.cancel();
     _dailyRefreshTimer?.cancel();
+    _syncTimer?.cancel();
+    unawaited(_connectivitySubscription?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     _focusNode.dispose();
     super.dispose();
