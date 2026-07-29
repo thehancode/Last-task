@@ -31,6 +31,7 @@ class WorkspaceThemePreview extends StatelessWidget {
             style: TextStyle(
               color: theme.muted,
               decoration: TextDecoration.lineThrough,
+              decorationColor: theme.muted,
             ),
           ),
           Container(

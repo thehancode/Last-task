@@ -68,6 +68,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
             ? FontWeight.bold
             : FontWeight.normal,
         decoration: done || archived ? TextDecoration.lineThrough : null,
+        decorationColor: TerminalPalette.of(context).muted,
       ),
     );
     final row = Semantics(
