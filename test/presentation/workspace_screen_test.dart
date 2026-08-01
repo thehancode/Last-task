@@ -14,6 +14,7 @@ import 'package:flutter_app/domain/repositories.dart';
 import 'package:flutter_app/presentation/auth_view_model.dart';
 import 'package:flutter_app/presentation/terminal_style.dart';
 import 'package:flutter_app/presentation/workspace_view_model.dart';
+import 'package:flutter_app/presentation/workspace/workspace_footer.dart';
 
 void main() {
   testWidgets('workspace loads its default list and exposes pointer commands', (
@@ -881,20 +882,19 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android swipes cycle first and second tags without dismissal', (
+  testWidgets('Android uses composer and taps do not visually select tasks', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.binding.setSurfaceSize(const Size(900, 700));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _Lists([_listWithTask()]);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
-          taskListRepositoryProvider.overrideWithValue(
-            _Lists([_listWithTask()]),
-          ),
+          taskListRepositoryProvider.overrideWithValue(repository),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
         child: const LastTaskApp(),
@@ -903,15 +903,265 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
-    await tester.drag(task, const Offset(-100, 0));
-    await tester.pumpAndSettle();
-    expect(task, findsOneWidget);
-    expect(find.text('●'), findsOneWidget);
+    expect(find.byKey(const ValueKey('android-task-composer')), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byType(WorkspaceFooter), findsNothing);
+    await tester.tap(task);
+    await tester.pump();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label?.contains('Swipe me') == true &&
+            widget.properties.selected == true,
+      ),
+      findsNothing,
+    );
 
-    await tester.drag(task, const Offset(100, 0));
+    final field = find.byKey(const ValueKey('android-composer-field'));
+    await tester.enterText(field, 'Created inline');
+    await tester.tap(find.byKey(const ValueKey('android-composer-send')));
     await tester.pumpAndSettle();
-    expect(task, findsOneWidget);
-    expect(find.text('▲'), findsOneWidget);
+    expect(repository._lists.single.tasks.first.title, 'Created inline');
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets(
+    'Android left swipe arms subtask composer without changing tags',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(900, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repository = _Lists([_listWithTask()]);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(repository),
+            settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
+      await tester.drag(task, const Offset(100, 0));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('android-composer-reply')),
+        findsNothing,
+      );
+      expect(repository._lists.single.tasks.single.tags, isEmpty);
+
+      await tester.drag(task, const Offset(-100, 0));
+      await tester.pumpAndSettle();
+      expect(task, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('android-composer-reply')),
+        findsOneWidget,
+      );
+      expect(repository._lists.single.tasks.single.tags, isEmpty);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('android-composer-field')),
+        'Child task',
+      );
+      await tester.tap(find.byKey(const ValueKey('android-composer-send')));
+      await tester.pumpAndSettle();
+      expect(repository._lists.single.tasks, hasLength(2));
+      expect(repository._lists.single.tasks.last.parentId, 'task-1');
+      expect(repository._lists.single.tasks.last.title, 'Child task');
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
+
+  testWidgets('Android long press shows icon menu and contextual highlight', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _Lists([_listWithTask()]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
+    await tester.longPress(task);
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('android-task-context-menu')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('android-context-edit')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('android-context-duplicate')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('android-context-delete')),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label?.contains('Swipe me') == true &&
+            widget.properties.selected == true,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('android-context-edit')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-task-context-menu')),
+      findsNothing,
+    );
+    expect(find.text('Edit task'), findsOneWidget);
+    final field = find.byKey(const ValueKey('android-composer-field'));
+    expect(tester.widget<TextField>(field).controller!.text, 'Swipe me');
+    await tester.enterText(field, 'Edited inline');
+    await tester.tap(find.byKey(const ValueKey('android-composer-send')));
+    await tester.pumpAndSettle();
+    expect(repository._lists.single.tasks.single.title, 'Edited inline');
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android background swipe latches before changing lists', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+    Task task(String id, String title) => Task(
+      id: id,
+      title: title,
+      status: TaskStatus.pending,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null,
+      daily: false,
+      completionHistory: const [],
+    );
+    final lists = [
+      TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'first-list',
+        name: 'First',
+        createdAt: now,
+        tasks: [task('first-task', 'First task')],
+      ),
+      TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'second-list',
+        name: 'Second',
+        createdAt: now.add(const Duration(days: 1)),
+        tasks: [task('second-task', 'Second task')],
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists(lists)),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    final start = tester.getRect(panel).bottomRight - const Offset(20, 20);
+    await tester.dragFrom(start, const Offset(-45, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('First task'), findsOneWidget);
+    expect(find.text('Second task'), findsNothing);
+
+    await tester.dragFrom(start, const Offset(-140, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('First task'), findsNothing);
+    expect(find.text('Second task'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android puts collapse and advance controls before task text', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+    Task task(String id, String title, {String? parentId}) => Task(
+      id: id,
+      title: title,
+      status: TaskStatus.pending,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null,
+      daily: false,
+      completionHistory: const [],
+      parentId: parentId,
+    );
+    final list = TaskList(
+      schemaVersion: currentSchemaVersion,
+      id: 'tree-list',
+      name: 'Tree',
+      createdAt: now,
+      tasks: [
+        task('root', 'Root task'),
+        task('child', 'Child task', parentId: 'root'),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists([list])),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final collapse = find.byKey(const ValueKey('task-collapse-root'));
+    final advance = find.byKey(const ValueKey('task-advance-root'));
+    expect(collapse, findsOneWidget);
+    expect(advance, findsOneWidget);
+    expect(
+      tester.getCenter(collapse).dx,
+      lessThan(tester.getCenter(advance).dx),
+    );
+    expect(
+      tester.getCenter(advance).dx,
+      lessThan(tester.getTopLeft(find.text('Root task')).dx),
+    );
+
+    await tester.tap(collapse);
+    await tester.pumpAndSettle();
+    expect(find.text('Child task'), findsNothing);
+    expect(
+      find.descendant(of: collapse, matching: find.byIcon(Icons.arrow_right)),
+      findsOneWidget,
+    );
     debugDefaultTargetPlatformOverride = null;
   });
 

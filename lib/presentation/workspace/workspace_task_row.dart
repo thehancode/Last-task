@@ -11,7 +11,6 @@ import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 import '../workspace_projection.dart';
-import 'workspace_dialogs.dart';
 import 'workspace_presenters.dart';
 import 'workspace_task_visibility.dart';
 
@@ -22,26 +21,59 @@ Color _tagColor(BuildContext context, TaskTag tag) => switch (tag) {
   TaskTag.diamond => TerminalPalette.of(context).pending,
 };
 
+class WorkspaceTaskInteractions extends InheritedWidget {
+  const WorkspaceTaskInteractions({
+    super.key,
+    required this.contextualTaskId,
+    required this.onSubtaskSwipe,
+    required this.onLongPress,
+    required super.child,
+  });
+
+  final String? contextualTaskId;
+  final ValueChanged<Task> onSubtaskSwipe;
+  final void Function(Task task, Offset globalPosition) onLongPress;
+
+  static WorkspaceTaskInteractions? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<WorkspaceTaskInteractions>();
+
+  @override
+  bool updateShouldNotify(WorkspaceTaskInteractions oldWidget) =>
+      contextualTaskId != oldWidget.contextualTaskId ||
+      onSubtaskSwipe != oldWidget.onSubtaskSwipe ||
+      onLongPress != oldWidget.onLongPress;
+}
+
 class WorkspaceTaskRow extends ConsumerWidget {
   const WorkspaceTaskRow({
     super.key,
     required this.task,
     required this.state,
     this.completedAt,
+    this.contextual = false,
+    this.onSubtaskSwipe,
+    this.onLongPress,
   });
   final Task task;
   final WorkspaceState state;
   final DateTime? completedAt;
+  final bool contextual;
+  final ValueChanged<Task>? onSubtaskSwipe;
+  final void Function(Task task, Offset globalPosition)? onLongPress;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final terminal = usesTerminalPresentation;
+    final interactions = WorkspaceTaskInteractions.maybeOf(context);
     final list = state.lists.firstWhere(
       (candidate) => candidate.tasks.any((item) => item.id == task.id),
     );
     final depth = taskDepth(list, task);
     final hasChildren = taskHasChildren(list, task);
     final selected = task.id == state.selectedTaskId;
+    final visuallySelected = terminal
+        ? selected
+        : contextual || interactions?.contextualTaskId == task.id;
     final multiSelected = state.multiSelectedTaskIds.contains(task.id);
     final visibleTaskIds = selected ? state.visibleTaskIds : const <String>[];
     final done = task.status == TaskStatus.done;
@@ -51,7 +83,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
     final search = state.search;
     final title = _TaskTitle(
       value: task.title,
-      selected: selected,
+      selected: visuallySelected,
       display: state.search == null
           ? state.settings.longTitleDisplay
           : LongTitleDisplay.wrapAll,
@@ -59,12 +91,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
       searchQuery: search?.query,
       currentSearchMatch: search?.currentTaskId == task.id,
       style: TextStyle(
-        color: selected || multiSelected || highlighted
+        color: visuallySelected || multiSelected || highlighted
             ? TerminalPalette.of(context).background
             : done || archived
             ? TerminalPalette.of(context).muted
             : TerminalPalette.of(context).text,
-        fontWeight: selected || multiSelected || highlighted
+        fontWeight: visuallySelected || multiSelected || highlighted
             ? FontWeight.bold
             : FontWeight.normal,
         decoration: done || archived ? TextDecoration.lineThrough : null,
@@ -72,7 +104,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
       ),
     );
     final row = Semantics(
-      selected: selected || multiSelected,
+      selected: visuallySelected || multiSelected,
       button: true,
       label: AppLocalizations.of(context)!.taskSemantics(
         workspaceStatusLabel(task.status, AppLocalizations.of(context)!),
@@ -85,13 +117,16 @@ class WorkspaceTaskRow extends ConsumerWidget {
       ),
       child: Listener(
         onPointerDown: (_) {
-          if (!state.hasMultiSelection) {
+          if (terminal && !state.hasMultiSelection) {
             ref.read(workspaceViewModelProvider.notifier).selectTask(task.id);
           }
         },
         child: InkWell(
-          onTap: () =>
-              ref.read(workspaceViewModelProvider.notifier).selectTask(task.id),
+          onTap: terminal
+              ? () => ref
+                    .read(workspaceViewModelProvider.notifier)
+                    .selectTask(task.id)
+              : null,
           onDoubleTap: () async {
             final vm = ref.read(workspaceViewModelProvider.notifier);
             final list = state.currentList;
@@ -113,7 +148,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
               vm.highlightTasks([task.id]);
               vm.showNotice(message, usesDoingColor: true);
             }
-            vm.selectTask(task.id);
+            if (terminal) vm.selectTask(task.id);
           },
           borderRadius: terminal ? BorderRadius.zero : BorderRadius.circular(5),
           child: AnimatedContainer(
@@ -129,7 +164,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
             decoration: BoxDecoration(
               color: highlighted
                   ? TerminalPalette.of(context).doing
-                  : selected
+                  : visuallySelected
                   ? TerminalPalette.of(context).accent
                   : multiSelected
                   ? TerminalPalette.of(context).doing
@@ -145,23 +180,68 @@ class WorkspaceTaskRow extends ConsumerWidget {
             // measured height, including the tag columns.
             child: Row(
               children: [
-                Text(
-                  '${terminal ? '  ' * depth : ''}${hasChildren ? (task.collapsed ? '▸ ' : '▾ ') : (selected ? '› ' : '- ')}',
-                  style: TextStyle(
-                    color: selected
-                        ? TerminalPalette.of(context).background
-                        : TerminalPalette.of(context).muted,
-                    fontWeight: FontWeight.bold,
+                if (terminal)
+                  Text(
+                    '${'  ' * depth}${hasChildren ? (task.collapsed ? '▸ ' : '▾ ') : (selected ? '› ' : '- ')}',
+                    style: TextStyle(
+                      color: selected
+                          ? TerminalPalette.of(context).background
+                          : TerminalPalette.of(context).muted,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: 32,
+                    child: hasChildren
+                        ? IconButton(
+                            key: ValueKey('task-collapse-${task.id}'),
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            tooltip: task.collapsed
+                                ? AppLocalizations.of(context)!.expandSubtasks
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.collapseSubtasks,
+                            onPressed: () {
+                              final vm = ref.read(
+                                workspaceViewModelProvider.notifier,
+                              );
+                              vm.selectTask(task.id);
+                              unawaited(vm.toggleSelectedCollapsed());
+                            },
+                            icon: Icon(
+                              task.collapsed
+                                  ? Icons.arrow_right
+                                  : Icons.arrow_drop_down,
+                            ),
+                          )
+                        : null,
                   ),
-                ),
+                if (completedAt == null &&
+                    !terminal &&
+                    !(task.parentId != null && task.status == TaskStatus.done))
+                  IconButton(
+                    key: ValueKey('task-advance-${task.id}'),
+                    tooltip: AppLocalizations.of(context)!.advanceTask,
+                    color: visuallySelected
+                        ? TerminalPalette.of(context).background
+                        : workspaceStatusColor(context, task.status),
+                    onPressed: () {
+                      final vm = ref.read(workspaceViewModelProvider.notifier);
+                      vm.selectTask(task.id);
+                      unawaited(vm.advanceSelectedTask());
+                    },
+                    icon: const Icon(Icons.play_arrow),
+                  ),
                 Expanded(child: title),
-                _TaskTags(task: task, selected: selected),
+                _TaskTags(task: task, selected: visuallySelected),
                 if (task.daily)
                   terminal
                       ? Text(
                           ' ↻',
                           style: TextStyle(
-                            color: selected
+                            color: visuallySelected
                                 ? TerminalPalette.of(context).background
                                 : TerminalPalette.of(context).done,
                           ),
@@ -169,7 +249,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
                       : Icon(
                           Icons.repeat,
                           size: 16,
-                          color: selected
+                          color: visuallySelected
                               ? TerminalPalette.of(context).background
                               : TerminalPalette.of(context).done,
                         ),
@@ -179,84 +259,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
                     child: Text(
                       workspaceLocalStamp(completedAt!),
                       style: TextStyle(
-                        color: selected
+                        color: visuallySelected
                             ? TerminalPalette.of(context).background
                             : TerminalPalette.of(context).muted,
                         fontSize: terminal ? null : 12,
                       ),
                     ),
-                  ),
-                if (completedAt == null &&
-                    !terminal &&
-                    !(task.parentId != null && task.status == TaskStatus.done))
-                  IconButton(
-                    tooltip: AppLocalizations.of(context)!.advanceTask,
-                    color: selected
-                        ? TerminalPalette.of(context).background
-                        : workspaceStatusColor(context, task.status),
-                    onPressed: () {
-                      ref
-                          .read(workspaceViewModelProvider.notifier)
-                          .selectTask(task.id);
-                      unawaited(
-                        ref
-                            .read(workspaceViewModelProvider.notifier)
-                            .advanceSelectedTask(),
-                      );
-                    },
-                    icon: const Icon(Icons.play_arrow),
-                  ),
-                if (!terminal)
-                  PopupMenuButton<String>(
-                    tooltip: AppLocalizations.of(context)!.taskActions,
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: selected
-                          ? TerminalPalette.of(context).background
-                          : TerminalPalette.of(context).muted,
-                    ),
-                    onSelected: (action) =>
-                        _handleTaskAction(context, ref, task, action),
-                    itemBuilder: (_) => [
-                      if (task.parentId == null &&
-                          task.status == TaskStatus.done)
-                        PopupMenuItem(
-                          value: 'revert',
-                          child: Text(
-                            AppLocalizations.of(context)!.reopenInDoing,
-                          ),
-                        ),
-                      if (task.status != TaskStatus.done &&
-                          depth + 1 < maxTaskDepth)
-                        PopupMenuItem(
-                          value: 'subtask',
-                          child: Text(AppLocalizations.of(context)!.newSubtask),
-                        ),
-                      if (hasChildren)
-                        PopupMenuItem(
-                          value: 'collapse',
-                          child: Text(
-                            task.collapsed
-                                ? AppLocalizations.of(context)!.expandSubtasks
-                                : AppLocalizations.of(
-                                    context,
-                                  )!.collapseSubtasks,
-                          ),
-                        ),
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Text(AppLocalizations.of(context)!.edit),
-                      ),
-                      if (!hasChildren)
-                        PopupMenuItem(
-                          value: 'duplicate',
-                          child: Text(AppLocalizations.of(context)!.duplicate),
-                        ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Text(AppLocalizations.of(context)!.delete),
-                      ),
-                    ],
                   ),
               ],
             ),
@@ -266,7 +274,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
     );
     final interactiveRow =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-        ? _AndroidTagSwipe(taskId: task.id, child: row)
+        ? _AndroidTaskGesture(
+            task: task,
+            onSubtaskSwipe: onSubtaskSwipe ?? interactions?.onSubtaskSwipe,
+            onLongPress: onLongPress ?? interactions?.onLongPress,
+            child: row,
+          )
         : row;
     return WorkspaceKeepSelectedTaskVisible(
       selected: selected,
@@ -319,38 +332,74 @@ class _TaskTags extends StatelessWidget {
   }
 }
 
-class _AndroidTagSwipe extends ConsumerStatefulWidget {
-  const _AndroidTagSwipe({required this.taskId, required this.child});
-  final String taskId;
+class _AndroidTaskGesture extends StatefulWidget {
+  const _AndroidTaskGesture({
+    required this.task,
+    required this.child,
+    this.onSubtaskSwipe,
+    this.onLongPress,
+  });
+  final Task task;
   final Widget child;
+  final ValueChanged<Task>? onSubtaskSwipe;
+  final void Function(Task task, Offset globalPosition)? onLongPress;
 
   @override
-  ConsumerState<_AndroidTagSwipe> createState() => _AndroidTagSwipeState();
+  State<_AndroidTaskGesture> createState() => _AndroidTaskGestureState();
 }
 
-class _AndroidTagSwipeState extends ConsumerState<_AndroidTagSwipe> {
+class _AndroidTaskGestureState extends State<_AndroidTaskGesture> {
+  static const _threshold = 64.0;
   double _distance = 0;
 
   void _finish(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
-    final shouldCycle = _distance.abs() >= 48 || velocity.abs() >= 450;
-    final left = _distance == 0 ? velocity < 0 : _distance < 0;
-    _distance = 0;
-    if (!shouldCycle) return;
-    final vm = ref.read(workspaceViewModelProvider.notifier);
-    vm.selectTask(widget.taskId);
-    unawaited(vm.cycleSelectedTag(left ? 0 : 1));
+    final left = _distance < 0 || (_distance == 0 && velocity < 0);
+    final shouldReply =
+        left && (_distance.abs() >= _threshold || velocity <= -600);
+    setState(() => _distance = 0);
+    if (shouldReply) widget.onSubtaskSwipe?.call(widget.task);
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    behavior: HitTestBehavior.translucent,
-    onHorizontalDragStart: (_) => _distance = 0,
-    onHorizontalDragUpdate: (details) => _distance += details.delta.dx,
-    onHorizontalDragEnd: _finish,
-    onHorizontalDragCancel: () => _distance = 0,
-    child: widget.child,
-  );
+  Widget build(BuildContext context) {
+    final progress = (-_distance / _threshold).clamp(0.0, 1.0);
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onLongPressStart: (details) =>
+          widget.onLongPress?.call(widget.task, details.globalPosition),
+      onHorizontalDragStart: (_) => setState(() => _distance = 0),
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _distance = (_distance + details.delta.dx).clamp(
+            -_threshold * 1.35,
+            18.0,
+          );
+        });
+      },
+      onHorizontalDragEnd: _finish,
+      onHorizontalDragCancel: () => setState(() => _distance = 0),
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          Positioned(
+            right: 12,
+            child: Opacity(
+              opacity: progress,
+              child: Icon(
+                Icons.subdirectory_arrow_left,
+                color: TerminalPalette.of(context).accent,
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: Offset(_distance < 0 ? _distance * .28 : 0, 0),
+            child: widget.child,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class WorkspaceEmptyState extends StatelessWidget {
@@ -558,77 +607,4 @@ class _TaskTitleState extends State<_TaskTitle> {
     }
     return Text.rich(TextSpan(style: style, children: spans));
   }
-}
-
-EdgeInsetsGeometry? get _dialogTitlePadding =>
-    usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 0) : null;
-
-EdgeInsetsGeometry? get _dialogContentPadding =>
-    usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : null;
-
-Future<void> _handleTaskAction(
-  BuildContext context,
-  WidgetRef ref,
-  Task task,
-  String action,
-) async {
-  final vm = ref.read(workspaceViewModelProvider.notifier);
-  vm.selectTask(task.id);
-  if (action == 'collapse') {
-    await vm.toggleSelectedCollapsed();
-    return;
-  }
-  if (action == 'revert') {
-    await vm.revertSelectedCompletedTask();
-    return;
-  }
-  if (action == 'delete') {
-    final delete =
-        await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            titlePadding: _dialogTitlePadding,
-            contentPadding: _dialogContentPadding,
-            title: Text(
-              AppLocalizations.of(context)!.deleteTaskTitle,
-              style: TextStyle(color: TerminalPalette.of(context).error),
-            ),
-            content: Text(AppLocalizations.of(context)!.deleteTaskBody),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(AppLocalizations.of(context)!.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(AppLocalizations.of(context)!.delete),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (delete) await vm.deleteSelectedTask();
-    return;
-  }
-  final draft = await showDialog<WorkspaceTaskDraft>(
-    context: context,
-    builder: (_) => WorkspaceTaskEditorDialog(
-      title: action == 'edit'
-          ? AppLocalizations.of(context)!.editTask
-          : action == 'subtask'
-          ? AppLocalizations.of(context)!.newSubtask
-          : AppLocalizations.of(context)!.duplicateTask,
-      initialTitle: action == 'subtask' ? '' : task.title,
-    ),
-  );
-  if (draft == null) return;
-  if (action == 'edit') {
-    await vm.updateSelectedTask(draft.title);
-    return;
-  }
-  if (action == 'subtask') {
-    await vm.createSubtask(draft.title);
-    return;
-  }
-  await vm.duplicateSelectedTask(draft.title);
 }

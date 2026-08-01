@@ -721,6 +721,48 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     );
   }
 
+  Future<bool> duplicateSelectedTaskTree() async {
+    final list = state.selectedTaskList;
+    final selected = state.selectedTask;
+    if (list == null || selected == null) return false;
+
+    final source = [selected, ...taskDescendants(list, selected)];
+    final idBySource = <String, String>{
+      for (final task in source) task.id: _uuid.v4(),
+    };
+    final now = DateTime.now().toUtc();
+    final copies = [
+      for (final task in source)
+        Task(
+          id: idBySource[task.id]!,
+          title: task.title,
+          status: TaskStatus.pending,
+          createdAt: now,
+          updatedAt: now,
+          completedAt: null,
+          daily: task.id == selected.id && task.parentId == null
+              ? list.isHabit
+              : false,
+          completionHistory: const [],
+          tags: task.tags,
+          parentId: task.id == selected.id
+              ? selected.parentId
+              : idBySource[task.parentId],
+          collapsed: false,
+        ),
+    ];
+    final lastSourceIndex = list.tasks.indexWhere(
+      (task) => task.id == source.last.id,
+    );
+    final tasks = list.tasks.toList(growable: true)
+      ..insertAll(lastSourceIndex + 1, copies);
+    return _saveList(
+      list.copyWith(tasks: tasks),
+      success: 'Task tree duplicated',
+      selectedTaskId: copies.first.id,
+    );
+  }
+
   Future<bool> deleteSelectedTask() async {
     final list = state.selectedTaskList;
     final id = state.selectedTaskId;

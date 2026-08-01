@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,10 +20,18 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     required this.state,
     required this.background,
     required this.backgroundConfigured,
+    this.contextualTaskId,
+    this.onSubtaskSwipe,
+    this.onTaskLongPress,
+    this.onCycleList,
   });
   final WorkspaceState state;
   final Uint8List? background;
   final bool backgroundConfigured;
+  final String? contextualTaskId;
+  final ValueChanged<Task>? onSubtaskSwipe;
+  final void Function(Task task, Offset globalPosition)? onTaskLongPress;
+  final ValueChanged<int>? onCycleList;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,7 +64,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
               Expanded(child: normalContent),
             ],
           );
-    return Container(
+    Widget panel = Container(
       key: ValueKey('task-panel-${state.view.name}'),
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
@@ -85,6 +94,94 @@ class WorkspaceTaskPanel extends ConsumerWidget {
               ],
             )
           : content,
+    );
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      panel = WorkspaceTaskInteractions(
+        contextualTaskId: contextualTaskId,
+        onSubtaskSwipe: onSubtaskSwipe ?? (_) {},
+        onLongPress: onTaskLongPress ?? (_, _) {},
+        child: panel,
+      );
+      panel = _AndroidListSwipe(
+        onCycleList: onCycleList ?? (_) {},
+        child: panel,
+      );
+    }
+    return panel;
+  }
+}
+
+class _AndroidListSwipe extends StatefulWidget {
+  const _AndroidListSwipe({required this.onCycleList, required this.child});
+
+  final ValueChanged<int> onCycleList;
+  final Widget child;
+
+  @override
+  State<_AndroidListSwipe> createState() => _AndroidListSwipeState();
+}
+
+class _AndroidListSwipeState extends State<_AndroidListSwipe> {
+  static const _threshold = 88.0;
+  double _distance = 0;
+
+  void _reset() {
+    if (_distance != 0) setState(() => _distance = 0);
+  }
+
+  void _finish(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    final distance = _distance;
+    final shouldCycle =
+        distance.abs() >= _threshold ||
+        (distance.abs() >= 28 && velocity.abs() >= 700);
+    _reset();
+    if (shouldCycle) widget.onCycleList(distance < 0 ? 1 : -1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (_distance.abs() / _threshold).clamp(0.0, 1.0);
+    final direction = _distance < 0 ? 1 : -1;
+    return GestureDetector(
+      key: const ValueKey('android-list-swipe'),
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: (_) => _reset(),
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _distance = (_distance + details.delta.dx).clamp(
+            -_threshold * 1.25,
+            _threshold * 1.25,
+          );
+        });
+      },
+      onHorizontalDragEnd: _finish,
+      onHorizontalDragCancel: _reset,
+      child: Stack(
+        children: [
+          Transform.translate(
+            offset: Offset(_distance * .16, 0),
+            child: widget.child,
+          ),
+          if (_distance != 0)
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: direction < 0 ? 8 : null,
+              right: direction > 0 ? 8 : null,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: progress,
+                  child: Icon(
+                    direction > 0 ? Icons.chevron_left : Icons.chevron_right,
+                    size: 34,
+                    color: TerminalPalette.of(context).accent,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

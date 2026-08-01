@@ -233,6 +233,74 @@ void main() {
   });
 
   test(
+    'duplicate tree creates a fresh pending copy with remapped parents',
+    () async {
+      final completedAt = DateTime.utc(2026, 1, 2);
+      Task source(
+        String id,
+        String title, {
+        String? parentId,
+        List<TaskTag> tags = const [],
+      }) => Task(
+        id: id,
+        title: title,
+        status: TaskStatus.done,
+        createdAt: DateTime.utc(2026, 1, 1),
+        updatedAt: completedAt,
+        completedAt: completedAt,
+        daily: false,
+        completionHistory: [completedAt],
+        tags: tags,
+        parentId: parentId,
+        collapsed: true,
+      );
+      final list = _list('tasks', 'Tasks', [
+        source('root', 'Root', tags: const [TaskTag.heart]),
+        source('child', 'Child', parentId: 'root'),
+        source('grandchild', 'Grandchild', parentId: 'child'),
+        _task('after', 'After'),
+      ]);
+      final repository = _TaskLists([list]);
+      final container = _container([list], repository: repository);
+      addTearDown(container.dispose);
+      final vm = await _ready(container);
+
+      vm.selectTask('root');
+      expect(await vm.duplicateSelectedTaskTree(), isTrue);
+
+      final saved = repository.lists.single.tasks;
+      expect(saved.map((task) => task.title), [
+        'Root',
+        'Child',
+        'Grandchild',
+        'Root',
+        'Child',
+        'Grandchild',
+        'After',
+      ]);
+      final copies = saved.sublist(3, 6);
+      expect(
+        copies.map((task) => task.id),
+        everyElement(isNot(anyOf('root', 'child', 'grandchild'))),
+      );
+      expect(
+        copies.map((task) => task.status),
+        everyElement(TaskStatus.pending),
+      );
+      expect(copies.map((task) => task.completedAt), everyElement(isNull));
+      expect(
+        copies.map((task) => task.completionHistory),
+        everyElement(isEmpty),
+      );
+      expect(copies.map((task) => task.collapsed), everyElement(isFalse));
+      expect(copies.first.tags, const [TaskTag.heart]);
+      expect(copies.first.parentId, isNull);
+      expect(copies[1].parentId, copies.first.id);
+      expect(copies[2].parentId, copies[1].id);
+    },
+  );
+
+  test(
     'subtasks insert in preorder, persist collapse, and enforce depth',
     () async {
       final list = _list('tasks', 'Tasks', [_task('root', 'Root')]);
