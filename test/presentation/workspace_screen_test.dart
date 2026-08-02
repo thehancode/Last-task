@@ -906,6 +906,28 @@ void main() {
     expect(find.byKey(const ValueKey('android-task-composer')), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(find.byType(WorkspaceFooter), findsNothing);
+    expect(find.byKey(const ValueKey('android-view-toggle')), findsOneWidget);
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('LIST VIEW'), findsOneWidget);
+    expect(find.text('LAST TASK'), findsNothing);
+    expect(find.text('Keyboard shortcuts'), findsNothing);
+    final viewSubtitle = find.byKey(const ValueKey('android-view-subtitle'));
+    expect(
+      tester.getTopLeft(find.text('Tasks')).dy,
+      lessThan(tester.getTopLeft(viewSubtitle).dy),
+    );
+    expect(
+      tester.widget<Text>(viewSubtitle).style?.color,
+      TerminalPalette.of(tester.element(viewSubtitle)).muted,
+    );
+    expect(tester.widget<Text>(viewSubtitle).style?.fontSize, 12);
+
+    await tester.tap(find.byKey(const ValueKey('android-view-toggle')));
+    await tester.pumpAndSettle();
+    expect(find.text('MULTI VIEW'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('android-view-toggle')));
+    await tester.pumpAndSettle();
+
     await tester.tap(task);
     await tester.pump();
     expect(
@@ -919,6 +941,10 @@ void main() {
     );
 
     final field = find.byKey(const ValueKey('android-composer-field'));
+    expect(
+      tester.widget<TextField>(field).decoration?.hintStyle?.color,
+      TerminalPalette.of(tester.element(field)).muted,
+    );
     await tester.enterText(field, 'Created inline');
     await tester.tap(find.byKey(const ValueKey('android-composer-send')));
     await tester.pumpAndSettle();
@@ -927,7 +953,7 @@ void main() {
   });
 
   testWidgets(
-    'Android left swipe arms subtask composer without changing tags',
+    'Android long press arms subtask composer and reply appears while typing',
     (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -949,7 +975,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 20));
 
       final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
-      await tester.drag(task, const Offset(100, 0));
+      final field = find.byKey(const ValueKey('android-composer-field'));
+      expect(
+        tester.widget<TextField>(field).decoration?.hintText,
+        'add new task',
+      );
+
+      await tester.drag(task, const Offset(-100, 0));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('android-composer-reply')),
@@ -957,18 +989,22 @@ void main() {
       );
       expect(repository._lists.single.tasks.single.tags, isEmpty);
 
-      await tester.drag(task, const Offset(-100, 0));
-      await tester.pumpAndSettle();
-      expect(task, findsOneWidget);
+      await tester.longPress(task);
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(field).decoration?.hintText,
+        'add new subtask',
+      );
+      expect(
+        find.byKey(const ValueKey('android-composer-reply')),
+        findsNothing,
+      );
+
+      await tester.enterText(field, 'Child task');
+      await tester.pump();
       expect(
         find.byKey(const ValueKey('android-composer-reply')),
         findsOneWidget,
-      );
-      expect(repository._lists.single.tasks.single.tags, isEmpty);
-
-      await tester.enterText(
-        find.byKey(const ValueKey('android-composer-field')),
-        'Child task',
       );
       await tester.tap(find.byKey(const ValueKey('android-composer-send')));
       await tester.pumpAndSettle();
@@ -1041,7 +1077,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android background swipe latches before changing lists', (
+  testWidgets('Android right swipe latches sidebar and list taps navigate', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -1088,16 +1124,39 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     final panel = find.byKey(const ValueKey('task-panel-list'));
-    final start = tester.getRect(panel).bottomRight - const Offset(20, 20);
-    await tester.dragFrom(start, const Offset(-45, 0));
+    await tester.dragFrom(tester.getCenter(panel), const Offset(-160, 0));
     await tester.pumpAndSettle();
     expect(find.text('First task'), findsOneWidget);
     expect(find.text('Second task'), findsNothing);
+    expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
 
-    await tester.dragFrom(start, const Offset(-140, 0));
+    final composerField = find.byKey(
+      const ValueKey('android-composer-field'),
+    );
+    await tester.tap(composerField);
+    await tester.pump();
+    expect(tester.widget<TextField>(composerField).focusNode?.hasFocus, isTrue);
+
+    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('android-sidebar-new-list')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('android-sidebar-list-second-list')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('First task'), findsNothing);
     expect(find.text('Second task'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(composerField).focusNode?.hasFocus,
+      isFalse,
+    );
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -1862,7 +1921,8 @@ void main() {
 
     expect(find.text('Long-title mode'), findsOneWidget);
     expect(find.text('Marquee speed'), findsOneWidget);
-    expect(find.byType(Switch), findsOneWidget);
+    expect(find.text('Show entrance tips'), findsNothing);
+    expect(find.byType(Switch), findsNothing);
     expect(find.text('Use Backend'), findsNothing);
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsNothing);
@@ -1936,7 +1996,7 @@ void main() {
     },
   );
 
-  testWidgets('Android tab selection reveals the selected tab and next tab', (
+  testWidgets('Android sidebar stacks lists and supports contextual actions', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -1946,13 +2006,181 @@ void main() {
     await tester.pumpWidget(_workspaceWithLists(_wideTabLists()));
     await tester.pump(const Duration(milliseconds: 20));
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
     await tester.pumpAndSettle();
 
-    _expectTextFullyVisible(tester, 'Tab number three', width: 700);
-    _expectTextFullyVisible(tester, 'Tab number four', width: 700);
+    expect(find.text('Last Task'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Lists'), findsOneWidget);
+    expect(find.text('Tab number three'), findsOneWidget);
+    expect(find.text('Tab number four'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('android-sidebar-new-list')),
+      findsOneWidget,
+    );
+    final listsLabel = find.byKey(
+      const ValueKey('android-sidebar-lists-label'),
+    );
+    expect(
+      tester.widget<Text>(listsLabel).style?.color,
+      TerminalPalette.of(tester.element(listsLabel)).muted,
+    );
+    expect(tester.widget<Text>(listsLabel).style?.fontSize, 12);
+    expect(
+      tester.getTopLeft(find.text('Last Task')).dy,
+      lessThan(tester.getTopLeft(find.text('Settings')).dy),
+    );
+    expect(
+      tester.getBottomLeft(find.text('Settings')).dy,
+      lessThan(
+        tester
+            .getCenter(find.byKey(const ValueKey('android-sidebar-header')))
+            .dy,
+      ),
+    );
+    expect(
+      tester.getTopLeft(listsLabel).dy,
+      lessThan(
+        tester
+            .getTopLeft(
+              find.descendant(
+                of: find.byKey(
+                  const ValueKey('android-sidebar-list-wide-tab-0'),
+                ),
+                matching: find.text('Tab number one'),
+              ),
+            )
+            .dy,
+      ),
+    );
+    final drawer = find.byType(Drawer);
+    expect(
+      tester
+          .getRect(find.byKey(const ValueKey('android-sidebar-new-list')))
+          .right,
+      closeTo(tester.getRect(drawer).right - 16, 1),
+    );
+
+    final target = find.byKey(
+      const ValueKey('android-sidebar-list-wide-tab-2'),
+    );
+    await tester.longPress(target);
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('android-list-context-menu')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('android-list-context-edit')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('android-list-context-delete')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('android-list-context-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Rename list'), findsOneWidget);
+    final renameField = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    expect(
+      tester.widget<TextField>(renameField).controller?.text,
+      'Tab number three',
+    );
     expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android sidebar header and lists share one scroll view', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+    final lists = [
+      for (var index = 0; index < 16; index++)
+        TaskList(
+          schemaVersion: currentSchemaVersion,
+          id: 'scroll-list-$index',
+          name: 'Scroll list $index',
+          createdAt: now,
+          tasks: const [],
+        ),
+    ];
+    await tester.pumpWidget(_workspaceWithLists(lists));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
+    await tester.pumpAndSettle();
+
+    final scroll = find.byKey(const ValueKey('android-sidebar-scroll'));
+    final header = find.byKey(const ValueKey('android-sidebar-header'));
+    final newList = find.byKey(const ValueKey('android-sidebar-new-list'));
+    expect(
+      tester.getSize(header).height,
+      closeTo(tester.getSize(scroll).height * .5, 1),
+    );
+    final headerTop = tester.getTopLeft(header).dy;
+    final buttonBottom = tester.getBottomLeft(newList).dy;
+
+    await tester.drag(scroll, const Offset(0, -160));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(header).dy, lessThan(headerTop));
+    expect(tester.getBottomLeft(newList).dy, closeTo(buttonBottom, 1));
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android focuses the composer after creating a new list', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _Lists([_listWithTask()]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(
+            const _DeviceState(),
+          ),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('android-sidebar-new-list')),
+    );
+    await tester.pumpAndSettle();
+
+    final listNameField = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(listNameField, 'Fresh list');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(repository._lists.last.name, 'Fresh list');
+    final composerField = find.byKey(
+      const ValueKey('android-composer-field'),
+    );
+    expect(tester.widget<TextField>(composerField).focusNode?.hasFocus, isTrue);
     debugDefaultTargetPlatformOverride = null;
   });
 }

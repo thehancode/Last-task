@@ -36,6 +36,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get addNewTask => 'añadir nueva tarea';
+
+  @override
+  String get addNewSubtask => 'añadir nueva subtarea';
+
+  @override
   String get newDailyTask => 'Crear nueva tarea diaria';
 
   @override
@@ -111,6 +117,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get newList => 'Nueva lista';
+
+  @override
+  String get listsLabel => 'Listas';
 
   @override
   String get renameList => 'Renombrar lista';
@@ -566,6 +575,12 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get addNewTask => 'agregar nueva tarea';
+
+  @override
+  String get addNewSubtask => 'agregar nueva subtarea';
+
+  @override
   String get newDailyTask => 'Crear nueva tarea diaria';
 
   @override
@@ -641,6 +656,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get newList => 'Nueva lista';
+
+  @override
+  String get listsLabel => 'Listas';
 
   @override
   String get renameList => 'Renombrar lista';
@@ -1096,6 +1114,12 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get newTask => 'Nueva tarea';
 
   @override
+  String get addNewTask => 'añadir nueva tarea';
+
+  @override
+  String get addNewSubtask => 'añadir nueva subtarea';
+
+  @override
   String get newDailyTask => 'Crear nueva tarea diaria';
 
   @override
@@ -1171,6 +1195,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get newList => 'Nueva lista';
+
+  @override
+  String get listsLabel => 'Listas';
 
   @override
   String get renameList => 'Renombrar lista';

@@ -154,6 +154,18 @@ abstract class AppLocalizations {
   /// **'New task'**
   String get newTask;
 
+  /// Android inline composer hint for creating a top-level task.
+  ///
+  /// In en, this message translates to:
+  /// **'add new task'**
+  String get addNewTask;
+
+  /// Android inline composer hint while replying to a held task.
+  ///
+  /// In en, this message translates to:
+  /// **'add new subtask'**
+  String get addNewSubtask;
+
   /// Dialog title for creating a root task in a habit list.
   ///
   /// In en, this message translates to:
@@ -291,6 +303,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New list'**
   String get newList;
+
+  /// Heading above the stacked task lists in the Android sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get listsLabel;
 
   /// Task-list menu action and editor title.
   ///

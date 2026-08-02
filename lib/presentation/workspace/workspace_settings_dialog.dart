@@ -236,13 +236,6 @@ class _ConfigSettings extends StatelessWidget {
                   )
                 : null,
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(strings.showTips),
-            value: settings.tipsEnabled,
-            onChanged: (value) =>
-                onUpdate(settings.copyWith(tipsEnabled: value)),
-          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(strings.rewardDuration),

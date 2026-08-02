@@ -25,13 +25,11 @@ class WorkspaceTaskInteractions extends InheritedWidget {
   const WorkspaceTaskInteractions({
     super.key,
     required this.contextualTaskId,
-    required this.onSubtaskSwipe,
     required this.onLongPress,
     required super.child,
   });
 
   final String? contextualTaskId;
-  final ValueChanged<Task> onSubtaskSwipe;
   final void Function(Task task, Offset globalPosition) onLongPress;
 
   static WorkspaceTaskInteractions? maybeOf(BuildContext context) =>
@@ -40,7 +38,6 @@ class WorkspaceTaskInteractions extends InheritedWidget {
   @override
   bool updateShouldNotify(WorkspaceTaskInteractions oldWidget) =>
       contextualTaskId != oldWidget.contextualTaskId ||
-      onSubtaskSwipe != oldWidget.onSubtaskSwipe ||
       onLongPress != oldWidget.onLongPress;
 }
 
@@ -51,14 +48,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
     required this.state,
     this.completedAt,
     this.contextual = false,
-    this.onSubtaskSwipe,
     this.onLongPress,
   });
   final Task task;
   final WorkspaceState state;
   final DateTime? completedAt;
   final bool contextual;
-  final ValueChanged<Task>? onSubtaskSwipe;
   final void Function(Task task, Offset globalPosition)? onLongPress;
 
   @override
@@ -276,7 +271,6 @@ class WorkspaceTaskRow extends ConsumerWidget {
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android
         ? _AndroidTaskGesture(
             task: task,
-            onSubtaskSwipe: onSubtaskSwipe ?? interactions?.onSubtaskSwipe,
             onLongPress: onLongPress ?? interactions?.onLongPress,
             child: row,
           )
@@ -336,12 +330,10 @@ class _AndroidTaskGesture extends StatefulWidget {
   const _AndroidTaskGesture({
     required this.task,
     required this.child,
-    this.onSubtaskSwipe,
     this.onLongPress,
   });
   final Task task;
   final Widget child;
-  final ValueChanged<Task>? onSubtaskSwipe;
   final void Function(Task task, Offset globalPosition)? onLongPress;
 
   @override
@@ -349,57 +341,13 @@ class _AndroidTaskGesture extends StatefulWidget {
 }
 
 class _AndroidTaskGestureState extends State<_AndroidTaskGesture> {
-  static const _threshold = 64.0;
-  double _distance = 0;
-
-  void _finish(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    final left = _distance < 0 || (_distance == 0 && velocity < 0);
-    final shouldReply =
-        left && (_distance.abs() >= _threshold || velocity <= -600);
-    setState(() => _distance = 0);
-    if (shouldReply) widget.onSubtaskSwipe?.call(widget.task);
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final progress = (-_distance / _threshold).clamp(0.0, 1.0);
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onLongPressStart: (details) =>
-          widget.onLongPress?.call(widget.task, details.globalPosition),
-      onHorizontalDragStart: (_) => setState(() => _distance = 0),
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          _distance = (_distance + details.delta.dx).clamp(
-            -_threshold * 1.35,
-            18.0,
-          );
-        });
-      },
-      onHorizontalDragEnd: _finish,
-      onHorizontalDragCancel: () => setState(() => _distance = 0),
-      child: Stack(
-        alignment: Alignment.centerRight,
-        children: [
-          Positioned(
-            right: 12,
-            child: Opacity(
-              opacity: progress,
-              child: Icon(
-                Icons.subdirectory_arrow_left,
-                color: TerminalPalette.of(context).accent,
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: Offset(_distance < 0 ? _distance * .28 : 0, 0),
-            child: widget.child,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onLongPressStart: (details) =>
+        widget.onLongPress?.call(widget.task, details.globalPosition),
+    child: widget.child,
+  );
 }
 
 class WorkspaceEmptyState extends StatelessWidget {

@@ -36,6 +36,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newTask => 'New task';
 
   @override
+  String get addNewTask => 'add new task';
+
+  @override
+  String get addNewSubtask => 'add new subtask';
+
+  @override
   String get newDailyTask => 'Create new daily task';
 
   @override
@@ -111,6 +117,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newList => 'New list';
+
+  @override
+  String get listsLabel => 'Lists';
 
   @override
   String get renameList => 'Rename list';
