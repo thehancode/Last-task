@@ -410,7 +410,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       return KeyEventResult.handled;
     }
     if (_grabbed) {
-      if (key == LogicalKeyboardKey.keyF) unawaited(vm.advanceSelectedTask());
       _releaseGrab();
       return KeyEventResult.handled;
     }
@@ -430,8 +429,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       unawaited(_confirmDeleteTask());
     } else if (key == LogicalKeyboardKey.keyR) {
       unawaited(vm.revertSelectedCompletedTask());
-    } else if (key == LogicalKeyboardKey.keyC) {
-      vm.toggleFocusView();
     } else if (key == LogicalKeyboardKey.keyV) {
       vm.toggleCompletedView();
     } else if (key == LogicalKeyboardKey.keyG) {
@@ -562,10 +559,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       await vm.renameCurrentList(result.name);
       _focusNode.requestFocus();
     } else {
-      final created = await vm.createList(
-        result.name,
-        isHabit: result.isHabit,
-      );
+      final created = await vm.createList(result.name, isHabit: result.isHabit);
       if (created && mounted && !usesTerminalPresentation) {
         _activateComposer(_ComposerMode.create);
       } else {

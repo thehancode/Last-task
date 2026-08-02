@@ -61,7 +61,6 @@ class WorkspaceState {
     required this.view,
     this.currentListId,
     this.selectedTaskId,
-    this.returnToMultiAfterFocus = false,
     this.soundEnabled = true,
     this.animatedTaskId,
     this.notice,
@@ -82,7 +81,6 @@ class WorkspaceState {
       view = WorkspaceView.list,
       currentListId = null,
       selectedTaskId = null,
-      returnToMultiAfterFocus = false,
       soundEnabled = true,
       animatedTaskId = null,
       notice = null,
@@ -101,7 +99,6 @@ class WorkspaceState {
   final WorkspaceView view;
   final String? currentListId;
   final String? selectedTaskId;
-  final bool returnToMultiAfterFocus;
   final bool soundEnabled;
   final String? animatedTaskId;
   final NoticeState? notice;
@@ -122,7 +119,6 @@ class WorkspaceState {
     String? currentListId,
     String? selectedTaskId,
     bool clearSelection = false,
-    bool? returnToMultiAfterFocus,
     bool? soundEnabled,
     String? animatedTaskId,
     bool clearAnimation = false,
@@ -151,8 +147,6 @@ class WorkspaceState {
     selectedTaskId: clearSelection
         ? null
         : (selectedTaskId ?? this.selectedTaskId),
-    returnToMultiAfterFocus:
-        returnToMultiAfterFocus ?? this.returnToMultiAfterFocus,
     soundEnabled: soundEnabled ?? this.soundEnabled,
     animatedTaskId: clearAnimation
         ? null
@@ -211,10 +205,6 @@ extension WorkspaceStateQueries on WorkspaceState {
       TaskStatus.done,
       TaskStatus.archived,
     ]).map((task) => task.id).toList(),
-    WorkspaceView.focus => visibleTreeTasks(
-      list,
-      rootStatuses: const {TaskStatus.doing},
-    ).map((task) => task.id).toList(),
     WorkspaceView.completed => completedTreeRows(
       list,
     ).map((row) => row.task.id).toList(),

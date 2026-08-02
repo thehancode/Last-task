@@ -17,13 +17,22 @@ ProjectedTaskSection? selectedTaskSection(WorkspaceState state) {
   final list = state.selectedTaskList;
   final selected = state.selectedTask;
   if (list == null || selected == null) return null;
-  final status = taskRoot(list, selected).status;
+  final rootStatus = taskRoot(list, selected).status;
+  final status = switch (rootStatus) {
+    TaskStatus.doing => TaskStatus.pending,
+    _ => rootStatus,
+  };
   return ProjectedTaskSection(
     list: list,
     status: status,
     tasks: [
       for (final task in list.tasks)
-        if (taskRoot(list, task).status == status) task,
+        if (switch (taskRoot(list, task).status) {
+              TaskStatus.doing => TaskStatus.pending,
+              final rootStatus => rootStatus,
+            } ==
+            status)
+          task,
     ],
   );
 }

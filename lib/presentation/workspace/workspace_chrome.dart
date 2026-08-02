@@ -515,7 +515,6 @@ class _WorkspaceTabsState extends ConsumerState<WorkspaceTabs> {
 String _viewLabel(WorkspaceView view, AppLocalizations strings) =>
     switch (view) {
       WorkspaceView.list => strings.listView,
-      WorkspaceView.focus => strings.doingFocus,
       WorkspaceView.completed => strings.completed,
       WorkspaceView.multi => strings.multiView,
     };

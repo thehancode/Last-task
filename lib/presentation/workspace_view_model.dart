@@ -24,7 +24,6 @@ final workspaceRandomProvider = Provider<Random>((ref) => Random());
 const tutorialTaskIds = [
   'tutorial-navigation',
   'tutorial-new-task',
-  'tutorial-advance-status',
   'tutorial-complete-task',
   'tutorial-new-list',
   'tutorial-surprise',
@@ -33,7 +32,6 @@ const tutorialTaskIds = [
 const tutorialTaskTitles = [
   'Try moving with the Up/Down Arrow keys',
   'Press N to create a new task (press Enter to save it)',
-  'Space then F moves a task from Pending to Doing to Done',
   'Space then Space moves a task directly to Done',
   'Ctrl+N creates a new list',
   'Completing every task on this list might unlock a surprise.',
@@ -434,7 +432,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     final next = state.copyWith(
       currentListId: listId,
       view: WorkspaceView.list,
-      returnToMultiAfterFocus: false,
       clearSelection: true,
       clearMultiSelection: true,
       clearSelectionAnchor: true,
@@ -491,35 +488,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       view: state.view == WorkspaceView.multi
           ? WorkspaceView.list
           : WorkspaceView.multi,
-      returnToMultiAfterFocus: false,
       clearSelection: true,
     );
     state = _withFirstVisibleSelected(next);
-    _scheduleDeviceSave();
-  }
-
-  void toggleFocusView() {
-    if (state.view == WorkspaceView.focus) {
-      state = _withFirstVisibleSelected(
-        state.copyWith(
-          view: WorkspaceView.list,
-          returnToMultiAfterFocus: false,
-        ),
-      );
-      _scheduleDeviceSave();
-      return;
-    }
-    final current = state.currentList;
-    if (current == null ||
-        !current.tasks.any(
-          (task) => task.parentId == null && task.status == TaskStatus.doing,
-        )) {
-      _showNotice(const NoticeState('No Doing tasks to focus'));
-      return;
-    }
-    state = _withFirstVisibleSelected(
-      state.copyWith(view: WorkspaceView.focus, clearSelection: true),
-    );
     _scheduleDeviceSave();
   }
 
@@ -529,7 +500,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         view: state.view == WorkspaceView.completed
             ? WorkspaceView.list
             : WorkspaceView.completed,
-        returnToMultiAfterFocus: false,
         clearSelection: true,
       ),
     );
@@ -553,7 +523,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
           lists: [...state.lists, list],
           currentListId: list.id,
           view: WorkspaceView.list,
-          returnToMultiAfterFocus: false,
           clearSelection: true,
           notice: const NoticeState('List created'),
         ),
@@ -601,7 +570,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
           lists: lists,
           currentListId: selectedList.id,
           view: WorkspaceView.list,
-          returnToMultiAfterFocus: false,
           clearSelection: true,
           notice: const NoticeState('List deleted'),
         ),
@@ -918,37 +886,12 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         else
           task,
     ];
-    final fromMulti = state.view == WorkspaceView.multi;
-    var view = state.view;
-    var returnToMulti = state.returnToMultiAfterFocus;
-    if (to == TaskStatus.doing) {
-      view = WorkspaceView.focus;
-      returnToMulti = fromMulti;
-    } else if (selected.parentId == null &&
-        selected.status == TaskStatus.doing &&
-        to == TaskStatus.done &&
-        (returnToMulti || fromMulti)) {
-      view = WorkspaceView.multi;
-      returnToMulti = false;
-    } else if (selected.parentId == null &&
-        selected.status == TaskStatus.doing &&
-        to == TaskStatus.done &&
-        !list.tasks.any(
-          (task) =>
-              task.parentId == null &&
-              task.id != root.id &&
-              task.status == TaskStatus.doing,
-        )) {
-      view = WorkspaceView.list;
-    }
     final success = await _saveList(
       list.copyWith(tasks: tasks),
       success: '${selected.status.label} → ${to.label}',
-      view: view,
-      returnToMultiAfterFocus: returnToMulti,
       animationTaskId: selected.id,
     );
-    if (success && view == WorkspaceView.multi && to == TaskStatus.done) {
+    if (success && state.view == WorkspaceView.multi && to == TaskStatus.done) {
       state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
     }
     final tutorialUnlocked =
@@ -990,27 +933,13 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       for (final task in list.tasks)
         if (completedIds.contains(task.id)) complete(task) else task,
     ];
-    var nextView = state.view;
-    var returnToMulti = state.returnToMultiAfterFocus;
-    if (state.view == WorkspaceView.focus) {
-      if (returnToMulti) {
-        nextView = WorkspaceView.multi;
-        returnToMulti = false;
-      } else if (!completedTasks.any(
-        (task) => task.parentId == null && task.status == TaskStatus.doing,
-      )) {
-        nextView = WorkspaceView.list;
-      }
-    }
     final success = await _saveList(
       list.copyWith(tasks: completedTasks),
       success: '${selected.status.label} → Done',
-      view: nextView,
-      returnToMultiAfterFocus: returnToMulti,
       animationTaskId: selected.id,
     );
     if (success) {
-      if (nextView == WorkspaceView.list) {
+      if (state.view == WorkspaceView.list) {
         final nextPendingId = _nextPendingTaskId(selected.id);
         if (nextPendingId != null) selectTask(nextPendingId);
       }
@@ -1309,7 +1238,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     required String success,
     String? selectedTaskId,
     WorkspaceView? view,
-    bool? returnToMultiAfterFocus,
     String? animationTaskId,
   }) async {
     final before = _captureHistory();
@@ -1324,7 +1252,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         currentListId: next.id,
         selectedTaskId: selectedTaskId,
         view: view,
-        returnToMultiAfterFocus: returnToMultiAfterFocus,
         animatedTaskId: animationTaskId,
         clearAnimation: animationTaskId == null,
         notice: NoticeState(success),
@@ -1389,7 +1316,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         currentListId: previous.currentListId,
         selectedTaskId: previous.selectedTaskId,
         view: previous.view,
-        returnToMultiAfterFocus: previous.returnToMultiAfterFocus,
         notice: const NoticeState('Undone'),
         clearSearch: true,
       );
@@ -1586,7 +1512,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     state.currentListId,
     state.selectedTaskId,
     state.view,
-    state.returnToMultiAfterFocus,
   );
 
   void _pushHistory(_HistoryEntry entry) {
@@ -1629,12 +1554,10 @@ class _HistoryEntry {
     this.currentListId,
     this.selectedTaskId,
     this.view,
-    this.returnToMultiAfterFocus,
   );
 
   final List<TaskList> lists;
   final String? currentListId;
   final String? selectedTaskId;
   final WorkspaceView view;
-  final bool returnToMultiAfterFocus;
 }

@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// Multiline desktop shortcut reference. Keep key glyphs and line breaks.
   ///
   /// In en, this message translates to:
-  /// **'↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
+  /// **'↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
   String get keyboardShortcutsHelp;
 
   /// Fallback workspace loading error.
@@ -424,12 +424,6 @@ abstract class AppLocalizations {
   /// **'LIST VIEW'**
   String get listView;
 
-  /// Uppercase header label for the active-task view.
-  ///
-  /// In en, this message translates to:
-  /// **'DOING FOCUS'**
-  String get doingFocus;
-
   /// Uppercase header label for completion history.
   ///
   /// In en, this message translates to:
@@ -466,16 +460,10 @@ abstract class AppLocalizations {
   /// **'Archived'**
   String get archived;
 
-  /// Empty state in the active-task view.
+  /// Empty state in completion history.
   ///
   /// In en, this message translates to:
-  /// **'No doing tasks'**
-  String get noDoingTasks;
-
-  /// Empty state in completion history; references a keyboard shortcut.
-  ///
-  /// In en, this message translates to:
-  /// **'No completed tasks yet — finish one with Space, then F.'**
+  /// **'No completed tasks yet — complete one from its task controls.'**
   String get noCompletedTasks;
 
   /// Empty state in the multi-list view.
@@ -535,7 +523,7 @@ abstract class AppLocalizations {
   /// Terminal footer status after pressing Space; preserve surrounding spaces.
   ///
   /// In en, this message translates to:
-  /// **' SPACE armed — F advance '**
+  /// **' SPACE armed — SPACE completes '**
   String get spaceArmed;
 
   /// Terminal footer prefix before the daily-task completion glyphs.
@@ -547,7 +535,7 @@ abstract class AppLocalizations {
   /// Compact non-terminal footer shortcut reference.
   ///
   /// In en, this message translates to:
-  /// **'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+F advance   Ctrl+↑↓ sort   ? help'**
+  /// **'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+Space complete   Ctrl+↑↓ sort   ? help'**
   String get keyboardHint;
 
   /// Screen-reader label for a terminal command shortcut.

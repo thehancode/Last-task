@@ -36,7 +36,6 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     final panelOpacity = backgroundConfigured ? 0.0 : 1.0;
     final normalContent = switch (state.view) {
       WorkspaceView.list => _ListContent(state: state),
-      WorkspaceView.focus => _FocusContent(state: state),
       WorkspaceView.completed => _CompletedContent(state: state),
       WorkspaceView.multi => _MultiContent(state: state),
     };
@@ -45,7 +44,6 @@ class WorkspaceTaskPanel extends ConsumerWidget {
         ? TerminalPalette.of(context).doing
         : switch (state.view) {
             WorkspaceView.list => TerminalPalette.of(context).accent,
-            WorkspaceView.focus => TerminalPalette.of(context).doing,
             WorkspaceView.completed => TerminalPalette.of(context).done,
             WorkspaceView.multi => TerminalPalette.of(context).accent,
           };
@@ -292,7 +290,6 @@ class _ListContent extends StatelessWidget {
           : const EdgeInsets.all(12),
       children: [
         for (final status in const [
-          TaskStatus.doing,
           TaskStatus.pending,
           TaskStatus.done,
           TaskStatus.archived,
@@ -301,39 +298,14 @@ class _ListContent extends StatelessWidget {
             state: state,
             title: workspaceStatusLabel(status, AppLocalizations.of(context)!),
             status: status,
-            tasks: visible
-                .where(
-                  (task) => taskRoot(state.currentList!, task).status == status,
-                )
-                .toList(),
+            tasks: visible.where((task) {
+              final rootStatus = taskRoot(state.currentList!, task).status;
+              return status == TaskStatus.pending
+                  ? rootStatus == TaskStatus.doing ||
+                        rootStatus == TaskStatus.pending
+                  : rootStatus == status;
+            }).toList(),
           ),
-      ],
-    );
-  }
-}
-
-class _FocusContent extends StatelessWidget {
-  const _FocusContent({required this.state});
-  final WorkspaceState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final tasks = visibleTreeTasks(
-      state.currentList,
-      rootStatuses: const {TaskStatus.doing},
-      revealTaskIds: state.search?.matchIds.toSet() ?? const {},
-    );
-    return _TaskScrollView(
-      key: const ValueKey('task-scroll-focus'),
-      eager: state.search != null,
-      indicatorColor: TerminalPalette.of(context).doing,
-      padding: usesTerminalPresentation
-          ? TerminalMetrics.panelPadding(context)
-          : const EdgeInsets.all(12),
-      children: [
-        if (tasks.isEmpty)
-          WorkspaceEmptyState(AppLocalizations.of(context)!.noDoingTasks),
-        for (final task in tasks) WorkspaceTaskRow(task: task, state: state),
       ],
     );
   }

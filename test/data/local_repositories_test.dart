@@ -86,7 +86,7 @@ void main() {
     final store = _MemoryStore(const []);
     final repository = LocalDeviceStateRepository(store);
     const state = DeviceWorkspaceState(
-      view: WorkspaceView.focus,
+      view: WorkspaceView.multi,
       currentListId: 'list',
       selectedTaskId: 'task',
       seenTipIds: {'search'},
@@ -95,7 +95,7 @@ void main() {
     await repository.save(state);
     final restored = await repository.load();
 
-    expect(restored.view, WorkspaceView.focus);
+    expect(restored.view, WorkspaceView.multi);
     expect(restored.selectedTaskId, 'task');
     expect(restored.seenTipIds, {'search'});
     expect(store.settings, isNull);

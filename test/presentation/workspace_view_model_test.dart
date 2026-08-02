@@ -54,7 +54,7 @@ void main() {
     expect(restored.tasks[1].parentId, restored.tasks[0].id);
   });
 
-  test('Multi view follows pending to Focus and Done back to Multi', () async {
+  test('Multi view remains active while task statuses change', () async {
     final first = _list('personal', 'Personal', [
       _task('personal-pending', 'Personal task'),
     ]);
@@ -79,11 +79,7 @@ void main() {
     await vm.advanceSelectedTask();
     expect(
       container.read(workspaceViewModelProvider).view,
-      WorkspaceView.focus,
-    );
-    expect(
-      container.read(workspaceViewModelProvider).returnToMultiAfterFocus,
-      isTrue,
+      WorkspaceView.multi,
     );
 
     await vm.advanceSelectedTask();
@@ -333,7 +329,7 @@ void main() {
   );
 
   test(
-    'nested status changes focus root, cascade done, and lock reopening',
+    'nested status changes update root, cascade done, and lock reopening',
     () async {
       final list = _list('tasks', 'Tasks', [
         _task('root', 'Root'),
@@ -352,7 +348,7 @@ void main() {
       expect(saved.tasks[1].status, TaskStatus.doing);
       expect(
         container.read(workspaceViewModelProvider).view,
-        WorkspaceView.focus,
+        WorkspaceView.list,
       );
 
       await vm.advanceSelectedTask();

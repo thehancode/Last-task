@@ -32,6 +32,12 @@ void main() {
     expect(restoredDevice.tutorialAwardEarned, isTrue);
   });
 
+  test('legacy Focus device view falls back to the list view', () {
+    final device = DeviceWorkspaceState.fromJson(const {'view': 'focus'});
+
+    expect(device.view, WorkspaceView.list);
+  });
+
   test('task tags round-trip while old tasks default to no tags', () {
     final oldTask = Task.fromJson(_taskJson());
     expect(oldTask.tags, isEmpty);

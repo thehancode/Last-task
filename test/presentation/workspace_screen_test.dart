@@ -316,6 +316,74 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('normal list merges Doing rows into the Pending section', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final pendingList = _listWithTask();
+    final pendingTask = pendingList.tasks.single;
+    final doingTask = Task(
+      id: 'doing-task',
+      title: 'Doing task',
+      status: TaskStatus.doing,
+      createdAt: pendingTask.createdAt,
+      updatedAt: pendingTask.updatedAt,
+      completedAt: null,
+      daily: false,
+      completionHistory: const [],
+    );
+    final list = pendingList.copyWith(tasks: [doingTask, ...pendingList.tasks]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists([list])),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.textContaining('Pending (2)'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Text && widget.data?.contains('Doing (') == true,
+      ),
+      findsNothing,
+    );
+    expect(find.text('Doing task'), findsOneWidget);
+    expect(find.text('Swipe me'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Space then F leaves the selected task unchanged', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final repository = _Lists([_listWithTask()]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+    await tester.pump();
+
+    expect(repository._lists.single.tasks.single.status, TaskStatus.pending);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('terminal task-panel background is transparent over an image', (
     tester,
   ) async {
@@ -357,7 +425,6 @@ void main() {
 
   for (final scenario in [
     (name: 'list', status: TaskStatus.pending),
-    (name: 'focus', status: TaskStatus.doing),
     (name: 'completed', status: TaskStatus.done),
     (name: 'multi', status: TaskStatus.pending),
   ]) {
@@ -389,9 +456,7 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 20));
 
-        if (scenario.name == 'focus') {
-          await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
-        } else if (scenario.name == 'completed') {
+        if (scenario.name == 'completed') {
           await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
         } else if (scenario.name == 'multi') {
           await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
@@ -1130,9 +1195,7 @@ void main() {
     expect(find.text('Second task'), findsNothing);
     expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
 
-    final composerField = find.byKey(
-      const ValueKey('android-composer-field'),
-    );
+    final composerField = find.byKey(const ValueKey('android-composer-field'));
     await tester.tap(composerField);
     await tester.pump();
     expect(tester.widget<TextField>(composerField).focusNode?.hasFocus, isTrue);
@@ -2149,9 +2212,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          deviceStateRepositoryProvider.overrideWithValue(
-            const _DeviceState(),
-          ),
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
           taskListRepositoryProvider.overrideWithValue(repository),
           settingsRepositoryProvider.overrideWithValue(const _Settings()),
         ],
@@ -2163,9 +2224,7 @@ void main() {
     final panel = find.byKey(const ValueKey('task-panel-list'));
     await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const ValueKey('android-sidebar-new-list')),
-    );
+    await tester.tap(find.byKey(const ValueKey('android-sidebar-new-list')));
     await tester.pumpAndSettle();
 
     final listNameField = find.descendant(
@@ -2177,9 +2236,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository._lists.last.name, 'Fresh list');
-    final composerField = find.byKey(
-      const ValueKey('android-composer-field'),
-    );
+    final composerField = find.byKey(const ValueKey('android-composer-field'));
     expect(tester.widget<TextField>(composerField).focusNode?.hasFocus, isTrue);
     debugDefaultTargetPlatformOverride = null;
   });

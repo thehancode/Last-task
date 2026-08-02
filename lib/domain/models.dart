@@ -57,7 +57,7 @@ extension TaskStatusX on TaskStatus {
   };
 }
 
-enum WorkspaceView { list, focus, completed, multi }
+enum WorkspaceView { list, completed, multi }
 
 enum LongTitleDisplay { wrapSelected, wrapAll, marquee }
 

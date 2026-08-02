@@ -92,7 +92,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -183,9 +183,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get listView => 'LISTA';
 
   @override
-  String get doingFocus => 'EN CURSO';
-
-  @override
   String get completed => 'HECHAS';
 
   @override
@@ -204,11 +201,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get archived => 'Archivadas';
 
   @override
-  String get noDoingTasks => 'No hay tareas en curso';
-
-  @override
   String get noCompletedTasks =>
-      'Aún no hay tareas completadas; termina una con Espacio y F.';
+      'Aún no hay tareas completadas; completa una desde sus controles.';
 
   @override
   String get noDoingOrPendingTasks => 'No hay tareas en curso ni pendientes';
@@ -242,7 +236,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza ';
+  String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';
 
   @override
   String dailyActivity(Object activity) {
@@ -251,7 +245,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+Espacio completar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {
@@ -631,7 +625,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -722,9 +716,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get listView => 'LISTA';
 
   @override
-  String get doingFocus => 'EN CURSO';
-
-  @override
   String get completed => 'HECHAS';
 
   @override
@@ -743,11 +734,8 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get archived => 'Archivadas';
 
   @override
-  String get noDoingTasks => 'No hay tareas en curso';
-
-  @override
   String get noCompletedTasks =>
-      'Aún no hay tareas completadas; termina una con Espacio y F.';
+      'Aún no hay tareas completadas; completa una desde sus controles.';
 
   @override
   String get noDoingOrPendingTasks => 'No hay tareas en curso ni pendientes';
@@ -781,7 +769,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza ';
+  String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';
 
   @override
   String dailyActivity(Object activity) {
@@ -790,7 +778,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+Espacio completar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {
@@ -1170,7 +1158,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y F   Avanzar estado\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nC   Enfoque en curso\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z   Deshacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -1261,9 +1249,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get listView => 'LISTA';
 
   @override
-  String get doingFocus => 'EN CURSO';
-
-  @override
   String get completed => 'HECHAS';
 
   @override
@@ -1282,11 +1267,8 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get archived => 'Archivadas';
 
   @override
-  String get noDoingTasks => 'No hay tareas en curso';
-
-  @override
   String get noCompletedTasks =>
-      'Aún no hay tareas completadas; termina una con Espacio y F.';
+      'Aún no hay tareas completadas; completa una desde sus controles.';
 
   @override
   String get noDoingOrPendingTasks => 'No hay tareas en curso ni pendientes';
@@ -1320,7 +1302,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get duplicate => 'Duplicar';
 
   @override
-  String get spaceArmed => ' ESPACIO activado — F avanza ';
+  String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';
 
   @override
   String dailyActivity(Object activity) {
@@ -1329,7 +1311,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+F avanzar   Ctrl+↑↓ ordenar   ? ayuda';
+      'Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+Espacio completar   Ctrl+↑↓ ordenar   ? ayuda';
 
   @override
   String commandSemantics(Object label, Object keys) {

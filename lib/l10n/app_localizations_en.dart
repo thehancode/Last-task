@@ -92,7 +92,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then F   Advance status\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nC   Doing focus\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit';
+      '↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit';
 
   @override
   String get couldNotLoad => 'Could not load Last Task';
@@ -183,9 +183,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listView => 'LIST VIEW';
 
   @override
-  String get doingFocus => 'DOING FOCUS';
-
-  @override
   String get completed => 'COMPLETED';
 
   @override
@@ -204,11 +201,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archived => 'Archived';
 
   @override
-  String get noDoingTasks => 'No doing tasks';
-
-  @override
   String get noCompletedTasks =>
-      'No completed tasks yet — finish one with Space, then F.';
+      'No completed tasks yet — complete one from its task controls.';
 
   @override
   String get noDoingOrPendingTasks => 'No Doing or Pending tasks';
@@ -242,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duplicate => 'Duplicate';
 
   @override
-  String get spaceArmed => ' SPACE armed — F advance ';
+  String get spaceArmed => ' SPACE armed — SPACE completes ';
 
   @override
   String dailyActivity(Object activity) {
@@ -251,7 +245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyboardHint =>
-      'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+F advance   Ctrl+↑↓ sort   ? help';
+      'Ctrl+A multi   Tab lists   ↑↓ move   N new   Space+Space complete   Ctrl+↑↓ sort   ? help';
 
   @override
   String commandSemantics(Object label, Object keys) {
