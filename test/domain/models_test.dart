@@ -17,12 +17,14 @@ void main() {
     expect(legacyDevice.terminalLaunchCount, 0);
     expect(legacyDevice.themesUnlocked, isFalse);
     expect(legacyDevice.tutorialAwardEarned, isFalse);
+    expect(legacyDevice.composerDrafts, isEmpty);
 
     final tutorial = legacyList.copyWith(isTutorial: true);
     final device = legacyDevice.copyWith(
       terminalLaunchCount: 2,
       themesUnlocked: true,
       tutorialAwardEarned: true,
+      composerDrafts: const {'list': 'unfinished task'},
     );
 
     expect(TaskList.fromJson(tutorial.toJson()).isTutorial, isTrue);
@@ -30,6 +32,7 @@ void main() {
     expect(restoredDevice.terminalLaunchCount, 2);
     expect(restoredDevice.themesUnlocked, isTrue);
     expect(restoredDevice.tutorialAwardEarned, isTrue);
+    expect(restoredDevice.composerDrafts, {'list': 'unfinished task'});
   });
 
   test('legacy Focus device view falls back to the list view', () {

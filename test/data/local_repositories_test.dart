@@ -90,6 +90,7 @@ void main() {
       currentListId: 'list',
       selectedTaskId: 'task',
       seenTipIds: {'search'},
+      composerDrafts: {'list': 'local draft'},
     );
 
     await repository.save(state);
@@ -98,6 +99,7 @@ void main() {
     expect(restored.view, WorkspaceView.multi);
     expect(restored.selectedTaskId, 'task');
     expect(restored.seenTipIds, {'search'});
+    expect(restored.composerDrafts, {'list': 'local draft'});
     expect(store.settings, isNull);
   });
 }

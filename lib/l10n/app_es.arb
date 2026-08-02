@@ -69,6 +69,7 @@
   "reopenInDoing": "Restaurar pendiente",
   "edit": "Editar",
   "duplicate": "Duplicar",
+  "archive": "Archivar",
   "spaceArmed": " ESPACIO activado — ESPACIO completa ",
   "dailyActivity": " Diaria: {activity}",
   "keyboardHint": "Ctrl+A múltiple   Tab listas   ↑↓ mover   N nueva   Espacio+Espacio completar   Ctrl+↑↓ ordenar   ? ayuda",

@@ -140,6 +140,8 @@
   "@edit": {"description": "Short task menu action."},
   "duplicate": "Duplicate",
   "@duplicate": {"description": "Short task menu action."},
+  "archive": "Archive",
+  "@archive": {"description": "Short task menu action that moves a task to the archived panel."},
   "spaceArmed": " SPACE armed — SPACE completes ",
   "@spaceArmed": {"description": "Terminal footer status after pressing Space; preserve surrounding spaces."},
   "dailyActivity": " Daily: {activity}",

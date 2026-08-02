@@ -195,6 +195,7 @@ class DeviceWorkspaceState {
     this.terminalLaunchCount = 0,
     this.themesUnlocked = false,
     this.tutorialAwardEarned = false,
+    this.composerDrafts = const {},
   });
 
   final WorkspaceView view;
@@ -206,6 +207,7 @@ class DeviceWorkspaceState {
   final int terminalLaunchCount;
   final bool themesUnlocked;
   final bool tutorialAwardEarned;
+  final Map<String, String> composerDrafts;
 
   DeviceWorkspaceState copyWith({
     WorkspaceView? view,
@@ -217,6 +219,7 @@ class DeviceWorkspaceState {
     int? terminalLaunchCount,
     bool? themesUnlocked,
     bool? tutorialAwardEarned,
+    Map<String, String>? composerDrafts,
   }) => DeviceWorkspaceState(
     view: view ?? this.view,
     currentListId: currentListId ?? this.currentListId,
@@ -227,6 +230,7 @@ class DeviceWorkspaceState {
     terminalLaunchCount: terminalLaunchCount ?? this.terminalLaunchCount,
     themesUnlocked: themesUnlocked ?? this.themesUnlocked,
     tutorialAwardEarned: tutorialAwardEarned ?? this.tutorialAwardEarned,
+    composerDrafts: composerDrafts ?? this.composerDrafts,
   );
 
   Map<String, Object?> toJson() => {
@@ -239,6 +243,7 @@ class DeviceWorkspaceState {
     'terminal_launch_count': terminalLaunchCount,
     'themes_unlocked': themesUnlocked,
     'tutorial_award_earned': tutorialAwardEarned,
+    if (composerDrafts.isNotEmpty) 'composer_drafts': composerDrafts,
   };
 
   factory DeviceWorkspaceState.fromJson(Map<String, Object?> json) {
@@ -261,6 +266,13 @@ class DeviceWorkspaceState {
       terminalLaunchCount: json['terminal_launch_count'] as int? ?? 0,
       themesUnlocked: json['themes_unlocked'] as bool? ?? false,
       tutorialAwardEarned: json['tutorial_award_earned'] as bool? ?? false,
+      composerDrafts: {
+        for (final entry
+            in (json['composer_drafts'] as Map<Object?, Object?>? ?? const {})
+                .entries)
+          if (entry.key is String && entry.value is String)
+            entry.key! as String: entry.value! as String,
+      },
     );
     if (state.terminalLaunchCount < 0) {
       throw const FormatException('terminal_launch_count must not be negative');

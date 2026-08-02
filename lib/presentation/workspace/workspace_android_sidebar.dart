@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth_view_model.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 
@@ -121,6 +122,7 @@ class _AndroidWorkspaceSidebarState
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final palette = TerminalPalette.of(context);
+    final username = ref.watch(authViewModelProvider).username;
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) => Stack(
@@ -146,6 +148,21 @@ class _AndroidWorkspaceSidebarState
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (username != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              username,
+                              key: const ValueKey(
+                                'android-sidebar-account-name',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.muted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                           ListTile(
                             key: const ValueKey('android-sidebar-settings'),
                             contentPadding: EdgeInsets.zero,

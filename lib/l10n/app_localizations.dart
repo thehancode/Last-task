@@ -520,6 +520,12 @@ abstract class AppLocalizations {
   /// **'Duplicate'**
   String get duplicate;
 
+  /// Short task menu action that moves a task to the archived panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archive;
+
   /// Terminal footer status after pressing Space; preserve surrounding spaces.
   ///
   /// In en, this message translates to:

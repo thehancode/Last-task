@@ -1483,6 +1483,29 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     }
   }
 
+  void updateComposerDraft(
+    String listId,
+    String draft, {
+    bool immediate = false,
+  }) {
+    final drafts = Map<String, String>.from(state.deviceState.composerDrafts);
+    if (draft.isEmpty) {
+      drafts.remove(listId);
+    } else {
+      drafts[listId] = draft;
+    }
+    if (mapEquals(drafts, state.deviceState.composerDrafts)) {
+      if (immediate) _scheduleDeviceSave(immediate: true);
+      return;
+    }
+    state = state.copyWith(
+      deviceState: state.deviceState.copyWith(
+        composerDrafts: Map.unmodifiable(drafts),
+      ),
+    );
+    _scheduleDeviceSave(immediate: immediate);
+  }
+
   void _showEntranceTipIfNeeded() {
     if (!state.settings.tipsEnabled) return;
     const tipIds = ['navigation', 'reorder', 'subtasks', 'search', 'copy'];
@@ -1575,6 +1598,11 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     currentListId: state.currentListId,
     selectedTaskId: state.selectedTaskId,
     soundEnabled: state.soundEnabled,
+    composerDrafts: Map.unmodifiable({
+      for (final entry in state.deviceState.composerDrafts.entries)
+        if (state.lists.any((list) => list.id == entry.key))
+          entry.key: entry.value,
+    }),
   );
 
   void _scheduleDeviceSave({bool immediate = false}) {

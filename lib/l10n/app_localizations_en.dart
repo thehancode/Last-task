@@ -236,6 +236,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duplicate => 'Duplicate';
 
   @override
+  String get archive => 'Archive';
+
+  @override
   String get spaceArmed => ' SPACE armed — SPACE completes ';
 
   @override

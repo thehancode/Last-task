@@ -276,7 +276,9 @@ class WorkspaceTaskRow extends ConsumerWidget {
           )
         : row;
     return WorkspaceKeepSelectedTaskVisible(
-      selected: selected,
+      // Android does not expose keyboard selection; automatically revealing
+      // the view-model selection would override its Done/Pending entry point.
+      selected: terminal && selected,
       first: visibleTaskIds.isNotEmpty && visibleTaskIds.first == task.id,
       last: visibleTaskIds.isNotEmpty && visibleTaskIds.last == task.id,
       child: interactiveRow,

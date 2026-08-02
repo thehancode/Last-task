@@ -236,6 +236,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get duplicate => 'Duplicar';
 
   @override
+  String get archive => 'Archivar';
+
+  @override
   String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';
 
   @override
@@ -769,6 +772,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get duplicate => 'Duplicar';
 
   @override
+  String get archive => 'Archivar';
+
+  @override
   String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';
 
   @override
@@ -1300,6 +1306,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get duplicate => 'Duplicar';
+
+  @override
+  String get archive => 'Archivar';
 
   @override
   String get spaceArmed => ' ESPACIO activado — ESPACIO completa ';

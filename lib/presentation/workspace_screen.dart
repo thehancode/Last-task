@@ -48,6 +48,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   final _composerFocusNode = FocusNode(debugLabel: 'android-task-composer');
   _ComposerMode _composerMode = _ComposerMode.create;
   String? _composerTaskId;
+  String? _loadedComposerListId;
+  bool _updatingComposerText = false;
+  double _lastViewInset = 0;
   String? _contextualTaskId;
   Offset? _contextMenuPosition;
 
@@ -55,6 +58,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _composerController.addListener(_onComposerChanged);
+    _composerFocusNode.addListener(_onComposerFocusChanged);
     _dailyRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       unawaited(
         ref.read(workspaceViewModelProvider.notifier).refreshDailyTasks(),
@@ -69,6 +74,22 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       }
     });
     _synchronize(force: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _lastViewInset = View.of(context).viewInsets.bottom;
+  }
+
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final inset = View.of(context).viewInsets.bottom;
+    if (_lastViewInset > 0 && inset == 0 && _composerFocusNode.hasFocus) {
+      _composerFocusNode.unfocus();
+    }
+    _lastViewInset = inset;
   }
 
   @override
@@ -107,8 +128,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     _syncTimer?.cancel();
     unawaited(_connectivitySubscription?.cancel());
     WidgetsBinding.instance.removeObserver(this);
-    _composerController.dispose();
-    _composerFocusNode.dispose();
+    _composerController
+      ..removeListener(_onComposerChanged)
+      ..dispose();
+    _composerFocusNode
+      ..removeListener(_onComposerFocusChanged)
+      ..dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -130,21 +155,75 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     return null;
   }
 
+  String _currentComposerDraft() {
+    final state = ref.read(workspaceViewModelProvider);
+    final listId = state.currentListId;
+    if (listId == null) return '';
+    return (state.deviceState.composerDrafts[listId] ?? '').replaceAll(
+      RegExp(r'[\r\n]+'),
+      ' ',
+    );
+  }
+
+  void _replaceComposerText(String text) {
+    _updatingComposerText = true;
+    _composerController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _updatingComposerText = false;
+  }
+
+  void _restoreCurrentDraft() {
+    _loadedComposerListId = ref.read(workspaceViewModelProvider).currentListId;
+    _replaceComposerText(_currentComposerDraft());
+  }
+
+  void _onComposerChanged() {
+    if (_updatingComposerText || _composerMode != _ComposerMode.create) return;
+    final listId = ref.read(workspaceViewModelProvider).currentListId;
+    if (listId == null) return;
+    ref
+        .read(workspaceViewModelProvider.notifier)
+        .updateComposerDraft(listId, _composerController.text);
+  }
+
+  void _onComposerFocusChanged() {
+    if (!mounted) return;
+    if (!_composerFocusNode.hasFocus && _composerMode == _ComposerMode.create) {
+      final listId = ref.read(workspaceViewModelProvider).currentListId;
+      if (listId != null) {
+        ref
+            .read(workspaceViewModelProvider.notifier)
+            .updateComposerDraft(
+              listId,
+              _composerController.text,
+              immediate: true,
+            );
+      }
+    }
+    setState(() {});
+  }
+
   void _activateComposer(
     _ComposerMode mode, {
     Task? task,
     bool requestFocus = true,
   }) {
+    final text = switch (mode) {
+      _ComposerMode.create => _currentComposerDraft(),
+      _ComposerMode.edit || _ComposerMode.duplicate => task?.title ?? '',
+      _ComposerMode.subtask => '',
+    };
     setState(() {
       _composerMode = mode;
       _composerTaskId = task?.id;
-      _composerController.text =
-          mode == _ComposerMode.edit || mode == _ComposerMode.duplicate
-          ? task?.title ?? ''
-          : '';
-      _composerController.selection = TextSelection.collapsed(
-        offset: _composerController.text.length,
-      );
+      if (mode == _ComposerMode.create) {
+        _loadedComposerListId = ref
+            .read(workspaceViewModelProvider)
+            .currentListId;
+      }
+      _replaceComposerText(text);
     });
     if (requestFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -171,6 +250,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
 
   Future<void> _submitComposer() async {
     final input = _composerController.text;
+    final submittedMode = _composerMode;
+    final submittedListId = ref.read(workspaceViewModelProvider).currentListId;
     final vm = ref.read(workspaceViewModelProvider.notifier);
     final taskId = _composerTaskId;
     if (taskId != null) vm.selectTask(taskId);
@@ -181,6 +262,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       _ComposerMode.duplicate => await vm.duplicateSelectedTask(input),
     };
     if (!success || !mounted) return;
+    if (submittedMode == _ComposerMode.create && submittedListId != null) {
+      ref
+          .read(workspaceViewModelProvider.notifier)
+          .updateComposerDraft(submittedListId, '', immediate: true);
+    }
     _dismissContextMenu(cancelComposer: false);
     _activateComposer(_ComposerMode.create, requestFocus: false);
     _composerFocusNode.requestFocus();
@@ -200,15 +286,17 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
 
   void _dismissContextMenu({bool cancelComposer = true}) {
     if (_contextualTaskId == null) return;
+    final restoreDraft =
+        cancelComposer && _composerMode == _ComposerMode.subtask;
     setState(() {
       _contextualTaskId = null;
       _contextMenuPosition = null;
       if (cancelComposer && _composerMode == _ComposerMode.subtask) {
         _composerMode = _ComposerMode.create;
         _composerTaskId = null;
-        _composerController.clear();
       }
     });
+    if (restoreDraft) _restoreCurrentDraft();
   }
 
   void _cancelSubtaskContext() {
@@ -255,6 +343,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     _activateComposer(_ComposerMode.create, requestFocus: false);
     ref.read(workspaceViewModelProvider.notifier).selectTask(task.id);
     await _confirmDeleteTask();
+  }
+
+  Future<void> _archiveContextTask() async {
+    final task = _taskById(_contextualTaskId);
+    _dismissContextMenu(cancelComposer: false);
+    if (task == null) return;
+    _activateComposer(_ComposerMode.create, requestFocus: false);
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    vm.selectTask(task.id);
+    await vm.archiveSelectedTask();
   }
 
   void _armGrab() {
@@ -679,6 +777,17 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       },
     );
     final terminal = usesTerminalPresentation;
+    if (!terminal &&
+        state.phase == WorkspacePhase.ready &&
+        _composerMode == _ComposerMode.create &&
+        _loadedComposerListId != state.currentListId) {
+      _loadedComposerListId = state.currentListId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _composerMode == _ComposerMode.create) {
+          _restoreCurrentDraft();
+        }
+      });
+    }
     final appearance = state.deviceState.desktopAppearance;
     final backgroundPath = supportsDesktopBackground
         ? appearance.backgroundImagePath
@@ -795,6 +904,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                               availableSize: constraints.biggest,
                               onEdit: _editContextTask,
                               onDuplicate: _duplicateContextTask,
+                              onArchive: _archiveContextTask,
                               onDelete: _deleteContextTask,
                             ),
                           ],
@@ -815,7 +925,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
               ),
             ),
           );
-    return Focus(
+    final focusedWorkspace = Focus(
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: _onKey,
@@ -833,6 +943,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                 ),
               ),
         drawerEdgeDragWidth: terminal ? null : MediaQuery.sizeOf(context).width,
+        drawerEnableOpenDragGesture:
+            terminal || state.view != WorkspaceView.list,
         onDrawerChanged: terminal
             ? null
             : (opened) {
@@ -878,6 +990,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         ),
       ),
     );
+    if (terminal) return focusedWorkspace;
+    return PopScope(
+      canPop: !_composerFocusNode.hasFocus,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _composerFocusNode.hasFocus) {
+          _composerFocusNode.unfocus();
+        }
+      },
+      child: focusedWorkspace,
+    );
   }
 }
 
@@ -912,155 +1034,160 @@ class _AndroidTaskComposer extends StatelessWidget {
     };
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (context, value, _) => Padding(
-        key: const ValueKey('android-task-composer'),
-        padding: const EdgeInsets.only(top: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (state.notice != null)
-              Container(
-                key: const ValueKey('android-composer-notice'),
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: (state.notice!.error ? palette.error : palette.done)
-                      .withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  state.notice!.text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: state.notice!.error ? palette.error : palette.done,
-                    fontWeight: FontWeight.w600,
+      builder: (context, value, _) => TextFieldTapRegion(
+        child: Padding(
+          key: const ValueKey('android-task-composer'),
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.notice != null)
+                Container(
+                  key: const ValueKey('android-composer-notice'),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (state.notice!.error ? palette.error : palette.done)
+                        .withValues(alpha: .14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    state.notice!.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: state.notice!.error ? palette.error : palette.done,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            if (mode == _ComposerMode.subtask &&
-                contextTask != null &&
-                value.text.trim().isNotEmpty)
-              Container(
-                key: const ValueKey('android-composer-reply'),
-                margin: const EdgeInsets.only(left: 10, right: 54, bottom: 6),
-                padding: const EdgeInsets.fromLTRB(12, 7, 4, 7),
-                decoration: BoxDecoration(
-                  color: palette.accent.withValues(alpha: .12),
-                  border: Border(
-                    left: BorderSide(color: palette.accent, width: 3),
+              if (mode == _ComposerMode.subtask &&
+                  contextTask != null &&
+                  value.text.trim().isNotEmpty)
+                Container(
+                  key: const ValueKey('android-composer-reply'),
+                  margin: const EdgeInsets.only(left: 10, right: 54, bottom: 6),
+                  padding: const EdgeInsets.fromLTRB(12, 7, 4, 7),
+                  decoration: BoxDecoration(
+                    color: palette.accent.withValues(alpha: .12),
+                    border: Border(
+                      left: BorderSide(color: palette.accent, width: 3),
+                    ),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            strings.newSubtask,
-                            style: TextStyle(
-                              color: palette.accent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.newSubtask,
+                              style: TextStyle(
+                                color: palette.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                          Text(
-                            contextTask!.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: strings.cancel,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onCancelSubtask,
-                      icon: const Icon(Icons.close, size: 18),
-                    ),
-                  ],
-                ),
-              ),
-            if (modeLabel != null && mode != _ComposerMode.subtask)
-              Padding(
-                key: const ValueKey('android-composer-mode'),
-                padding: const EdgeInsets.only(left: 16, bottom: 3),
-                child: Text(
-                  modeLabel,
-                  style: TextStyle(
-                    color: palette.accent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    key: const ValueKey('android-composer-field'),
-                    controller: controller,
-                    focusNode: focusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.newline,
-                    decoration: InputDecoration(
-                      hintText: mode == _ComposerMode.subtask
-                          ? strings.addNewSubtask
-                          : strings.addNewTask,
-                      hintStyle: TextStyle(color: palette.muted),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 13,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
-                        borderSide: BorderSide(color: palette.muted),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
-                        borderSide: BorderSide(
-                          color: palette.muted.withValues(alpha: .6),
+                            Text(
+                              contextTask!.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(26),
-                        borderSide: BorderSide(
-                          color: palette.accent,
-                          width: 1.5,
+                      IconButton(
+                        tooltip: strings.cancel,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: onCancelSubtask,
+                        icon: const Icon(Icons.close, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
+              if (modeLabel != null && mode != _ComposerMode.subtask)
+                Padding(
+                  key: const ValueKey('android-composer-mode'),
+                  padding: const EdgeInsets.only(left: 16, bottom: 3),
+                  child: Text(
+                    modeLabel,
+                    style: TextStyle(
+                      color: palette.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('android-composer-field'),
+                      controller: controller,
+                      focusNode: focusNode,
+                      maxLines: 1,
+                      textInputAction: TextInputAction.done,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.singleLineFormatter,
+                      ],
+                      onTapOutside: (_) => focusNode.unfocus(),
+                      decoration: InputDecoration(
+                        hintText: mode == _ComposerMode.subtask
+                            ? strings.addNewSubtask
+                            : strings.addNewTask,
+                        hintStyle: TextStyle(color: palette.muted),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 13,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide(color: palette.muted),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide(
+                            color: palette.muted.withValues(alpha: .6),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide(
+                            color: palette.accent,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Semantics(
-                  button: true,
-                  label: strings.save,
-                  child: Material(
-                    key: const ValueKey('android-composer-send'),
-                    color: palette.accent,
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      tooltip: strings.save,
-                      color: palette.background,
-                      onPressed: onSubmit,
-                      icon: const Icon(Icons.arrow_upward),
+                  const SizedBox(width: 8),
+                  Semantics(
+                    button: true,
+                    label: strings.save,
+                    child: Material(
+                      key: const ValueKey('android-composer-send'),
+                      color: palette.accent,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        tooltip: strings.save,
+                        color: palette.background,
+                        onPressed: onSubmit,
+                        icon: const Icon(Icons.arrow_upward),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1073,16 +1200,18 @@ class _AndroidTaskContextMenu extends StatelessWidget {
     required this.availableSize,
     required this.onEdit,
     required this.onDuplicate,
+    required this.onArchive,
     required this.onDelete,
   });
 
-  static const _width = 164.0;
+  static const _width = 212.0;
   static const _height = 54.0;
 
   final Offset pressPosition;
   final Size availableSize;
   final VoidCallback onEdit;
   final VoidCallback onDuplicate;
+  final VoidCallback onArchive;
   final VoidCallback onDelete;
 
   @override
@@ -1121,6 +1250,12 @@ class _AndroidTaskContextMenu extends StatelessWidget {
               tooltip: strings.duplicate,
               onPressed: onDuplicate,
               icon: const Icon(Icons.copy),
+            ),
+            IconButton(
+              key: const ValueKey('android-context-archive'),
+              tooltip: strings.archive,
+              onPressed: onArchive,
+              icon: const Icon(Icons.archive_outlined),
             ),
             IconButton(
               key: const ValueKey('android-context-delete'),
