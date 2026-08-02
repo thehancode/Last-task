@@ -49,6 +49,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   StreamSubscription<void>? _remoteChangeSubscription;
   Object? _pendingSyncError;
   final List<_HistoryEntry> _history = [];
+  final List<_HistoryEntry> _redoHistory = [];
 
   TaskListRepository get _lists => ref.read(taskListRepositoryProvider);
   SettingsRepository get _settings => ref.read(settingsRepositoryProvider);
@@ -1301,6 +1302,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       return false;
     }
     final previous = _history.last;
+    final current = _captureHistory();
     final previousIds = previous.lists.map((list) => list.id).toSet();
     final deletes = state.lists
         .map((list) => list.id)
@@ -1311,6 +1313,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         TaskListChangeSet(upserts: previous.lists, deletes: deletes),
       );
       _history.removeLast();
+      _pushRedoHistory(current);
       var restored = state.copyWith(
         lists: previous.lists,
         currentListId: previous.currentListId,
@@ -1328,6 +1331,44 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       return true;
     } on Object catch (error) {
       return _error('Undo failed: $error');
+    }
+  }
+
+  Future<bool> redo() async {
+    if (_redoHistory.isEmpty) {
+      _showNotice(const NoticeState('Nothing to redo'));
+      return false;
+    }
+    final next = _redoHistory.last;
+    final current = _captureHistory();
+    final nextIds = next.lists.map((list) => list.id).toSet();
+    final deletes = state.lists
+        .map((list) => list.id)
+        .where((id) => !nextIds.contains(id))
+        .toList(growable: false);
+    try {
+      await _lists.commit(
+        TaskListChangeSet(upserts: next.lists, deletes: deletes),
+      );
+      _redoHistory.removeLast();
+      _pushUndoHistory(current);
+      var restored = state.copyWith(
+        lists: next.lists,
+        currentListId: next.currentListId,
+        selectedTaskId: next.selectedTaskId,
+        view: next.view,
+        notice: const NoticeState('Redone'),
+        clearSearch: true,
+      );
+      if (!restored.visibleTaskIds.contains(restored.selectedTaskId)) {
+        restored = _withFirstVisibleSelected(restored);
+      }
+      state = restored;
+      _expireNotice(const Duration(seconds: 2));
+      _scheduleDeviceSave();
+      return true;
+    } on Object catch (error) {
+      return _error('Redo failed: $error');
     }
   }
 
@@ -1515,8 +1556,18 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   );
 
   void _pushHistory(_HistoryEntry entry) {
+    _redoHistory.clear();
+    _pushUndoHistory(entry);
+  }
+
+  void _pushUndoHistory(_HistoryEntry entry) {
     _history.add(entry);
     if (_history.length > 50) _history.removeAt(0);
+  }
+
+  void _pushRedoHistory(_HistoryEntry entry) {
+    _redoHistory.add(entry);
+    if (_redoHistory.length > 50) _redoHistory.removeAt(0);
   }
 
   DeviceWorkspaceState _currentDeviceState() => state.deviceState.copyWith(

@@ -442,7 +442,7 @@ void main() {
     },
   );
 
-  test('direct completion completes a subtree and undo restores it', () async {
+  test('direct completion supports undo and redo', () async {
     final list = _list('tasks', 'Tasks', [
       _task('root', 'Root'),
       _task('child', 'Child', parentId: 'root'),
@@ -464,6 +464,25 @@ void main() {
       everyElement(TaskStatus.pending),
     );
     expect(container.read(workspaceViewModelProvider).selectedTaskId, 'root');
+
+    expect(await vm.redo(), isTrue);
+    expect(
+      repository.lists.single.tasks.map((task) => task.status),
+      everyElement(TaskStatus.done),
+    );
+    expect(container.read(workspaceViewModelProvider).selectedTaskId, 'root');
+  });
+
+  test('a new mutation after undo clears redo history', () async {
+    final list = _list('tasks', 'Tasks', [_task('root', 'Root')]);
+    final container = _container([list]);
+    addTearDown(container.dispose);
+    final vm = await _ready(container);
+
+    expect(await vm.completeSelectedTask(), isTrue);
+    expect(await vm.undo(), isTrue);
+    expect(await vm.createTask('Replacement'), isTrue);
+    expect(await vm.redo(), isFalse);
   });
 
   test('list completion selects the next pending task', () async {

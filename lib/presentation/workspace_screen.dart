@@ -318,7 +318,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.keyZ) {
-        unawaited(vm.undo());
+        if (usesTerminalPresentation &&
+            HardwareKeyboard.instance.isShiftPressed) {
+          unawaited(vm.redo());
+        } else {
+          unawaited(vm.undo());
+        }
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.keyF) {

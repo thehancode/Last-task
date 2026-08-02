@@ -384,6 +384,42 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('terminal Ctrl+Shift+Z redoes an undone task completion', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final repository = _Lists([_listWithTask()]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(repository._lists.single.tasks.single.status, TaskStatus.done);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('terminal task-panel background is transparent over an image', (
     tester,
   ) async {

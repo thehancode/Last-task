@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// Multiline desktop shortcut reference. Keep key glyphs and line breaks.
   ///
   /// In en, this message translates to:
-  /// **'↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z   Undo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
+  /// **'↑/↓ or J/K   Move selection\nShift+↑/↓   Select visible tasks\n←/→   Switch task lists\nHold Ctrl + ←/→   Reorder task lists\nSpace then Space   Complete subtree\nShift+Space   Archive task\nHold Ctrl + ↑/↓   Reorder task/subtree\nN / Tab / E / D / X   New, subtask, edit, duplicate, delete\nH   Collapse / expand subtasks\nW / Shift+W   Cycle first / second tag\nCtrl+C   Copy task/selection\nCtrl+Shift+C   Copy current section\nEsc   Clear selection\nCtrl+A / Ctrl+Shift+A   Select visible / Multi view\nCtrl+F or /   Search\nCtrl+Z / Ctrl+Shift+Z   Undo / redo\nCtrl+N   New list\nF2 / Ctrl+R   Rename list\nCtrl+X   Delete list\nV   Completed history\nG   Settings\nS   Sound\nQ   Quit'**
   String get keyboardShortcutsHelp;
 
   /// Fallback workspace loading error.
