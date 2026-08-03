@@ -1103,7 +1103,8 @@ void main() {
 
       final field = find.byKey(const ValueKey('android-composer-field'));
       expect(tester.widget<TextField>(field).controller!.text, 'first draft');
-      expect(tester.widget<TextField>(field).maxLines, 1);
+      expect(tester.widget<TextField>(field).minLines, 1);
+      expect(tester.widget<TextField>(field).maxLines, isNull);
 
       await tester.tap(field);
       await tester.enterText(field, 'kept locally');
@@ -1186,9 +1187,17 @@ void main() {
         tester.widget<TextField>(field).decoration?.hintText,
         'add new subtask',
       );
+      expect(tester.widget<TextField>(field).focusNode!.hasFocus, isFalse);
       expect(
         find.byKey(const ValueKey('android-composer-reply')),
         findsNothing,
+      );
+
+      await tester.tap(field);
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('android-composer-reply')),
+        findsOneWidget,
       );
 
       await tester.enterText(field, 'Child task');
@@ -1205,6 +1214,97 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     },
   );
+
+  testWidgets('Android back deselects a context-selected task', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
+    final field = find.byKey(const ValueKey('android-composer-field'));
+    await tester.longPress(task);
+    await tester.pump();
+
+    final container = riverpod.ProviderScope.containerOf(tester.element(task));
+    expect(container.read(workspaceViewModelProvider).selectedTaskId, 'task-1');
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isFalse);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+
+    expect(container.read(workspaceViewModelProvider).selectedTaskId, isNull);
+    expect(
+      find.byKey(const ValueKey('android-context-menu-barrier')),
+      findsNothing,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android back exits edit mode after dismissing its keyboard', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final task = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
+    await tester.longPress(task);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('android-context-edit')));
+    await tester.pump();
+
+    final field = find.byKey(const ValueKey('android-composer-field'));
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+    expect(
+      find.byKey(const ValueKey('android-composer-edit-preview')),
+      findsOneWidget,
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isFalse);
+    expect(
+      find.byKey(const ValueKey('android-composer-edit-preview')),
+      findsOneWidget,
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('android-composer-edit-preview')),
+      findsNothing,
+    );
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
+  });
 
   testWidgets('Android long press shows icon menu and contextual highlight', (
     tester,
@@ -1298,10 +1398,23 @@ void main() {
       find.byKey(const ValueKey('android-task-context-menu')),
       findsNothing,
     );
-    expect(find.text('Edit task'), findsOneWidget);
+    expect(find.byKey(const ValueKey('android-composer-mode')), findsNothing);
+    final editPreview = find.byKey(
+      const ValueKey('android-composer-edit-preview'),
+    );
+    expect(editPreview, findsOneWidget);
+    expect(
+      find.descendant(of: editPreview, matching: find.text('Edit task')),
+      findsOneWidget,
+    );
     final field = find.byKey(const ValueKey('android-composer-field'));
     expect(tester.widget<TextField>(field).controller!.text, 'Swipe me');
     await tester.enterText(field, 'Edited inline');
+    await tester.pump();
+    expect(
+      find.descendant(of: editPreview, matching: find.text('Edited inline')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('android-composer-send')));
     await tester.pumpAndSettle();
     expect(repository._lists.single.tasks.single.title, 'Edited inline');

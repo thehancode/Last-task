@@ -246,7 +246,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       vm.showNotice('Tasks can only be nested three levels deep');
       return false;
     }
-    _activateComposer(_ComposerMode.subtask, task: task);
+    _activateComposer(_ComposerMode.subtask, task: task, requestFocus: false);
     return true;
   }
 
@@ -275,6 +275,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   }
 
   void _showContextMenu(Task task, Offset position) {
+    ref.read(workspaceViewModelProvider.notifier).selectTask(task.id);
     _armSubtask(task);
     final overlay = _androidOverlayKey.currentContext?.findRenderObject();
     final localPosition = overlay is RenderBox
@@ -307,6 +308,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     } else if (_composerMode == _ComposerMode.subtask) {
       _activateComposer(_ComposerMode.create, requestFocus: false);
     }
+  }
+
+  void _cancelEditingComposer() {
+    _activateComposer(_ComposerMode.create, requestFocus: false);
+    ref.read(workspaceViewModelProvider.notifier).clearTaskSelection();
   }
 
   void _selectAndroidList(String listId) {
@@ -1028,10 +1034,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     );
     if (terminal) return focusedWorkspace;
     return PopScope(
-      canPop: !_composerFocusNode.hasFocus,
+      canPop:
+          !_composerFocusNode.hasFocus &&
+          _composerMode == _ComposerMode.create &&
+          state.selectedTaskId == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _composerFocusNode.hasFocus) {
+        if (didPop) return;
+        if (_composerFocusNode.hasFocus) {
           _composerFocusNode.unfocus();
+        } else if (_composerMode == _ComposerMode.edit ||
+            _composerMode == _ComposerMode.duplicate) {
+          _cancelEditingComposer();
+        } else if (ref.read(workspaceViewModelProvider).selectedTaskId !=
+            null) {
+          _dismissContextMenu();
+          ref.read(workspaceViewModelProvider.notifier).clearTaskSelection();
         }
       },
       child: focusedWorkspace,
@@ -1062,12 +1079,7 @@ class _AndroidTaskComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
     final palette = TerminalPalette.of(context);
-    final modeLabel = switch (mode) {
-      _ComposerMode.create => null,
-      _ComposerMode.subtask => strings.newSubtask,
-      _ComposerMode.edit => strings.editTask,
-      _ComposerMode.duplicate => strings.duplicateTask,
-    };
+    final hasContext = contextTask != null;
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) => TextFieldTapRegion(
@@ -1103,55 +1115,25 @@ class _AndroidTaskComposer extends StatelessWidget {
                 ),
               if (mode == _ComposerMode.subtask &&
                   contextTask != null &&
-                  value.text.trim().isNotEmpty)
-                Container(
+                  focusNode.hasFocus)
+                _AndroidComposerPreview(
                   key: const ValueKey('android-composer-reply'),
-                  margin: const EdgeInsets.only(left: 10, right: 54, bottom: 6),
-                  padding: const EdgeInsets.fromLTRB(12, 7, 4, 7),
-                  decoration: BoxDecoration(
-                    color: palette.accent.withValues(alpha: .12),
-                    border: Border(
-                      left: BorderSide(color: palette.accent, width: 3),
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              strings.newSubtask,
-                              style: TextStyle(
-                                color: palette.accent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              contextTask!.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: strings.cancel,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: onCancelSubtask,
-                        icon: const Icon(Icons.close, size: 18),
-                      ),
-                    ],
-                  ),
+                  label: strings.newSubtask,
+                  text: contextTask!.title,
+                  onCancel: onCancelSubtask,
+                )
+              else if (mode == _ComposerMode.edit && contextTask != null)
+                _AndroidComposerPreview(
+                  key: const ValueKey('android-composer-edit-preview'),
+                  label: strings.editTask,
+                  text: value.text,
                 ),
-              if (modeLabel != null && mode != _ComposerMode.subtask)
+              if (mode == _ComposerMode.duplicate)
                 Padding(
                   key: const ValueKey('android-composer-mode'),
                   padding: const EdgeInsets.only(left: 16, bottom: 3),
                   child: Text(
-                    modeLabel,
+                    strings.duplicateTask,
                     style: TextStyle(
                       color: palette.accent,
                       fontSize: 12,
@@ -1163,41 +1145,47 @@ class _AndroidTaskComposer extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: TextField(
-                      key: const ValueKey('android-composer-field'),
-                      controller: controller,
-                      focusNode: focusNode,
-                      maxLines: 1,
-                      textInputAction: TextInputAction.done,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.singleLineFormatter,
-                      ],
-                      onTapOutside: (_) => focusNode.unfocus(),
-                      decoration: InputDecoration(
-                        hintText: mode == _ComposerMode.subtask
-                            ? strings.addNewSubtask
-                            : strings.addNewTask,
-                        hintStyle: TextStyle(color: palette.muted),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 13,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(26),
-                          borderSide: BorderSide(color: palette.muted),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(26),
-                          borderSide: BorderSide(
-                            color: palette.muted.withValues(alpha: .6),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 79),
+                      child: TextField(
+                        key: const ValueKey('android-composer-field'),
+                        controller: controller,
+                        focusNode: focusNode,
+                        minLines: 1,
+                        maxLines: null,
+                        textInputAction: TextInputAction.newline,
+                        style: const TextStyle(fontSize: 14, height: 1.2),
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        onTapOutside: (_) => focusNode.unfocus(),
+                        decoration: InputDecoration(
+                          hintText: mode == _ComposerMode.subtask
+                              ? strings.addNewSubtask
+                              : strings.addNewTask,
+                          hintStyle: TextStyle(color: palette.muted),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
                           ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(26),
-                          borderSide: BorderSide(
-                            color: palette.accent,
-                            width: 1.5,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(26),
+                            borderSide: BorderSide(color: palette.muted),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(26),
+                            borderSide: BorderSide(
+                              color: hasContext
+                                  ? palette.accent
+                                  : palette.muted.withValues(alpha: .6),
+                              width: hasContext ? 1.5 : 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(26),
+                            borderSide: BorderSide(
+                              color: palette.accent,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -1225,6 +1213,69 @@ class _AndroidTaskComposer extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AndroidComposerPreview extends StatelessWidget {
+  const _AndroidComposerPreview({
+    super.key,
+    required this.label,
+    required this.text,
+    this.onCancel,
+  });
+
+  final String label;
+  final String text;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = TerminalPalette.of(context);
+    final strings = AppLocalizations.of(context)!;
+    return Container(
+      margin: const EdgeInsets.only(left: 10, right: 54, bottom: 6),
+      padding: EdgeInsets.fromLTRB(12, 7, onCancel == null ? 12 : 4, 7),
+      decoration: BoxDecoration(
+        color: palette.accent.withValues(alpha: .12),
+        border: Border(left: BorderSide(color: palette.accent, width: 3)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: palette.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 112),
+                  child: Scrollbar(
+                    child: SingleChildScrollView(child: Text(text)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onCancel != null)
+            IconButton(
+              tooltip: strings.cancel,
+              visualDensity: VisualDensity.compact,
+              onPressed: onCancel,
+              icon: const Icon(Icons.close, size: 18),
+            ),
+        ],
       ),
     );
   }

@@ -376,6 +376,20 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     );
   }
 
+  void clearTaskSelection() {
+    if (state.selectedTaskId == null &&
+        !state.hasMultiSelection &&
+        state.selectionAnchorTaskId == null) {
+      return;
+    }
+    state = state.copyWith(
+      clearSelection: true,
+      clearMultiSelection: true,
+      clearSelectionAnchor: true,
+    );
+    _scheduleDeviceSave();
+  }
+
   void extendTaskSelection(int delta) {
     final list = state.currentList;
     if (list == null || delta == 0) return;
