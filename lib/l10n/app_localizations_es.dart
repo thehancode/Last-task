@@ -122,6 +122,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get listsLabel => 'Listas';
 
   @override
+  String get openSidebar => 'Abrir barra lateral';
+
+  @override
   String get renameList => 'Renombrar lista';
 
   @override
@@ -231,6 +234,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get edit => 'Editar';
+
+  @override
+  String get copy => 'Copiar';
 
   @override
   String get duplicate => 'Duplicar';
@@ -658,6 +664,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get listsLabel => 'Listas';
 
   @override
+  String get openSidebar => 'Abrir barra lateral';
+
+  @override
   String get renameList => 'Renombrar lista';
 
   @override
@@ -767,6 +776,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get edit => 'Editar';
+
+  @override
+  String get copy => 'Copiar';
 
   @override
   String get duplicate => 'Duplicar';
@@ -1194,6 +1206,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get listsLabel => 'Listas';
 
   @override
+  String get openSidebar => 'Abrir barra lateral';
+
+  @override
   String get renameList => 'Renombrar lista';
 
   @override
@@ -1303,6 +1318,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get edit => 'Editar';
+
+  @override
+  String get copy => 'Copiar';
 
   @override
   String get duplicate => 'Duplicar';

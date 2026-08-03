@@ -1211,6 +1211,23 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.binding.setSurfaceSize(const Size(900, 700));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    String? clipboardText;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText =
+              (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
     final repository = _Lists([_listWithTask()]);
     await tester.pumpWidget(
       ProviderScope(
@@ -1232,9 +1249,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('android-context-edit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('android-context-copy')), findsOneWidget);
     expect(
       find.byKey(const ValueKey('android-context-duplicate')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey('android-context-archive')),
@@ -1254,6 +1272,24 @@ void main() {
       findsOneWidget,
     );
 
+    final edit = find.byKey(const ValueKey('android-context-edit'));
+    final copy = find.byKey(const ValueKey('android-context-copy'));
+    final archive = find.byKey(const ValueKey('android-context-archive'));
+    final delete = find.byKey(const ValueKey('android-context-delete'));
+    expect(tester.getCenter(edit).dx, lessThan(tester.getCenter(copy).dx));
+    expect(tester.getCenter(copy).dx, lessThan(tester.getCenter(archive).dx));
+    expect(tester.getCenter(archive).dx, lessThan(tester.getCenter(delete).dx));
+
+    await tester.tap(copy);
+    await tester.pump();
+    expect(clipboardText, 'Swipe me');
+    expect(
+      find.byKey(const ValueKey('android-task-context-menu')),
+      findsNothing,
+    );
+
+    await tester.longPress(task);
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('android-context-edit')));
     await tester.pumpAndSettle();
     expect(
@@ -1270,40 +1306,18 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets(
-    'Android opens lists at the Done and Pending boundary with edge fades',
-    (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-      await tester.binding.setSurfaceSize(const Size(420, 420));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final now = DateTime.utc(2026, 1, 1);
-      Task task(String id, TaskStatus status) => Task(
-        id: id,
-        title: '$status $id',
-        status: status,
-        createdAt: now,
-        updatedAt: now,
-        completedAt: status == TaskStatus.done ? now : null,
-        daily: false,
-        completionHistory: const [],
-      );
-      final repository = _Lists([
-        TaskList(
-          schemaVersion: currentSchemaVersion,
-          id: 'boundary-list',
-          name: 'Boundary',
-          tasks: [
-            for (var index = 0; index < 6; index++)
-              task('done-$index', TaskStatus.done),
-            for (var index = 0; index < 8; index++)
-              task('pending-$index', TaskStatus.pending),
-          ],
-          createdAt: now,
-        ),
-      ]);
+  testWidgets('Android double tap completes an active task directly', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final status in [TaskStatus.pending, TaskStatus.doing]) {
+      final repository = _Lists([_listWithTask(status: status)]);
       await tester.pumpWidget(
         ProviderScope(
+          key: ValueKey(status),
           overrides: [
             deviceStateRepositoryProvider.overrideWithValue(
               const _DeviceState(),
@@ -1314,41 +1328,109 @@ void main() {
           child: const LastTaskApp(),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 30));
-      await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
 
-      final active = find.byKey(
-        const ValueKey('android-active-list-boundary-list'),
+      final task = find.bySemanticsLabel(
+        RegExp('${status.label} task: Swipe me'),
       );
-      final viewport = find.descendant(
-        of: active,
-        matching: find.byKey(const ValueKey('task-list-viewport')),
-      );
-      final lastDone = find.bySemanticsLabel(RegExp('Done task:.*done-5'));
-      expect(
-        tester.widget<SingleChildScrollView>(viewport).controller!.offset,
-        greaterThan(400),
-      );
-      final viewportTop = tester.getTopLeft(viewport).dy;
-      final doneRect = tester.getRect(lastDone);
-      expect(doneRect.top, lessThan(viewportTop));
-      expect(doneRect.bottom, greaterThan(viewportTop));
-      expect(
-        tester.getTopLeft(find.textContaining('Pending (8)')).dy,
-        lessThan(tester.getBottomLeft(viewport).dy),
-      );
-      expect(
-        find.byKey(const ValueKey('android-task-scroll-fade')),
-        findsWidgets,
-      );
-      expect(find.byKey(const ValueKey('task-overflow-up')), findsNothing);
-      expect(find.byKey(const ValueKey('task-overflow-down')), findsNothing);
-      debugDefaultTargetPlatformOverride = null;
-    },
-  );
+      await tester.tap(task);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(task);
+      await tester.pumpAndSettle();
 
-  testWidgets('Android archives from the context menu into the left page', (
+      expect(repository._lists.single.tasks.single.status, TaskStatus.done);
+      expect(
+        find.bySemanticsLabel(RegExp('Done task: Swipe me')),
+        findsNothing,
+      );
+      await tester.drag(
+        find.byKey(const ValueKey('task-panel-list')),
+        const Offset(-360, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(RegExp('Done task: Swipe me')),
+        findsOneWidget,
+      );
+    }
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android puts Done then Archived on the right page', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+    Task task(String id, TaskStatus status) => Task(
+      id: id,
+      title: '$status $id',
+      status: status,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: status == TaskStatus.done ? now : null,
+      daily: false,
+      completionHistory: const [],
+    );
+    final repository = _Lists([
+      TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'page-list',
+        name: 'Pages',
+        tasks: [
+          task('done-first', TaskStatus.done),
+          task('archived', TaskStatus.archived),
+          task('done-second', TaskStatus.done),
+          task('pending', TaskStatus.pending),
+        ],
+        createdAt: now,
+      ),
+    ]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 30));
+
+    expect(find.textContaining('Pending (1)'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Pending task:.*pending')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel(RegExp('Done task:')), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Archived task:')), findsNothing);
+
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    await tester.drag(panel, const Offset(-360, 0));
+    await tester.pumpAndSettle();
+
+    final doneHeading = find.textContaining('Done (2)');
+    final archivedHeading = find.textContaining('Archived (1)');
+    final firstDone = find.bySemanticsLabel(RegExp('Done task:.*done-first'));
+    final secondDone = find.bySemanticsLabel(RegExp('Done task:.*done-second'));
+    expect(doneHeading, findsOneWidget);
+    expect(archivedHeading, findsOneWidget);
+    expect(
+      tester.getTopLeft(doneHeading).dy,
+      lessThan(tester.getTopLeft(archivedHeading).dy),
+    );
+    expect(
+      tester.getTopLeft(firstDone).dy,
+      lessThan(tester.getTopLeft(secondDone).dy),
+    );
+    expect(find.bySemanticsLabel(RegExp('Pending task:')), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android archives from the context menu into the right page', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -1380,7 +1462,7 @@ void main() {
     expect(archivedPanel, findsNothing);
     await tester.drag(panel, const Offset(-360, 0));
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(archivedPanel).dx, lessThan(20));
+    expect(tester.getTopLeft(archivedPanel).dx, lessThan(30));
     expect(
       find.bySemanticsLabel(RegExp('Archived task: Swipe me')),
       findsOneWidget,
@@ -1388,9 +1470,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android right swipe latches sidebar and list taps navigate', (
-    tester,
-  ) async {
+  testWidgets('Android page return does not open the sidebar', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.binding.setSurfaceSize(const Size(900, 700));
@@ -1434,6 +1514,23 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 20));
 
+    final title = find.text('First');
+    final headerButton = find.byKey(const ValueKey('android-open-sidebar'));
+    final twoLineIcon = find.byKey(
+      const ValueKey('android-two-line-menu-icon'),
+    );
+    expect(headerButton, findsOneWidget);
+    expect(twoLineIcon, findsOneWidget);
+    expect(
+      find.descendant(of: twoLineIcon, matching: find.byType(Container)),
+      findsNWidgets(2),
+    );
+    expect(tester.getCenter(title).dx, closeTo(450, 0.1));
+    expect(
+      tester.getCenter(headerButton).dx,
+      lessThan(tester.getCenter(title).dx),
+    );
+
     final panel = find.byKey(const ValueKey('task-panel-list'));
     await tester.dragFrom(tester.getCenter(panel), const Offset(-600, 0));
     await tester.pumpAndSettle();
@@ -1445,16 +1542,39 @@ void main() {
     expect(find.text('Second task'), findsNothing);
     expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
 
+    await tester.tap(headerButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
+    await tester.tapAt(const Offset(880, 350));
+    await tester.pumpAndSettle();
+
     await tester.dragFrom(tester.getCenter(panel), const Offset(600, 0));
     await tester.pumpAndSettle();
     expect(find.text('First task'), findsOneWidget);
+    expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
+
+    await tester.dragFrom(tester.getCenter(panel), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    await tester.dragFrom(
+      Offset(13, tester.getCenter(panel).dy),
+      const Offset(600, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('First task'), findsOneWidget);
+    expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
 
     final composerField = find.byKey(const ValueKey('android-composer-field'));
     await tester.tap(composerField);
     await tester.pump();
     expect(tester.widget<TextField>(composerField).focusNode?.hasFocus, isTrue);
 
-    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
+    await tester.dragFrom(
+      Offset(13, tester.getCenter(panel).dy),
+      const Offset(360, 0),
+    );
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('android-sidebar-scroll')),
@@ -1474,10 +1594,16 @@ void main() {
       tester.widget<TextField>(composerField).focusNode?.hasFocus,
       isFalse,
     );
+    await tester.dragFrom(tester.getCenter(panel), const Offset(360, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android puts collapse and advance controls before task text', (
+  testWidgets('Android compacts task rows and keeps collapse before text', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -1502,8 +1628,10 @@ void main() {
       name: 'Tree',
       createdAt: now,
       tasks: [
-        task('root', 'Root task'),
+        task('root', 'Root task\nsecond line'),
         task('child', 'Child task', parentId: 'root'),
+        task('leaf-one', 'First leaf task'),
+        task('leaf-two', 'Second leaf task'),
       ],
     );
     await tester.pumpWidget(
@@ -1511,7 +1639,14 @@ void main() {
         overrides: [
           deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
-          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          settingsRepositoryProvider.overrideWithValue(
+            _Settings(
+              const AppSettings(
+                nativeFontSize: 16,
+                longTitleDisplay: LongTitleDisplay.wrapAll,
+              ),
+            ),
+          ),
         ],
         child: const LastTaskApp(),
       ),
@@ -1520,15 +1655,45 @@ void main() {
 
     final collapse = find.byKey(const ValueKey('task-collapse-root'));
     final advance = find.byKey(const ValueKey('task-advance-root'));
+    final rootText = find.text('Root task\nsecond line');
     expect(collapse, findsOneWidget);
-    expect(advance, findsOneWidget);
+    expect(advance, findsNothing);
     expect(
       tester.getCenter(collapse).dx,
-      lessThan(tester.getCenter(advance).dx),
+      lessThan(tester.getTopLeft(rootText).dx),
+    );
+    expect(tester.widget<Text>(rootText).style?.height, 1.1);
+    expect(tester.getSize(rootText).height, inInclusiveRange(30, 32));
+    expect(find.byKey(const ValueKey('task-prefix-root')), findsNothing);
+    final childPrefix = find.byKey(const ValueKey('task-prefix-child'));
+    final leafPrefix = find.byKey(const ValueKey('task-prefix-leaf-one'));
+    expect(childPrefix, findsOneWidget);
+    expect(leafPrefix, findsOneWidget);
+    expect(
+      tester.getCenter(childPrefix).dx,
+      greaterThan(tester.getCenter(leafPrefix).dx),
+    );
+
+    final divider = find.byKey(const ValueKey('task-divider-leaf-one'));
+    final leafRow = find.bySemanticsLabel(
+      RegExp('Pending task: First leaf task'),
+    );
+    expect(divider, findsOneWidget);
+    expect(find.byKey(const ValueKey('task-divider-root')), findsNothing);
+    expect(find.byKey(const ValueKey('task-divider-child')), findsNothing);
+    expect(find.byKey(const ValueKey('task-divider-leaf-two')), findsNothing);
+    expect(tester.getSize(divider).height, 10);
+    expect(
+      find.descendant(of: divider, matching: find.byType(CustomPaint)),
+      findsOneWidget,
     );
     expect(
-      tester.getCenter(advance).dx,
-      lessThan(tester.getTopLeft(find.text('Root task')).dx),
+      tester.getSize(divider).width,
+      closeTo(tester.getSize(leafRow).width * 0.75, 0.1),
+    );
+    expect(
+      tester.getCenter(divider).dx,
+      closeTo(tester.getCenter(leafRow).dx, 0.1),
     );
 
     await tester.tap(collapse);
@@ -2560,7 +2725,10 @@ List<TaskList> _wideTabLists() {
   ];
 }
 
-TaskList _listWithTask({List<TaskTag> tags = const []}) {
+TaskList _listWithTask({
+  List<TaskTag> tags = const [],
+  TaskStatus status = TaskStatus.pending,
+}) {
   final now = DateTime.utc(2026, 1, 1);
   return TaskList(
     schemaVersion: currentSchemaVersion,
@@ -2571,7 +2739,7 @@ TaskList _listWithTask({List<TaskTag> tags = const []}) {
       Task(
         id: 'task-1',
         title: 'Swipe me',
-        status: TaskStatus.pending,
+        status: status,
         createdAt: now,
         updatedAt: now,
         completedAt: null,

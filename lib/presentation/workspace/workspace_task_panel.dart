@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,12 +22,14 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     required this.backgroundConfigured,
     this.contextualTaskId,
     this.onTaskLongPress,
+    this.onAndroidListPageChanged,
   });
   final WorkspaceState state;
   final Uint8List? background;
   final bool backgroundConfigured;
   final String? contextualTaskId;
   final void Function(Task task, Offset globalPosition)? onTaskLongPress;
+  final ValueChanged<int>? onAndroidListPageChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +39,12 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     final normalContent = switch (state.view) {
       WorkspaceView.list =>
-        android ? _AndroidListPages(state: state) : _ListContent(state: state),
+        android
+            ? _AndroidListPages(
+                state: state,
+                onPageChanged: onAndroidListPageChanged,
+              )
+            : _ListContent(state: state),
       WorkspaceView.completed => _CompletedContent(state: state),
       WorkspaceView.multi => _MultiContent(state: state),
     };
@@ -315,9 +321,10 @@ class _ListContent extends StatelessWidget {
 }
 
 class _AndroidListPages extends StatefulWidget {
-  const _AndroidListPages({required this.state});
+  const _AndroidListPages({required this.state, this.onPageChanged});
 
   final WorkspaceState state;
+  final ValueChanged<int>? onPageChanged;
 
   @override
   State<_AndroidListPages> createState() => _AndroidListPagesState();
@@ -325,14 +332,40 @@ class _AndroidListPages extends StatefulWidget {
 
 class _AndroidListPagesState extends State<_AndroidListPages> {
   bool _openingDrawer = false;
+  int _pageIndex = 0;
+  int? _gestureStartPage;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onPageChanged?.call(0);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _AndroidListPages oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state.currentListId == widget.state.currentListId) return;
+    _pageIndex = 0;
+    _gestureStartPage = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onPageChanged?.call(0);
+    });
+  }
 
   bool _handlePageScroll(ScrollNotification notification) {
+    if (notification is ScrollStartNotification) {
+      _gestureStartPage = _pageIndex;
+    }
     if (notification is ScrollEndNotification) {
       _openingDrawer = false;
+      _gestureStartPage = null;
     }
     if (notification.metrics.axis != Axis.horizontal ||
         notification is! OverscrollNotification ||
         notification.overscroll >= 0 ||
+        _gestureStartPage != 0 ||
         _openingDrawer) {
       return false;
     }
@@ -349,68 +382,44 @@ class _AndroidListPagesState extends State<_AndroidListPages> {
         onNotification: _handlePageScroll,
         child: PageView(
           key: ValueKey('android-list-pages-${widget.state.currentListId}'),
+          onPageChanged: (index) {
+            _pageIndex = index;
+            widget.onPageChanged?.call(index);
+          },
           children: [
-            _AndroidActiveListContent(
+            _AndroidPendingContent(
               key: ValueKey(
                 'android-active-list-${widget.state.currentListId}',
               ),
               state: widget.state,
             ),
-            _AndroidArchivedContent(state: widget.state),
+            _AndroidDoneArchivedContent(state: widget.state),
           ],
         ),
       );
 }
 
-class _AndroidActiveListContent extends StatefulWidget {
-  const _AndroidActiveListContent({super.key, required this.state});
+class _AndroidPendingContent extends StatelessWidget {
+  const _AndroidPendingContent({super.key, required this.state});
 
   final WorkspaceState state;
 
   @override
-  State<_AndroidActiveListContent> createState() =>
-      _AndroidActiveListContentState();
-}
-
-class _AndroidActiveListContentState extends State<_AndroidActiveListContent> {
-  final _lastDoneRowKey = GlobalKey(debugLabel: 'android-last-done-row');
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     final visible = visibleTreeTasks(
       state.currentList,
       revealTaskIds: state.search?.matchIds.toSet() ?? const {},
     );
-    final doneTasks = visible
-        .where(
-          (task) =>
-              taskRoot(state.currentList!, task).status == TaskStatus.done,
-        )
-        .toList();
     final pendingTasks = visible.where((task) {
       final status = taskRoot(state.currentList!, task).status;
       return status == TaskStatus.doing || status == TaskStatus.pending;
     }).toList();
     return _TaskScrollView(
       key: const ValueKey('task-scroll-list'),
-      // The Done/Pending boundary is measured on entry, so Android lays out
-      // the active list eagerly before applying its initial scroll offset.
-      eager: true,
+      eager: state.search != null,
       indicatorColor: TerminalPalette.of(context).accent,
       padding: const EdgeInsets.all(12),
-      initialAnchorKey: doneTasks.isEmpty ? null : _lastDoneRowKey,
       children: [
-        _TaskSection(
-          state: state,
-          title: workspaceStatusLabel(
-            TaskStatus.done,
-            AppLocalizations.of(context)!,
-          ),
-          status: TaskStatus.done,
-          tasks: doneTasks,
-          lastTaskKey: doneTasks.isEmpty ? null : _lastDoneRowKey,
-        ),
         _TaskSection(
           state: state,
           title: workspaceStatusLabel(
@@ -425,34 +434,52 @@ class _AndroidActiveListContentState extends State<_AndroidActiveListContent> {
   }
 }
 
-class _AndroidArchivedContent extends StatelessWidget {
-  const _AndroidArchivedContent({required this.state});
+class _AndroidDoneArchivedContent extends StatelessWidget {
+  const _AndroidDoneArchivedContent({required this.state});
 
   final WorkspaceState state;
 
   @override
   Widget build(BuildContext context) {
+    final searchMatches = state.search?.matchIds.toSet() ?? const <String>{};
+    final doneTasks = visibleTreeTasks(
+      state.currentList,
+      rootStatuses: const {TaskStatus.done},
+      revealTaskIds: searchMatches,
+    );
     final archivedTasks = visibleTreeTasks(
       state.currentList,
       rootStatuses: const {TaskStatus.archived},
-      revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+      revealTaskIds: searchMatches,
     );
     return KeyedSubtree(
-      key: const ValueKey('android-archived-panel'),
+      key: const ValueKey('android-done-archived-panel'),
       child: _TaskScrollView(
-        key: const ValueKey('task-scroll-archived'),
+        key: const ValueKey('task-scroll-done-archived'),
         eager: state.search != null,
-        indicatorColor: TerminalPalette.of(context).muted,
+        indicatorColor: TerminalPalette.of(context).done,
         padding: const EdgeInsets.all(12),
         children: [
           _TaskSection(
             state: state,
             title: workspaceStatusLabel(
-              TaskStatus.archived,
+              TaskStatus.done,
               AppLocalizations.of(context)!,
             ),
-            status: TaskStatus.archived,
-            tasks: archivedTasks,
+            status: TaskStatus.done,
+            tasks: doneTasks,
+          ),
+          KeyedSubtree(
+            key: const ValueKey('android-archived-panel'),
+            child: _TaskSection(
+              state: state,
+              title: workspaceStatusLabel(
+                TaskStatus.archived,
+                AppLocalizations.of(context)!,
+              ),
+              status: TaskStatus.archived,
+              tasks: archivedTasks,
+            ),
           ),
         ],
       ),
@@ -483,11 +510,15 @@ class _CompletedContent extends StatelessWidget {
           ? TerminalMetrics.panelPadding(context)
           : const EdgeInsets.all(12),
       children: [
-        for (final row in rows)
+        for (var index = 0; index < rows.length; index++)
           WorkspaceTaskRow(
-            task: row.task,
+            task: rows[index].task,
             state: state,
-            completedAt: row.completedAt,
+            completedAt: rows[index].completedAt,
+            showMobileDivider:
+                index < rows.length - 1 &&
+                rows[index].task.parentId == null &&
+                rows[index + 1].task.parentId == null,
           ),
       ],
     );
@@ -597,14 +628,12 @@ class _TaskScrollView extends StatefulWidget {
     required this.indicatorColor,
     required this.padding,
     required this.children,
-    this.initialAnchorKey,
   });
 
   final bool eager;
   final Color indicatorColor;
   final EdgeInsetsGeometry padding;
   final List<Widget> children;
-  final GlobalKey? initialAnchorKey;
 
   @override
   State<_TaskScrollView> createState() => _TaskScrollViewState();
@@ -620,7 +649,6 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
     super.initState();
     _controller.addListener(_updateIndicators);
     _scheduleIndicatorUpdate();
-    _scheduleInitialScroll();
   }
 
   @override
@@ -640,24 +668,6 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
   void _scheduleIndicatorUpdate() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _updateIndicators();
-    });
-  }
-
-  void _scheduleInitialScroll() {
-    final anchorKey = widget.initialAnchorKey;
-    if (anchorKey == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_controller.hasClients) return;
-      final renderObject = anchorKey.currentContext?.findRenderObject();
-      if (renderObject is! RenderBox) return;
-      final viewport = RenderAbstractViewport.of(renderObject);
-      final anchorOffset = viewport.getOffsetToReveal(renderObject, 0).offset;
-      final target = (anchorOffset + renderObject.size.height / 2).clamp(
-        _controller.position.minScrollExtent,
-        _controller.position.maxScrollExtent,
-      );
-      _controller.jumpTo(target);
-      _updateIndicators();
     });
   }
 
@@ -761,13 +771,11 @@ class _TaskSection extends StatelessWidget {
     required this.title,
     required this.status,
     required this.tasks,
-    this.lastTaskKey,
   });
   final WorkspaceState state;
   final String title;
   final TaskStatus status;
   final List<Task> tasks;
-  final GlobalKey? lastTaskKey;
 
   @override
   Widget build(BuildContext context) {
@@ -800,9 +808,12 @@ class _TaskSection extends StatelessWidget {
           else
             for (var index = 0; index < tasks.length; index++)
               WorkspaceTaskRow(
-                key: index == tasks.length - 1 ? lastTaskKey : null,
                 task: tasks[index],
                 state: state,
+                showMobileDivider:
+                    index < tasks.length - 1 &&
+                    tasks[index].parentId == null &&
+                    tasks[index + 1].parentId == null,
               ),
         ],
       ),

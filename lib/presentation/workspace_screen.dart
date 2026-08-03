@@ -38,6 +38,7 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     with WidgetsBindingObserver {
   final _focusNode = FocusNode(debugLabel: 'workspace');
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _androidOverlayKey = GlobalKey();
   Timer? _grabTimer;
   Timer? _dailyRefreshTimer;
@@ -53,6 +54,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   double _lastViewInset = 0;
   String? _contextualTaskId;
   Offset? _contextMenuPosition;
+  bool _androidSecondaryListPage = false;
 
   @override
   void initState() {
@@ -308,6 +310,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   }
 
   void _selectAndroidList(String listId) {
+    if (_androidSecondaryListPage) {
+      setState(() => _androidSecondaryListPage = false);
+    }
     ref.read(workspaceViewModelProvider.notifier).selectList(listId);
     _activateComposer(_ComposerMode.create, requestFocus: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -315,25 +320,32 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     });
   }
 
+  void _setAndroidListPage(int index) {
+    final secondary = index == 1;
+    if (_androidSecondaryListPage == secondary) return;
+    setState(() => _androidSecondaryListPage = secondary);
+  }
+
+  void _openAndroidSidebar() => _scaffoldKey.currentState?.openDrawer();
+
   void _editContextTask() {
     final task = _taskById(_contextualTaskId);
     _dismissContextMenu(cancelComposer: false);
     if (task != null) _activateComposer(_ComposerMode.edit, task: task);
   }
 
-  Future<void> _duplicateContextTask() async {
+  Future<void> _copyContextTask() async {
     final task = _taskById(_contextualTaskId);
     if (task == null) return;
-    final list = _listForTask(task.id);
-    _dismissContextMenu(cancelComposer: false);
-    if (list != null && taskHasChildren(list, task)) {
-      final vm = ref.read(workspaceViewModelProvider.notifier);
-      vm.selectTask(task.id);
-      _activateComposer(_ComposerMode.create, requestFocus: false);
-      await vm.duplicateSelectedTaskTree();
-      return;
-    }
-    _activateComposer(_ComposerMode.duplicate, task: task);
+    _dismissContextMenu();
+    await Clipboard.setData(ClipboardData(text: task.title));
+    if (!mounted) return;
+    final vm = ref.read(workspaceViewModelProvider.notifier);
+    vm.highlightTasks([task.id]);
+    vm.showNotice(
+      AppLocalizations.of(context)!.taskWasCopied,
+      usesDoingColor: true,
+    );
   }
 
   Future<void> _deleteContextTask() async {
@@ -868,7 +880,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                         children: [
                           Column(
                             children: [
-                              AndroidWorkspaceHeader(state: state),
+                              AndroidWorkspaceHeader(
+                                state: state,
+                                onOpenSidebar: _openAndroidSidebar,
+                              ),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.only(
@@ -882,6 +897,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                                         backgroundPath != null,
                                     contextualTaskId: _contextualTaskId,
                                     onTaskLongPress: _showContextMenu,
+                                    onAndroidListPageChanged:
+                                        _setAndroidListPage,
                                   ),
                                 ),
                               ),
@@ -903,7 +920,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                                   _contextMenuPosition ?? Offset.zero,
                               availableSize: constraints.biggest,
                               onEdit: _editContextTask,
-                              onDuplicate: _duplicateContextTask,
+                              onCopy: _copyContextTask,
                               onArchive: _archiveContextTask,
                               onDelete: _deleteContextTask,
                             ),
@@ -930,6 +947,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       autofocus: true,
       onKeyEvent: _onKey,
       child: Scaffold(
+        key: _scaffoldKey,
         drawer: terminal
             ? null
             : Drawer(
@@ -942,9 +960,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                   onDeleteList: _confirmDeleteList,
                 ),
               ),
-        drawerEdgeDragWidth: terminal ? null : MediaQuery.sizeOf(context).width,
+        drawerEdgeDragWidth: terminal
+            ? null
+            : state.view == WorkspaceView.list
+            ? 24
+            : MediaQuery.sizeOf(context).width,
         drawerEnableOpenDragGesture:
-            terminal || state.view != WorkspaceView.list,
+            terminal ||
+            state.view != WorkspaceView.list ||
+            !_androidSecondaryListPage,
         onDrawerChanged: terminal
             ? null
             : (opened) {
@@ -1199,7 +1223,7 @@ class _AndroidTaskContextMenu extends StatelessWidget {
     required this.pressPosition,
     required this.availableSize,
     required this.onEdit,
-    required this.onDuplicate,
+    required this.onCopy,
     required this.onArchive,
     required this.onDelete,
   });
@@ -1210,7 +1234,7 @@ class _AndroidTaskContextMenu extends StatelessWidget {
   final Offset pressPosition;
   final Size availableSize;
   final VoidCallback onEdit;
-  final VoidCallback onDuplicate;
+  final VoidCallback onCopy;
   final VoidCallback onArchive;
   final VoidCallback onDelete;
 
@@ -1246,9 +1270,9 @@ class _AndroidTaskContextMenu extends StatelessWidget {
               icon: const Icon(Icons.edit),
             ),
             IconButton(
-              key: const ValueKey('android-context-duplicate'),
-              tooltip: strings.duplicate,
-              onPressed: onDuplicate,
+              key: const ValueKey('android-context-copy'),
+              tooltip: strings.copy,
+              onPressed: onCopy,
               icon: const Icon(Icons.copy),
             ),
             IconButton(

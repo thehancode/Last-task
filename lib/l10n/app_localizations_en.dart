@@ -122,6 +122,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listsLabel => 'Lists';
 
   @override
+  String get openSidebar => 'Open sidebar';
+
+  @override
   String get renameList => 'Rename list';
 
   @override
@@ -231,6 +234,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get edit => 'Edit';
+
+  @override
+  String get copy => 'Copy';
 
   @override
   String get duplicate => 'Duplicate';

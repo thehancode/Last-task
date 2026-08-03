@@ -310,6 +310,12 @@ abstract class AppLocalizations {
   /// **'Lists'**
   String get listsLabel;
 
+  /// Tooltip for the Android button that opens the list sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Open sidebar'**
+  String get openSidebar;
+
   /// Task-list menu action and editor title.
   ///
   /// In en, this message translates to:
@@ -513,6 +519,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
+
+  /// Short task menu action that copies a task title.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
 
   /// Short task menu action.
   ///

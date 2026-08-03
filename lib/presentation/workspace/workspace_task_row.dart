@@ -49,12 +49,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
     this.completedAt,
     this.contextual = false,
     this.onLongPress,
+    this.showMobileDivider = false,
   });
   final Task task;
   final WorkspaceState state;
   final DateTime? completedAt;
   final bool contextual;
   final void Function(Task task, Offset globalPosition)? onLongPress;
+  final bool showMobileDivider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -96,6 +98,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
             : FontWeight.normal,
         decoration: done || archived ? TextDecoration.lineThrough : null,
         decorationColor: TerminalPalette.of(context).muted,
+        height: terminal ? null : 1.1,
       ),
     );
     final row = Semantics(
@@ -124,6 +127,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
               : null,
           onDoubleTap: () async {
             final vm = ref.read(workspaceViewModelProvider.notifier);
+            if (!terminal) {
+              if (task.status == TaskStatus.pending ||
+                  task.status == TaskStatus.doing) {
+                vm.selectTask(task.id);
+                await vm.completeSelectedTask();
+              }
+              return;
+            }
             final list = state.currentList;
             if (state.hasMultiSelection && list != null) {
               final message = AppLocalizations.of(context)!.selectionWasCopied;
@@ -143,7 +154,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
               vm.highlightTasks([task.id]);
               vm.showNotice(message, usesDoingColor: true);
             }
-            if (terminal) vm.selectTask(task.id);
+            vm.selectTask(task.id);
           },
           borderRadius: terminal ? BorderRadius.zero : BorderRadius.circular(5),
           child: AnimatedContainer(
@@ -151,10 +162,10 @@ class WorkspaceTaskRow extends ConsumerWidget {
             duration: terminal
                 ? Duration.zero
                 : const Duration(milliseconds: 220),
-            margin: EdgeInsets.symmetric(vertical: terminal ? 0 : 2),
+            margin: EdgeInsets.zero,
             padding: EdgeInsets.symmetric(
               horizontal: terminal ? 0 : 8,
-              vertical: terminal ? 1 : 9,
+              vertical: terminal ? 1 : 4,
             ).add(EdgeInsets.only(left: terminal ? 0 : depth * 16.0)),
             decoration: BoxDecoration(
               color: highlighted
@@ -211,23 +222,17 @@ class WorkspaceTaskRow extends ConsumerWidget {
                                   : Icons.arrow_drop_down,
                             ),
                           )
-                        : null,
-                  ),
-                if (completedAt == null &&
-                    !terminal &&
-                    !(task.parentId != null && task.status == TaskStatus.done))
-                  IconButton(
-                    key: ValueKey('task-advance-${task.id}'),
-                    tooltip: AppLocalizations.of(context)!.advanceTask,
-                    color: visuallySelected
-                        ? TerminalPalette.of(context).background
-                        : workspaceStatusColor(context, task.status),
-                    onPressed: () {
-                      final vm = ref.read(workspaceViewModelProvider.notifier);
-                      vm.selectTask(task.id);
-                      unawaited(vm.advanceSelectedTask());
-                    },
-                    icon: const Icon(Icons.play_arrow),
+                        : Text(
+                            '-',
+                            key: ValueKey('task-prefix-${task.id}'),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: visuallySelected
+                                  ? TerminalPalette.of(context).background
+                                  : TerminalPalette.of(context).muted,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 Expanded(child: title),
                 _TaskTags(task: task, selected: visuallySelected),
@@ -281,9 +286,66 @@ class WorkspaceTaskRow extends ConsumerWidget {
       selected: terminal && selected,
       first: visibleTaskIds.isNotEmpty && visibleTaskIds.first == task.id,
       last: visibleTaskIds.isNotEmpty && visibleTaskIds.last == task.id,
-      child: interactiveRow,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          interactiveRow,
+          if (!terminal && showMobileDivider)
+            FractionallySizedBox(
+              widthFactor: 0.75,
+              child: SizedBox(
+                key: ValueKey('task-divider-${task.id}'),
+                height: 10,
+                child: CustomPaint(
+                  painter: _DottedTaskDividerPainter(
+                    color: TerminalPalette.of(context).muted,
+                    gap: _twoSpaceWidth(context),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
+}
+
+double _twoSpaceWidth(BuildContext context) {
+  final painter = TextPainter(
+    text: TextSpan(text: '  ', style: Theme.of(context).textTheme.bodyMedium),
+    textDirection: Directionality.of(context),
+  )..layout();
+  return painter.width;
+}
+
+class _DottedTaskDividerPainter extends CustomPainter {
+  const _DottedTaskDividerPainter({required this.color, required this.gap});
+
+  static const diameter = 2.0;
+
+  final Color color;
+  final double gap;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final step = diameter + gap;
+    final count = ((size.width + gap) / step).floor();
+    if (count <= 0) return;
+    final usedWidth = count * diameter + (count - 1) * gap;
+    final firstCenter = (size.width - usedWidth) / 2 + diameter / 2;
+    final paint = Paint()..color = color;
+    for (var index = 0; index < count; index++) {
+      canvas.drawCircle(
+        Offset(firstCenter + index * step, size.height / 2),
+        diameter / 2,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DottedTaskDividerPainter oldDelegate) =>
+      color != oldDelegate.color || gap != oldDelegate.gap;
 }
 
 class _TaskTags extends StatelessWidget {

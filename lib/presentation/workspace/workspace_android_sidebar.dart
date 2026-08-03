@@ -8,9 +8,14 @@ import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 
 class AndroidWorkspaceHeader extends ConsumerWidget {
-  const AndroidWorkspaceHeader({super.key, required this.state});
+  const AndroidWorkspaceHeader({
+    super.key,
+    required this.state,
+    required this.onOpenSidebar,
+  });
 
   final WorkspaceState state;
+  final VoidCallback onOpenSidebar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,45 +23,91 @@ class AndroidWorkspaceHeader extends ConsumerWidget {
     final isMulti = state.view == WorkspaceView.multi;
     final title = state.currentList?.name ?? strings.appTitle;
     final viewLabel = isMulti ? strings.multiView : strings.listView;
-    return Semantics(
-      button: true,
-      label: '$title, $viewLabel',
-      child: InkWell(
-        key: const ValueKey('android-view-toggle'),
-        borderRadius: BorderRadius.circular(12),
-        onTap: () =>
-            ref.read(workspaceViewModelProvider.notifier).toggleMultiView(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+    return SizedBox(
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 52),
+            child: Semantics(
+              button: true,
+              label: '$title, $viewLabel',
+              child: InkWell(
+                key: const ValueKey('android-view-toggle'),
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => ref
+                    .read(workspaceViewModelProvider.notifier)
+                    .toggleMultiView(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        viewLabel,
+                        key: const ValueKey('android-view-subtitle'),
+                        style: TextStyle(
+                          color: TerminalPalette.of(context).muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                viewLabel,
-                key: const ValueKey('android-view-subtitle'),
-                style: TextStyle(
-                  color: TerminalPalette.of(context).muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              key: const ValueKey('android-open-sidebar'),
+              tooltip: strings.openSidebar,
+              onPressed: onOpenSidebar,
+              icon: const _TwoLineMenuIcon(),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _TwoLineMenuIcon extends StatelessWidget {
+  const _TwoLineMenuIcon();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: const ValueKey('android-two-line-menu-icon'),
+    width: 24,
+    height: 18,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        for (var index = 0; index < 2; index++)
+          Container(
+            width: 20,
+            height: 2,
+            decoration: BoxDecoration(
+              color: IconTheme.of(context).color,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class AndroidWorkspaceSidebar extends ConsumerStatefulWidget {
