@@ -2670,6 +2670,23 @@ void main() {
     expect(find.text('23pt'), findsOneWidget);
     expect(find.text('Tag names'), findsNothing);
     expect(find.byKey(const ValueKey('tag-name-heart')), findsNothing);
+    final terminalLogOutAction = find.byKey(
+      const Key('settings-log-out-action'),
+    );
+    expect(terminalLogOutAction, findsOneWidget);
+    final terminalLogOutText = find.descendant(
+      of: terminalLogOutAction,
+      matching: find.text('Log out'),
+    );
+    expect(terminalLogOutText, findsOneWidget);
+    expect(
+      tester.widget<Text>(terminalLogOutText).style?.color,
+      TerminalPalette.of(tester.element(terminalLogOutAction)).error,
+    );
+    expect(
+      tester.getTopLeft(terminalLogOutAction).dy,
+      greaterThan(tester.getTopLeft(find.text('Load data').last).dy),
+    );
 
     await tester.tap(find.text('< Wrap selected >'));
     await tester.pump();
@@ -2768,6 +2785,30 @@ void main() {
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsNothing);
     expect(find.text('Tag names'), findsNothing);
+    final androidLogOutAction = find.byKey(
+      const Key('settings-log-out-action'),
+    );
+    expect(androidLogOutAction, findsOneWidget);
+    expect(find.text('Log out'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: androidLogOutAction,
+        matching: find.byIcon(Icons.logout),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<TextButton>(androidLogOutAction)
+          .style
+          ?.foregroundColor
+          ?.resolve(const {}),
+      Theme.of(tester.element(androidLogOutAction)).colorScheme.error,
+    );
+    expect(
+      tester.getTopLeft(androidLogOutAction).dy,
+      greaterThan(tester.getTopLeft(find.text('Language')).dy),
+    );
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });

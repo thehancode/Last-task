@@ -218,12 +218,6 @@ class _ConfigSettings extends StatelessWidget {
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(strings.logOut),
-            trailing: const Icon(Icons.logout),
-            onTap: onLogOut,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
             enabled: settings.longTitleDisplay == LongTitleDisplay.marquee,
             title: Text(strings.marqueeSpeedLabel),
             subtitle: Text(marqueePreset.label(strings)),
@@ -285,6 +279,17 @@ class _ConfigSettings extends StatelessWidget {
               onTap: onImportData,
             ),
           ],
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              key: const Key('settings-log-out-action'),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: onLogOut,
+              child: Text(strings.logOut),
+            ),
+          ),
         ],
       );
     }
@@ -301,10 +306,6 @@ class _ConfigSettings extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        _SettingsRow(
-          label: strings.logOut,
-          control: TextButton(onPressed: onLogOut, child: Text(strings.logOut)),
         ),
         _SettingsRow(
           label: strings.marqueeSpeedLabel,
@@ -398,6 +399,13 @@ class _ConfigSettings extends StatelessWidget {
             onTap: onImportData,
             fillWidth: true,
           ),
+        ),
+        _TextAction(
+          key: const Key('settings-log-out-action'),
+          value: strings.logOut,
+          onTap: onLogOut,
+          fillWidth: true,
+          enabledColor: TerminalPalette.of(context).error,
         ),
       ],
     );
@@ -704,16 +712,19 @@ class _StepControl extends StatelessWidget {
 
 class _TextAction extends StatelessWidget {
   const _TextAction({
+    super.key,
     required this.value,
     required this.onTap,
     this.semanticsLabel,
     this.fillWidth = false,
+    this.enabledColor,
   });
 
   final String value;
   final VoidCallback? onTap;
   final String? semanticsLabel;
   final bool fillWidth;
+  final Color? enabledColor;
 
   @override
   Widget build(BuildContext context) {
@@ -743,7 +754,7 @@ class _TextAction extends StatelessWidget {
                       value,
                       style: TextStyle(
                         color: enabled
-                            ? TerminalPalette.of(context).accent
+                            ? enabledColor ?? TerminalPalette.of(context).accent
                             : TerminalPalette.of(context).muted,
                         fontWeight: FontWeight.bold,
                       ),
