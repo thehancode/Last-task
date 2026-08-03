@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,6 +27,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     this.contextualTaskId,
     this.onTaskLongPress,
     this.onAndroidListPageChanged,
+    this.onAndroidOpenDrawer,
   });
   final WorkspaceState state;
   final Uint8List? background;
@@ -30,6 +35,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
   final String? contextualTaskId;
   final void Function(Task task, Offset globalPosition)? onTaskLongPress;
   final ValueChanged<int>? onAndroidListPageChanged;
+  final VoidCallback? onAndroidOpenDrawer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,6 +49,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
             ? _AndroidListPages(
                 state: state,
                 onPageChanged: onAndroidListPageChanged,
+                onOpenDrawer: onAndroidOpenDrawer,
               )
             : _ListContent(state: state),
       WorkspaceView.completed => _CompletedContent(state: state),
@@ -320,20 +327,128 @@ class _ListContent extends StatelessWidget {
   }
 }
 
+abstract final class AndroidGestureConfig {
+  static const touchSlop = 18.0;
+  static const horizontalDominance = 1.6;
+  static const pageCommitViewportFraction = 0.20;
+  static const pageCommitMinDistance = 72.0;
+  static const pageCommitMaxDistance = 112.0;
+  static const pageFlingVelocity = 350.0;
+  static const drawerEdgeWidth = 24.0;
+  static const drawerOpenDistance = 44.0;
+  static const settleDuration = Duration(milliseconds: 220);
+
+  static double pageCommitDistance(double viewportDimension) =>
+      (viewportDimension * pageCommitViewportFraction).clamp(
+        pageCommitMinDistance,
+        pageCommitMaxDistance,
+      );
+}
+
+class _AndroidGestureTrace {
+  _AndroidGestureTrace({
+    required this.source,
+    required this.startPage,
+    required this.startedAt,
+  });
+
+  final String source;
+  final int startPage;
+  final Duration startedAt;
+  Offset total = Offset.zero;
+  Offset? lockDelta;
+  String owner = 'unclaimed';
+  String result = 'none';
+  double releaseVelocity = 0;
+  Duration endedAt = Duration.zero;
+
+  double _angle(Offset delta) =>
+      math.atan2(delta.dy.abs(), delta.dx.abs()) * 180 / math.pi;
+
+  String _ratio(Offset delta) => delta.dy == 0
+      ? 'inf'
+      : (delta.dx.abs() / delta.dy.abs()).toStringAsFixed(2);
+
+  void printToConsole() {
+    if (!kDebugMode) return;
+    final lock = lockDelta;
+    final elapsed = (endedAt - startedAt).inMilliseconds;
+    debugPrint(
+      '[android-gesture] source=$source startPage=$startPage '
+      'dx=${total.dx.toStringAsFixed(1)} dy=${total.dy.toStringAsFixed(1)} '
+      'angle=${_angle(total).toStringAsFixed(1)}deg ratio=${_ratio(total)} '
+      'lockDx=${lock?.dx.toStringAsFixed(1) ?? '-'} '
+      'lockDy=${lock?.dy.toStringAsFixed(1) ?? '-'} '
+      'lockAngle=${lock == null ? '-' : '${_angle(lock).toStringAsFixed(1)}deg'} '
+      'velocity=${releaseVelocity.toStringAsFixed(1)} '
+      'elapsed=${elapsed}ms owner=$owner result=$result',
+    );
+  }
+}
+
+class _DominantHorizontalDragGestureRecognizer
+    extends HorizontalDragGestureRecognizer {
+  _DominantHorizontalDragGestureRecognizer({super.debugOwner});
+
+  Offset _distance = Offset.zero;
+  ValueChanged<Offset>? onQualified;
+  bool _reportedQualification = false;
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    _distance = Offset.zero;
+    _reportedQualification = false;
+    super.addAllowedPointer(event);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerMoveEvent) _distance += event.delta;
+    super.handleEvent(event);
+  }
+
+  @override
+  bool hasSufficientGlobalDistanceToAccept(
+    PointerDeviceKind pointerDeviceKind,
+    double? deviceTouchSlop,
+  ) {
+    final qualifies =
+        _distance.dx.abs() > AndroidGestureConfig.touchSlop &&
+        _distance.dx.abs() >=
+            _distance.dy.abs() * AndroidGestureConfig.horizontalDominance;
+    if (qualifies && !_reportedQualification) {
+      _reportedQualification = true;
+      onQualified?.call(_distance);
+    }
+    return qualifies;
+  }
+}
+
+enum _AndroidHorizontalGestureOwner { page, drawer, blocked }
+
 class _AndroidListPages extends StatefulWidget {
-  const _AndroidListPages({required this.state, this.onPageChanged});
+  const _AndroidListPages({
+    required this.state,
+    this.onPageChanged,
+    this.onOpenDrawer,
+  });
 
   final WorkspaceState state;
   final ValueChanged<int>? onPageChanged;
+  final VoidCallback? onOpenDrawer;
 
   @override
   State<_AndroidListPages> createState() => _AndroidListPagesState();
 }
 
 class _AndroidListPagesState extends State<_AndroidListPages> {
-  bool _openingDrawer = false;
+  final _pageController = PageController();
   int _pageIndex = 0;
-  int? _gestureStartPage;
+  int _gestureStartPage = 0;
+  double _gestureStartPixels = 0;
+  double _gestureDx = 0;
+  _AndroidHorizontalGestureOwner? _gestureOwner;
+  _AndroidGestureTrace? _gestureTrace;
 
   @override
   void initState() {
@@ -348,55 +463,272 @@ class _AndroidListPagesState extends State<_AndroidListPages> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state.currentListId == widget.state.currentListId) return;
     _pageIndex = 0;
-    _gestureStartPage = null;
+    _gestureOwner = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onPageChanged?.call(0);
+      if (!mounted) return;
+      if (_pageController.hasClients) _pageController.jumpToPage(0);
+      widget.onPageChanged?.call(0);
     });
-  }
-
-  bool _handlePageScroll(ScrollNotification notification) {
-    if (notification is ScrollStartNotification) {
-      _gestureStartPage = _pageIndex;
-    }
-    if (notification is ScrollEndNotification) {
-      _openingDrawer = false;
-      _gestureStartPage = null;
-    }
-    if (notification.metrics.axis != Axis.horizontal ||
-        notification is! OverscrollNotification ||
-        notification.overscroll >= 0 ||
-        _gestureStartPage != 0 ||
-        _openingDrawer) {
-      return false;
-    }
-    _openingDrawer = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Scaffold.of(context).openDrawer();
-    });
-    return false;
   }
 
   @override
-  Widget build(BuildContext context) =>
-      NotificationListener<ScrollNotification>(
-        onNotification: _handlePageScroll,
-        child: PageView(
-          key: ValueKey('android-list-pages-${widget.state.currentListId}'),
-          onPageChanged: (index) {
-            _pageIndex = index;
-            widget.onPageChanged?.call(index);
-          },
-          children: [
-            _AndroidPendingContent(
-              key: ValueKey(
-                'android-active-list-${widget.state.currentListId}',
-              ),
-              state: widget.state,
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _handleDragStart(DragStartDetails details) {
+    if (!_pageController.hasClients) return;
+    _gestureStartPage = _pageIndex;
+    _gestureStartPixels = _pageController.position.pixels;
+    _gestureDx = 0;
+    _gestureOwner = null;
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!_pageController.hasClients) return;
+    final delta = details.primaryDelta ?? 0;
+    _gestureDx += delta;
+    _gestureOwner ??= switch ((_gestureStartPage, _gestureDx.sign)) {
+      (0, < 0) => _AndroidHorizontalGestureOwner.page,
+      (0, > 0) => _AndroidHorizontalGestureOwner.drawer,
+      (1, > 0) => _AndroidHorizontalGestureOwner.page,
+      _ => _AndroidHorizontalGestureOwner.blocked,
+    };
+    _gestureTrace?.owner = _gestureOwner!.name;
+    if (_gestureOwner != _AndroidHorizontalGestureOwner.page) return;
+    final position = _pageController.position;
+    final target = (_gestureStartPixels - _gestureDx).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    _pageController.jumpTo(target);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    final owner = _gestureOwner;
+    _gestureOwner = null;
+    _gestureTrace?.releaseVelocity = details.primaryVelocity ?? 0;
+    if (owner == _AndroidHorizontalGestureOwner.drawer) {
+      if (_gestureDx >= AndroidGestureConfig.drawerOpenDistance) {
+        _gestureTrace?.result = 'drawer-opened';
+        widget.onOpenDrawer?.call();
+      } else {
+        _gestureTrace?.result = 'drawer-distance-rejected';
+      }
+      return;
+    }
+    if (owner != _AndroidHorizontalGestureOwner.page ||
+        !_pageController.hasClients) {
+      _gestureTrace?.result = owner == _AndroidHorizontalGestureOwner.blocked
+          ? 'blocked'
+          : 'horizontal-rejected';
+      return;
+    }
+    final position = _pageController.position;
+    final distance = (position.pixels - _gestureStartPixels).abs();
+    final velocity = details.primaryVelocity ?? 0;
+    final velocityMatchesDirection =
+        velocity.abs() >= AndroidGestureConfig.pageFlingVelocity &&
+        velocity.sign == _gestureDx.sign;
+    final commits =
+        distance >=
+            AndroidGestureConfig.pageCommitDistance(
+              position.viewportDimension,
+            ) ||
+        velocityMatchesDirection;
+    final direction = (-_gestureDx).sign.toInt();
+    final targetPage = commits
+        ? (_gestureStartPage + direction).clamp(0, 1)
+        : _gestureStartPage;
+    _gestureTrace?.result = commits
+        ? 'page-committed-$targetPage'
+        : 'page-returned-$_gestureStartPage';
+    _settleToPage(targetPage);
+  }
+
+  void _handleDragCancel() {
+    final owner = _gestureOwner;
+    _gestureOwner = null;
+    _gestureTrace?.result = owner == null
+        ? 'horizontal-rejected'
+        : 'horizontal-cancelled';
+    if (owner == _AndroidHorizontalGestureOwner.page) {
+      _settleToPage(_gestureStartPage);
+    }
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    if (!kDebugMode) return;
+    _gestureTrace = _AndroidGestureTrace(
+      source: 'panel',
+      startPage: _pageIndex,
+      startedAt: event.timeStamp,
+    );
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (!kDebugMode) return;
+    _gestureTrace?.total += event.delta;
+  }
+
+  void _handlePointerEnd(PointerEvent event) {
+    if (!kDebugMode) return;
+    final trace = _gestureTrace;
+    if (trace == null) return;
+    trace.endedAt = event.timeStamp;
+    scheduleMicrotask(() {
+      trace.printToConsole();
+      if (identical(_gestureTrace, trace)) _gestureTrace = null;
+    });
+  }
+
+  void _settleToPage(int page) {
+    if (!_pageController.hasClients) return;
+    unawaited(
+      _pageController.animateToPage(
+        page,
+        duration: AndroidGestureConfig.settleDuration,
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: _handlePointerDown,
+    onPointerMove: _handlePointerMove,
+    onPointerUp: _handlePointerEnd,
+    onPointerCancel: _handlePointerEnd,
+    child: RawGestureDetector(
+      behavior: HitTestBehavior.opaque,
+      gestures: {
+        _DominantHorizontalDragGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<
+              _DominantHorizontalDragGestureRecognizer
+            >(
+              () => _DominantHorizontalDragGestureRecognizer(debugOwner: this),
+              (recognizer) => recognizer
+                ..dragStartBehavior = DragStartBehavior.down
+                ..onlyAcceptDragOnThreshold = true
+                ..onQualified = (delta) {
+                  _gestureTrace?.lockDelta ??= delta;
+                }
+                ..onStart = _handleDragStart
+                ..onUpdate = _handleDragUpdate
+                ..onEnd = _handleDragEnd
+                ..onCancel = _handleDragCancel,
             ),
-            _AndroidDoneArchivedContent(state: widget.state),
-          ],
-        ),
-      );
+      },
+      child: PageView(
+        key: ValueKey('android-list-pages-${widget.state.currentListId}'),
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) {
+          _pageIndex = index;
+          widget.onPageChanged?.call(index);
+        },
+        children: [
+          _AndroidPendingContent(
+            key: ValueKey('android-active-list-${widget.state.currentListId}'),
+            state: widget.state,
+          ),
+          _AndroidDoneArchivedContent(state: widget.state),
+        ],
+      ),
+    ),
+  );
+}
+
+class AndroidDrawerEdgeDragRegion extends StatefulWidget {
+  const AndroidDrawerEdgeDragRegion({super.key, required this.onOpenDrawer});
+
+  final VoidCallback onOpenDrawer;
+
+  @override
+  State<AndroidDrawerEdgeDragRegion> createState() =>
+      _AndroidDrawerEdgeDragRegionState();
+}
+
+class _AndroidDrawerEdgeDragRegionState
+    extends State<AndroidDrawerEdgeDragRegion> {
+  double _dx = 0;
+  _AndroidGestureTrace? _gestureTrace;
+
+  void _handlePointerDown(PointerDownEvent event) {
+    if (!kDebugMode) return;
+    _gestureTrace = _AndroidGestureTrace(
+      source: 'edge',
+      startPage: 0,
+      startedAt: event.timeStamp,
+    );
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (!kDebugMode) return;
+    _gestureTrace?.total += event.delta;
+  }
+
+  void _handlePointerEnd(PointerEvent event) {
+    if (!kDebugMode) return;
+    final trace = _gestureTrace;
+    if (trace == null) return;
+    trace.endedAt = event.timeStamp;
+    scheduleMicrotask(() {
+      trace.printToConsole();
+      if (identical(_gestureTrace, trace)) _gestureTrace = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: _handlePointerDown,
+    onPointerMove: _handlePointerMove,
+    onPointerUp: _handlePointerEnd,
+    onPointerCancel: _handlePointerEnd,
+    child: RawGestureDetector(
+      behavior: HitTestBehavior.opaque,
+      gestures: {
+        _DominantHorizontalDragGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<
+              _DominantHorizontalDragGestureRecognizer
+            >(
+              () => _DominantHorizontalDragGestureRecognizer(debugOwner: this),
+              (recognizer) {
+                recognizer
+                  ..dragStartBehavior = DragStartBehavior.down
+                  ..onlyAcceptDragOnThreshold = true
+                  ..onQualified = (delta) {
+                    _gestureTrace?.lockDelta ??= delta;
+                  }
+                  ..onStart = (_) {
+                    _dx = 0;
+                    _gestureTrace?.owner = 'drawer';
+                  }
+                  ..onUpdate = (details) {
+                    _dx += details.primaryDelta ?? 0;
+                  }
+                  ..onEnd = (details) {
+                    _gestureTrace?.releaseVelocity =
+                        details.primaryVelocity ?? 0;
+                    if (_dx >= AndroidGestureConfig.drawerOpenDistance) {
+                      _gestureTrace?.result = 'drawer-opened';
+                      widget.onOpenDrawer();
+                    } else {
+                      _gestureTrace?.result = 'drawer-distance-rejected';
+                    }
+                    _dx = 0;
+                  }
+                  ..onCancel = () {
+                    _gestureTrace?.result = 'horizontal-cancelled';
+                    _dx = 0;
+                  };
+              },
+            ),
+      },
+      child: const SizedBox.expand(),
+    ),
+  );
 }
 
 class _AndroidPendingContent extends StatelessWidget {
@@ -414,18 +746,34 @@ class _AndroidPendingContent extends StatelessWidget {
       final status = taskRoot(state.currentList!, task).status;
       return status == TaskStatus.doing || status == TaskStatus.pending;
     }).toList();
+    final title = workspaceStatusLabel(
+      TaskStatus.pending,
+      AppLocalizations.of(context)!,
+    );
+    if (state.search == null) {
+      return _TaskScrollView.slivers(
+        key: const ValueKey('task-scroll-list'),
+        indicatorColor: TerminalPalette.of(context).accent,
+        padding: const EdgeInsets.all(12),
+        slivers: [
+          _AndroidTaskSectionSliver(
+            state: state,
+            title: title,
+            status: TaskStatus.pending,
+            tasks: pendingTasks,
+          ),
+        ],
+      );
+    }
     return _TaskScrollView(
       key: const ValueKey('task-scroll-list'),
-      eager: state.search != null,
+      eager: true,
       indicatorColor: TerminalPalette.of(context).accent,
       padding: const EdgeInsets.all(12),
       children: [
         _TaskSection(
           state: state,
-          title: workspaceStatusLabel(
-            TaskStatus.pending,
-            AppLocalizations.of(context)!,
-          ),
+          title: title,
           status: TaskStatus.pending,
           tasks: pendingTasks,
         ),
@@ -452,37 +800,60 @@ class _AndroidDoneArchivedContent extends StatelessWidget {
       rootStatuses: const {TaskStatus.archived},
       revealTaskIds: searchMatches,
     );
+    final doneTitle = workspaceStatusLabel(
+      TaskStatus.done,
+      AppLocalizations.of(context)!,
+    );
+    final archivedTitle = workspaceStatusLabel(
+      TaskStatus.archived,
+      AppLocalizations.of(context)!,
+    );
     return KeyedSubtree(
       key: const ValueKey('android-done-archived-panel'),
-      child: _TaskScrollView(
-        key: const ValueKey('task-scroll-done-archived'),
-        eager: state.search != null,
-        indicatorColor: TerminalPalette.of(context).done,
-        padding: const EdgeInsets.all(12),
-        children: [
-          _TaskSection(
-            state: state,
-            title: workspaceStatusLabel(
-              TaskStatus.done,
-              AppLocalizations.of(context)!,
+      child: state.search == null
+          ? _TaskScrollView.slivers(
+              key: const ValueKey('task-scroll-done-archived'),
+              indicatorColor: TerminalPalette.of(context).done,
+              padding: const EdgeInsets.all(12),
+              slivers: [
+                _AndroidTaskSectionSliver(
+                  state: state,
+                  title: doneTitle,
+                  status: TaskStatus.done,
+                  tasks: doneTasks,
+                ),
+                _AndroidTaskSectionSliver(
+                  sectionKey: const ValueKey('android-archived-panel'),
+                  state: state,
+                  title: archivedTitle,
+                  status: TaskStatus.archived,
+                  tasks: archivedTasks,
+                ),
+              ],
+            )
+          : _TaskScrollView(
+              key: const ValueKey('task-scroll-done-archived'),
+              eager: true,
+              indicatorColor: TerminalPalette.of(context).done,
+              padding: const EdgeInsets.all(12),
+              children: [
+                _TaskSection(
+                  state: state,
+                  title: doneTitle,
+                  status: TaskStatus.done,
+                  tasks: doneTasks,
+                ),
+                KeyedSubtree(
+                  key: const ValueKey('android-archived-panel'),
+                  child: _TaskSection(
+                    state: state,
+                    title: archivedTitle,
+                    status: TaskStatus.archived,
+                    tasks: archivedTasks,
+                  ),
+                ),
+              ],
             ),
-            status: TaskStatus.done,
-            tasks: doneTasks,
-          ),
-          KeyedSubtree(
-            key: const ValueKey('android-archived-panel'),
-            child: _TaskSection(
-              state: state,
-              title: workspaceStatusLabel(
-                TaskStatus.archived,
-                AppLocalizations.of(context)!,
-              ),
-              status: TaskStatus.archived,
-              tasks: archivedTasks,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -628,12 +999,21 @@ class _TaskScrollView extends StatefulWidget {
     required this.indicatorColor,
     required this.padding,
     required this.children,
-  });
+  }) : slivers = null;
+
+  const _TaskScrollView.slivers({
+    super.key,
+    required this.indicatorColor,
+    required this.padding,
+    required this.slivers,
+  }) : eager = false,
+       children = null;
 
   final bool eager;
   final Color indicatorColor;
   final EdgeInsetsGeometry padding;
-  final List<Widget> children;
+  final List<Widget>? children;
+  final List<Widget>? slivers;
 
   @override
   State<_TaskScrollView> createState() => _TaskScrollViewState();
@@ -687,21 +1067,32 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
 
   @override
   Widget build(BuildContext context) {
-    final viewport = widget.eager
+    final viewport = widget.slivers != null
+        ? CustomScrollView(
+            key: const ValueKey('task-list-viewport'),
+            controller: _controller,
+            slivers: [
+              SliverPadding(
+                padding: widget.padding,
+                sliver: SliverMainAxisGroup(slivers: widget.slivers!),
+              ),
+            ],
+          )
+        : widget.eager
         ? SingleChildScrollView(
             key: const ValueKey('task-list-viewport'),
             controller: _controller,
             padding: widget.padding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: widget.children,
+              children: widget.children!,
             ),
           )
         : ListView(
             key: const ValueKey('task-list-viewport'),
             controller: _controller,
             padding: widget.padding,
-            children: widget.children,
+            children: widget.children!,
           );
     if (!usesTerminalPresentation) {
       return ShaderMask(
@@ -739,6 +1130,64 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
       ],
     );
   }
+}
+
+class _AndroidTaskSectionSliver extends StatelessWidget {
+  const _AndroidTaskSectionSliver({
+    this.sectionKey,
+    required this.state,
+    required this.title,
+    required this.status,
+    required this.tasks,
+  });
+
+  final Key? sectionKey;
+  final WorkspaceState state;
+  final String title;
+  final TaskStatus status;
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context) => SliverMainAxisGroup(
+    slivers: [
+      SliverToBoxAdapter(
+        child: Text(
+          key: sectionKey,
+          '${workspaceStatusIcon(status)} $title (${tasks.where((task) => task.parentId == null).length})',
+          style: TextStyle(
+            color: workspaceStatusColor(context, status),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      const SliverToBoxAdapter(child: SizedBox(height: 4)),
+      if (tasks.isEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Text(
+              '· ${AppLocalizations.of(context)!.empty}',
+              style: TextStyle(color: TerminalPalette.of(context).muted),
+            ),
+          ),
+        )
+      else
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => WorkspaceTaskRow(
+              task: tasks[index],
+              state: state,
+              showMobileDivider:
+                  index < tasks.length - 1 &&
+                  tasks[index].parentId == null &&
+                  tasks[index + 1].parentId == null,
+            ),
+            childCount: tasks.length,
+          ),
+        ),
+      const SliverToBoxAdapter(child: SizedBox(height: 14)),
+    ],
+  );
 }
 
 class _TaskOverflowIndicator extends StatelessWidget {

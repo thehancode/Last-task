@@ -15,6 +15,8 @@ import 'package:flutter_app/presentation/auth_view_model.dart';
 import 'package:flutter_app/presentation/terminal_style.dart';
 import 'package:flutter_app/presentation/workspace_view_model.dart';
 import 'package:flutter_app/presentation/workspace/workspace_footer.dart';
+import 'package:flutter_app/presentation/workspace/workspace_task_panel.dart';
+import 'package:flutter_app/presentation/workspace/workspace_task_row.dart';
 
 void main() {
   testWidgets('workspace loads its default list and exposes pointer commands', (
@@ -1603,6 +1605,250 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('Android drawer gesture uses fixed angle and distance limits', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(AndroidGestureConfig.touchSlop, 18);
+    expect(AndroidGestureConfig.horizontalDominance, 1.6);
+    expect(AndroidGestureConfig.drawerEdgeWidth, 24);
+    expect(AndroidGestureConfig.drawerOpenDistance, 44);
+    final edge = find.byKey(const ValueKey('android-drawer-edge-region'));
+    final start = tester.getCenter(edge);
+
+    Future<void> dragEdge(Offset delta) async {
+      final gesture = await tester.startGesture(start);
+      await gesture.moveBy(delta);
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    await dragEdge(const Offset(64, 41));
+    expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
+
+    await dragEdge(const Offset(43, 0));
+    expect(find.byKey(const ValueKey('android-sidebar-scroll')), findsNothing);
+
+    await dragEdge(const Offset(64, 40));
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
+    await tester.tapAt(const Offset(880, 350));
+    await tester.pumpAndSettle();
+
+    await dragEdge(const Offset(44, 0));
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android page gesture uses normalized distance completion', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(AndroidGestureConfig.pageCommitViewportFraction, 0.20);
+    expect(AndroidGestureConfig.pageCommitMinDistance, 72);
+    expect(AndroidGestureConfig.pageCommitMaxDistance, 112);
+    expect(AndroidGestureConfig.pageCommitDistance(300), 72);
+    expect(AndroidGestureConfig.pageCommitDistance(420), 84);
+    expect(AndroidGestureConfig.pageCommitDistance(900), 112);
+    expect(AndroidGestureConfig.pageFlingVelocity, 350);
+    final pages = find.byKey(const ValueKey('android-list-pages-list-1'));
+    final width = tester.getSize(pages).width;
+    final start = tester.getCenter(pages);
+
+    await tester.fling(pages, const Offset(-80, 0), 340);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsNothing,
+    );
+
+    await tester.fling(pages, const Offset(-80, 0), 360);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsOneWidget,
+    );
+    await tester.fling(pages, const Offset(80, 0), 360);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsNothing,
+    );
+
+    Future<void> slowDrag(double distance) async {
+      final gesture = await tester.startGesture(start);
+      await gesture.moveBy(Offset(-distance, 0));
+      await tester.pump(const Duration(milliseconds: 400));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    final commitDistance = AndroidGestureConfig.pageCommitDistance(width);
+    await slowDrag(commitDistance - 1);
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsNothing,
+    );
+
+    await slowDrag(commitDistance);
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsOneWidget,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android vertical scroll does not replay a stale page target', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists(
+              _listsWithManyTasks(TaskStatus.pending, multipleLists: false),
+            ),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final pages = find.byKey(const ValueKey('android-list-pages-list-1'));
+    await tester.drag(pages, const Offset(-150, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsOneWidget,
+    );
+
+    await tester.drag(pages, const Offset(150, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsNothing,
+    );
+
+    final pendingViewport = find.descendant(
+      of: find.byKey(const ValueKey('task-scroll-list')),
+      matching: find.byKey(const ValueKey('task-list-viewport')),
+    );
+    final scrollable = find.descendant(
+      of: pendingViewport,
+      matching: find.byType(Scrollable),
+    );
+    final position = tester.state<ScrollableState>(scrollable).position;
+    expect(position.pixels, 0);
+
+    await tester.drag(pendingViewport, const Offset(8, -173));
+    await tester.pumpAndSettle();
+
+    expect(position.pixels, greaterThan(0));
+    expect(
+      find.byKey(const ValueKey('android-done-archived-panel')),
+      findsNothing,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android Done page lazily builds a large task section', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists(
+              _listsWithManyTasks(
+                TaskStatus.done,
+                multipleLists: false,
+                taskCount: 71,
+              ),
+            ),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final pages = find.byKey(const ValueKey('android-list-pages-list-1'));
+    await tester.drag(pages, const Offset(-150, 0));
+    await tester.pumpAndSettle();
+
+    final doneScroll = find.byKey(const ValueKey('task-scroll-done-archived'));
+    final rows = find.descendant(
+      of: doneScroll,
+      matching: find.byType(WorkspaceTaskRow),
+    );
+    expect(find.byType(CustomScrollView), findsWidgets);
+    expect(rows, findsAtLeastNWidgets(1));
+    expect(rows.evaluate().length, lessThan(71));
+
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp('Done task: Task 70')),
+      400,
+      scrollable: find.descendant(
+        of: doneScroll,
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.bySemanticsLabel(RegExp('Done task: Task 70')), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('Android compacts task rows and keeps collapse before text', (
     tester,
   ) async {
@@ -2754,6 +3000,7 @@ TaskList _listWithTask({
 List<TaskList> _listsWithManyTasks(
   TaskStatus status, {
   required bool multipleLists,
+  int taskCount = 20,
 }) {
   final now = DateTime.utc(2026, 1, 1);
   Task task(int index) => Task(
@@ -2782,7 +3029,7 @@ List<TaskList> _listsWithManyTasks(
       list('list-2', 'Work', Iterable<int>.generate(10, (index) => index + 10)),
     ];
   }
-  return [list('list-1', 'Tasks', Iterable<int>.generate(20))];
+  return [list('list-1', 'Tasks', Iterable<int>.generate(taskCount))];
 }
 
 class _Lists implements TaskListRepository {

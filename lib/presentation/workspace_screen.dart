@@ -899,6 +899,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                                     onTaskLongPress: _showContextMenu,
                                     onAndroidListPageChanged:
                                         _setAndroidListPage,
+                                    onAndroidOpenDrawer: _openAndroidSidebar,
                                   ),
                                 ),
                               ),
@@ -966,9 +967,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
             ? 24
             : MediaQuery.sizeOf(context).width,
         drawerEnableOpenDragGesture:
-            terminal ||
-            state.view != WorkspaceView.list ||
-            !_androidSecondaryListPage,
+            terminal || state.view != WorkspaceView.list,
         onDrawerChanged: terminal
             ? null
             : (opened) {
@@ -977,6 +976,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         body: Stack(
           children: [
             Positioned.fill(child: workspace),
+            if (!terminal &&
+                state.view == WorkspaceView.list &&
+                !_androidSecondaryListPage)
+              Positioned(
+                key: const ValueKey('android-drawer-edge-region'),
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: AndroidGestureConfig.drawerEdgeWidth,
+                child: AndroidDrawerEdgeDragRegion(
+                  onOpenDrawer: _openAndroidSidebar,
+                ),
+              ),
             if (terminal && state.tipId != null)
               Positioned(
                 left: TerminalMetrics.cell(context),
