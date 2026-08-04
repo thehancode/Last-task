@@ -2785,6 +2785,8 @@ void main() {
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsNothing);
     expect(find.text('Tag names'), findsNothing);
+    final androidThemesAction = find.byKey(const Key('settings-themes-action'));
+    expect(androidThemesAction, findsOneWidget);
     final androidLogOutAction = find.byKey(
       const Key('settings-log-out-action'),
     );
@@ -2807,11 +2809,189 @@ void main() {
     );
     expect(
       tester.getTopLeft(androidLogOutAction).dy,
-      greaterThan(tester.getTopLeft(find.text('Language')).dy),
+      greaterThan(tester.getTopLeft(androidThemesAction).dy),
     );
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  testWidgets(
+    'Android theme picker uses shared assets and applies light theme',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(420, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final catalog = await ThemeCatalog.load(rootBundle);
+      final settings = _RecordingSettings();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            themeCatalogProvider.overrideWithValue(catalog),
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists()),
+            settingsRepositoryProvider.overrideWithValue(settings),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
+      await tester.pumpAndSettle();
+      final themesAction = find.byKey(const Key('settings-themes-action'));
+      await tester.ensureVisible(themesAction);
+      await tester.tap(themesAction);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Long-title mode'), findsNothing);
+      expect(find.text('Themes'), findsOneWidget);
+      expect(catalog.themes, hasLength(7));
+      expect(
+        catalog.themes.where((theme) => theme.isLight).map((theme) => theme.id),
+        ['rose-day', 'catppuccin-latte', 'gruvbox-light'],
+      );
+      expect(
+        catalog.themes.map((theme) => theme.id),
+        isNot(contains('tokyo-night')),
+      );
+      expect(
+        catalog.themes.map((theme) => theme.id),
+        isNot(contains('oxocarbon')),
+      );
+      expect(
+        catalog.themes.map((theme) => theme.id),
+        isNot(contains('oxocarbon-light')),
+      );
+      final gruvboxLight = catalog.byId('gruvbox-light');
+      expect(
+        [
+          gruvboxLight.background,
+          gruvboxLight.panel,
+          gruvboxLight.text,
+          gruvboxLight.muted,
+          gruvboxLight.accent,
+          gruvboxLight.pending,
+          gruvboxLight.doing,
+          gruvboxLight.done,
+          gruvboxLight.error,
+        ],
+        const [
+          Color(0xfffbf1c7),
+          Color(0xffebdbb2),
+          Color(0xff3c3836),
+          Color(0xff7c6f64),
+          Color(0xffb57614),
+          Color(0xffaf3a03),
+          Color(0xff076678),
+          Color(0xff79740e),
+          Color(0xff9d0006),
+        ],
+      );
+      for (final theme in catalog.themes) {
+        expect(find.text(theme.name, skipOffstage: false), findsOneWidget);
+      }
+      final preview = find.byKey(const Key('mobile-theme-preview'));
+      expect(preview, findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(
+              find.descendant(of: preview, matching: find.text('● Doing')),
+            )
+            .style
+            ?.color,
+        catalog.byId('classic').doing,
+      );
+      final darkTheme = Theme.of(tester.element(find.text('Themes')));
+      expect(darkTheme.brightness, Brightness.dark);
+      expect(
+        darkTheme.scaffoldBackgroundColor,
+        catalog.byId('classic').background,
+      );
+      expect(darkTheme.colorScheme.surface, catalog.byId('classic').panel);
+
+      final lightTheme = catalog.byId('catppuccin-latte');
+      final lightChoice = find.byKey(
+        const ValueKey('theme-choice-catppuccin-latte'),
+      );
+      await tester.ensureVisible(lightChoice);
+      await tester.tap(lightChoice);
+      await tester.pumpAndSettle();
+
+      expect(settings.settings.themeId, lightTheme.id);
+      expect(settings.saveCalls, 1);
+      expect(
+        find.descendant(
+          of: lightChoice,
+          matching: find.byIcon(Icons.radio_button_checked),
+        ),
+        findsOneWidget,
+      );
+      final pickerTheme = Theme.of(tester.element(find.text('Themes')));
+      expect(pickerTheme.brightness, Brightness.light);
+      expect(pickerTheme.scaffoldBackgroundColor, lightTheme.panel);
+      expect(pickerTheme.colorScheme.surface, lightTheme.background);
+      expect(pickerTheme.colorScheme.onSurface, lightTheme.text);
+      expect(pickerTheme.dialogTheme.backgroundColor, lightTheme.background);
+      final taskPanel = tester.widget<Container>(
+        find.byKey(const ValueKey('task-panel-list')),
+      );
+      expect(
+        (taskPanel.decoration! as BoxDecoration).color,
+        lightTheme.background,
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.descendant(of: preview, matching: find.text('● Doing')),
+            )
+            .style
+            ?.color,
+        lightTheme.doing,
+      );
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
+
+  testWidgets('terminal light theme keeps its declared surface roles', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final catalog = await ThemeCatalog.load(rootBundle);
+    final theme = catalog.byId('gruvbox-light');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          themeCatalogProvider.overrideWithValue(catalog),
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
+          settingsRepositoryProvider.overrideWithValue(
+            _Settings(const AppSettings(themeId: 'gruvbox-light')),
+          ),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final workspaceTheme = Theme.of(
+      tester.element(find.byKey(const ValueKey('task-panel-list'))),
+    );
+    expect(workspaceTheme.brightness, Brightness.light);
+    expect(workspaceTheme.scaffoldBackgroundColor, theme.background);
+    expect(workspaceTheme.colorScheme.surface, theme.panel);
+    final taskPanel = tester.widget<Container>(
+      find.byKey(const ValueKey('task-panel-list')),
+    );
+    expect((taskPanel.decoration! as BoxDecoration).color, theme.panel);
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('terminal tab selection reveals the selected tab and next tab', (
     tester,
   ) async {
@@ -3225,6 +3405,20 @@ class _Settings implements SettingsRepository {
 
   @override
   Future<void> save(AppSettings settings) async {}
+}
+
+class _RecordingSettings implements SettingsRepository {
+  AppSettings settings = const AppSettings(nativeFontSize: 16);
+  int saveCalls = 0;
+
+  @override
+  Future<AppSettings> load() async => settings;
+
+  @override
+  Future<void> save(AppSettings value) async {
+    settings = value;
+    saveCalls++;
+  }
 }
 
 class _DeviceState implements DeviceStateRepository {

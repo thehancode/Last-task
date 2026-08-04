@@ -1,6 +1,7 @@
 {
   "id": "classic",
   "name": "Classic",
+  "is_light": false,
   "background": "#0d0f18",
   "panel": "#161926",
   "text": "#dde0eb",

@@ -93,111 +93,61 @@ String _helpTipText(AppLocalizations strings, String id) => switch (id) {
   _ => '',
 };
 
-class WorkspaceThemePickerDialog extends ConsumerStatefulWidget {
+class WorkspaceThemePickerDialog extends ConsumerWidget {
   const WorkspaceThemePickerDialog({super.key});
 
-  @override
-  ConsumerState<WorkspaceThemePickerDialog> createState() =>
-      _WorkspaceThemePickerDialogState();
-}
-
-class _WorkspaceThemePickerDialogState
-    extends ConsumerState<WorkspaceThemePickerDialog> {
-  final _focusNode = FocusNode(debugLabel: 'theme-picker');
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _focusNode.requestFocus(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _cycle(int direction) {
-    final catalog = ref.read(themeCatalogProvider);
-    final current = ref.read(workspaceViewModelProvider).settings.themeId;
-    final index = catalog.themes.indexWhere((theme) => theme.id == current);
-    final next =
-        catalog.themes[(index + direction + catalog.themes.length) %
-            catalog.themes.length];
-    _select(next.id);
-  }
-
-  void _select(String id) {
+  void _select(WidgetRef ref, String id) {
     final vm = ref.read(workspaceViewModelProvider.notifier);
     final settings = ref.read(workspaceViewModelProvider).settings;
     unawaited(vm.updateSettings(settings.copyWith(themeId: id)));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = AppLocalizations.of(context)!;
     final state = ref.watch(workspaceViewModelProvider);
     final catalog = ref.watch(themeCatalogProvider);
     final theme = catalog.byId(state.settings.themeId);
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: (_, event) {
-        if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-          return KeyEventResult.ignored;
-        }
-        if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-          _cycle(-1);
-          return KeyEventResult.handled;
-        }
-        if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-          _cycle(1);
-          return KeyEventResult.handled;
-        }
-        if (event.logicalKey == LogicalKeyboardKey.escape ||
-            event.logicalKey == LogicalKeyboardKey.keyT) {
-          Navigator.pop(context);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: AlertDialog(
-        titlePadding: _dialogTitlePadding,
-        contentPadding: _dialogContentPadding,
-        title: const Text('Themes'),
-        content: SizedBox(
-          width: 360,
+    return AlertDialog(
+      title: Text(strings.themes),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              WorkspaceThemePreview(theme: theme),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  for (final item in catalog.themes)
-                    TextButton(
-                      onPressed: () => _select(item.id),
-                      child: Text(item.name),
+              WorkspaceThemePreview(
+                key: const Key('mobile-theme-preview'),
+                theme: theme,
+              ),
+              const SizedBox(height: 12),
+              for (final item in catalog.themes)
+                Semantics(
+                  selected: item.id == theme.id,
+                  child: ListTile(
+                    key: ValueKey('theme-choice-${item.id}'),
+                    selected: item.id == theme.id,
+                    selectedColor: Theme.of(context).colorScheme.primary,
+                    leading: Icon(
+                      item.id == theme.id
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
                     ),
-                ],
-              ),
-              Text(
-                '← / → to cycle',
-                style: TextStyle(color: TerminalPalette.of(context).muted),
-              ),
+                    title: Text(item.name),
+                    onTap: () => _select(ref, item.id),
+                  ),
+                ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(strings.close),
+        ),
+      ],
     );
   }
 }

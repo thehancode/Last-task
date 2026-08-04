@@ -25,20 +25,43 @@ class LastTaskApp extends ConsumerWidget {
     final fontScale = settings.nativeFontSize / 16;
     final fontFamily = settings.fontFamily.flutterFamily;
     final palette = ref.watch(themeCatalogProvider).byId(settings.themeId);
+    final terminal = usesTerminalPresentation;
+    final brightness = palette.isLight ? Brightness.light : Brightness.dark;
+    final appBackground = !terminal && palette.isLight
+        ? palette.panel
+        : palette.background;
+    final appSurface = !terminal && palette.isLight
+        ? palette.background
+        : palette.panel;
+    final colorScheme = brightness == Brightness.dark
+        ? ColorScheme.dark(
+            primary: palette.accent,
+            onPrimary: palette.background,
+            secondary: palette.doing,
+            onSecondary: palette.background,
+            surface: appSurface,
+            onSurface: palette.text,
+            error: palette.error,
+            onError: palette.background,
+          )
+        : ColorScheme.light(
+            primary: palette.accent,
+            onPrimary: palette.background,
+            secondary: palette.doing,
+            onSecondary: palette.background,
+            surface: appSurface,
+            onSurface: palette.text,
+            error: palette.error,
+            onError: palette.background,
+          );
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: palette.background,
-      colorScheme: ColorScheme.dark(
-        primary: palette.accent,
-        secondary: palette.doing,
-        surface: palette.panel,
-        error: palette.error,
-      ),
+      brightness: brightness,
+      scaffoldBackgroundColor: appBackground,
+      colorScheme: colorScheme,
       fontFamily: fontFamily,
-      dialogTheme: DialogThemeData(backgroundColor: palette.panel),
+      dialogTheme: DialogThemeData(backgroundColor: appSurface),
     );
-    final terminal = usesTerminalPresentation;
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

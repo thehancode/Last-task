@@ -15,6 +15,7 @@ import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 import '../auth_view_model.dart';
 import 'workspace_dialog_tabs.dart';
+import 'workspace_dialogs.dart';
 import 'workspace_theme_preview.dart';
 
 EdgeInsetsGeometry? get _dialogTitlePadding =>
@@ -108,6 +109,15 @@ class _WorkspaceSettingsDialogState
       await ref.read(authViewModelProvider.notifier).logOut();
     }
 
+    void showMobileThemes() {
+      Navigator.of(context).pushReplacement<void, void>(
+        DialogRoute<void>(
+          context: context,
+          builder: (_) => const WorkspaceThemePickerDialog(),
+        ),
+      );
+    }
+
     final tabs = [
       SettingsTab.config,
       if (supportsDesktopBackground) SettingsTab.background,
@@ -152,6 +162,7 @@ class _WorkspaceSettingsDialogState
                         settings: settings,
                         onUpdate: vm.updateSettings,
                         onLogOut: logOut,
+                        onShowThemes: showMobileThemes,
                         onExportData: _exportData,
                         onImportData: _importData,
                       ),
@@ -187,6 +198,7 @@ class _ConfigSettings extends StatelessWidget {
     required this.settings,
     required this.onUpdate,
     required this.onLogOut,
+    required this.onShowThemes,
     required this.onExportData,
     required this.onImportData,
   });
@@ -194,6 +206,7 @@ class _ConfigSettings extends StatelessWidget {
   final AppSettings settings;
   final ValueChanged<AppSettings> onUpdate;
   final Future<void> Function() onLogOut;
+  final VoidCallback onShowThemes;
   final Future<void> Function() onExportData;
   final Future<void> Function() onImportData;
 
@@ -264,6 +277,13 @@ class _ConfigSettings extends StatelessWidget {
                 languageLocale: _nextLanguageLocale(settings.languageLocale),
               ),
             ),
+          ),
+          ListTile(
+            key: const Key('settings-themes-action'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.themes),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: onShowThemes,
           ),
           if (usesTerminalPresentation) ...[
             ListTile(

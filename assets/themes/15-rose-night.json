@@ -1,6 +1,7 @@
 {
   "id": "rose-night",
   "name": "Rosé Night",
+  "is_light": false,
   "background": "#21141f",
   "panel": "#352033",
   "text": "#ffe9f3",

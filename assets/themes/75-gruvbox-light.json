@@ -1,0 +1,14 @@
+{
+  "id": "gruvbox-light",
+  "name": "Gruvbox Light",
+  "is_light": true,
+  "background": "#fbf1c7",
+  "panel": "#ebdbb2",
+  "text": "#3c3836",
+  "muted": "#7c6f64",
+  "accent": "#b57614",
+  "pending": "#af3a03",
+  "doing": "#076678",
+  "done": "#79740e",
+  "error": "#9d0006"
+}

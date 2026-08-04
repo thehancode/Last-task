@@ -74,14 +74,15 @@ class WorkspaceTaskPanel extends ConsumerWidget {
               Expanded(child: normalContent),
             ],
           );
+    final panelColor = usesTerminalPresentation
+        ? TerminalPalette.of(context).panel
+        : Theme.of(context).colorScheme.surface;
     Widget panel = Container(
       key: ValueKey('task-panel-${state.view.name}'),
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: TerminalPalette.of(
-          context,
-        ).panel.withValues(alpha: panelOpacity),
+        color: panelColor.withValues(alpha: panelOpacity),
         border: Border.all(color: border),
         borderRadius: radius,
       ),

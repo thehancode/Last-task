@@ -1,6 +1,7 @@
 {
   "id": "catppuccin-latte",
   "name": "Catppuccin Latte",
+  "is_light": true,
   "background": "#eff1f5",
   "panel": "#e6e9ef",
   "text": "#4c4f69",

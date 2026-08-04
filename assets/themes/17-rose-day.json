@@ -1,6 +1,7 @@
 {
   "id": "rose-day",
   "name": "Rosé Day",
+  "is_light": true,
   "background": "#fff5fa",
   "panel": "#ffe4f0",
   "text": "#4b263b",

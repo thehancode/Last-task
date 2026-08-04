@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// A terminal palette loaded from `assets/themes/*.json`.
+/// An application palette loaded from `assets/themes/*.json`.
 ///
 /// Adding a JSON file with the same fields makes it available at the next app
 /// launch; no Dart registry needs updating.
@@ -11,6 +11,7 @@ class AppThemeDefinition {
   const AppThemeDefinition({
     required this.id,
     required this.name,
+    required this.isLight,
     required this.background,
     required this.panel,
     required this.text,
@@ -24,6 +25,7 @@ class AppThemeDefinition {
 
   final String id;
   final String name;
+  final bool isLight;
   final Color background;
   final Color panel;
   final Color text;
@@ -51,9 +53,19 @@ class AppThemeDefinition {
       return value;
     }
 
+    bool flag(String field) {
+      final value = json[field];
+      if (value == null) return false;
+      if (value is! bool) {
+        throw FormatException('Theme $field must be a boolean');
+      }
+      return value;
+    }
+
     return AppThemeDefinition(
       id: text('id'),
       name: text('name'),
+      isLight: flag('is_light'),
       background: color('background'),
       panel: color('panel'),
       text: color('text'),
@@ -115,6 +127,7 @@ final themeCatalogProvider = Provider<ThemeCatalog>(
 const classic = AppThemeDefinition(
   id: 'classic',
   name: 'Classic',
+  isLight: false,
   background: Color(0xff0d0f18),
   panel: Color(0xff161926),
   text: Color(0xffdde0eb),
@@ -129,6 +142,7 @@ const classic = AppThemeDefinition(
 const gruvbox = AppThemeDefinition(
   id: 'gruvbox',
   name: 'Gruvbox',
+  isLight: false,
   background: Color(0xff282828),
   panel: Color(0xff3c3836),
   text: Color(0xffebdbb2),

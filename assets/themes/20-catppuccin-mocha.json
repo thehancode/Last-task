@@ -1,6 +1,7 @@
 {
   "id": "catppuccin-mocha",
   "name": "Catppuccin Mocha",
+  "is_light": false,
   "background": "#1e1e2e",
   "panel": "#313244",
   "text": "#cdd6f4",

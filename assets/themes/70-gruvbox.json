@@ -1,6 +1,7 @@
 {
   "id": "gruvbox",
   "name": "Gruvbox",
+  "is_light": false,
   "background": "#282828",
   "panel": "#3c3836",
   "text": "#ebdbb2",
