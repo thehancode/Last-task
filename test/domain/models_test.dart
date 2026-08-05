@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_app/domain/models.dart';
 
 void main() {
-  test('tutorial and onboarding fields round-trip with legacy defaults', () {
+  test('tutorial and device draft fields round-trip with legacy defaults', () {
     final legacyList = TaskList.fromJson({
       'schema_version': 1,
       'id': 'legacy',
@@ -14,24 +14,15 @@ void main() {
     final legacyDevice = DeviceWorkspaceState.fromJson(const {});
 
     expect(legacyList.isTutorial, isFalse);
-    expect(legacyDevice.terminalLaunchCount, 0);
-    expect(legacyDevice.themesUnlocked, isFalse);
-    expect(legacyDevice.tutorialAwardEarned, isFalse);
     expect(legacyDevice.composerDrafts, isEmpty);
 
     final tutorial = legacyList.copyWith(isTutorial: true);
     final device = legacyDevice.copyWith(
-      terminalLaunchCount: 2,
-      themesUnlocked: true,
-      tutorialAwardEarned: true,
       composerDrafts: const {'list': 'unfinished task'},
     );
 
     expect(TaskList.fromJson(tutorial.toJson()).isTutorial, isTrue);
     final restoredDevice = DeviceWorkspaceState.fromJson(device.toJson());
-    expect(restoredDevice.terminalLaunchCount, 2);
-    expect(restoredDevice.themesUnlocked, isTrue);
-    expect(restoredDevice.tutorialAwardEarned, isTrue);
     expect(restoredDevice.composerDrafts, {'list': 'unfinished task'});
   });
 
@@ -168,8 +159,10 @@ void main() {
       final defaults = AppSettings.fromJson(const {});
       expect(defaults.languageLocale, 'en');
       expect(defaults.themeId, 'classic');
-      expect(defaults.marqueeSpeedMs, normalMarqueeSpeedMs);
       expect(defaults.fontFamily, AppFontFamily.ubuntuMonoNerd);
+      expect(defaults.fontFamily.label, 'Classic');
+      expect(AppFontFamily.comicShannsMonoNerd.label, 'Comic');
+      expect(AppFontFamily.goMonoNerd.label, 'Mono');
       expect(defaults.nativeFontSize, 23);
       expect(defaults.tagNames.nameFor(TaskTag.spade), 'Spade');
       expect(defaults.tagNames.nameFor(TaskTag.heart), 'Heart');
@@ -221,27 +214,23 @@ void main() {
     expect(settings.validate, throwsFormatException);
   });
 
-  test('new settings preserve legacy long-title values and defaults', () {
+  test('settings preserve wrap modes and migrate legacy marquee values', () {
     final legacyWrap = AppSettings.fromJson({'long_title_display': 'wrap'});
     expect(legacyWrap.longTitleDisplay, LongTitleDisplay.wrapAll);
     expect(
       AppSettings.fromJson(const {}).longTitleDisplay,
-      LongTitleDisplay.wrapSelected,
+      LongTitleDisplay.wrapAll,
     );
-    expect(legacyWrap.tipsEnabled, isFalse);
-    expect(legacyWrap.rewardDuration, RewardDuration.medium);
 
     final settings = AppSettings.fromJson({
       'long_title_display': 'slidingWindow',
       'tips_enabled': false,
       'reward_duration': 'long',
     });
-    expect(settings.longTitleDisplay, LongTitleDisplay.marquee);
-    expect(settings.tipsEnabled, isFalse);
-    expect(
-      settings.rewardDuration.duration,
-      const Duration(milliseconds: 1400),
-    );
+    expect(settings.longTitleDisplay, LongTitleDisplay.wrapAll);
+    expect(settings.toJson(), isNot(contains('tips_enabled')));
+    expect(settings.toJson(), isNot(contains('reward_duration')));
+    expect(settings.toJson(), isNot(contains('marquee_speed_ms')));
   });
 
   test('device workspace state and desktop appearance round trip', () {
@@ -250,7 +239,6 @@ void main() {
       currentListId: 'list',
       selectedTaskId: 'task',
       soundEnabled: false,
-      seenTipIds: {'search', 'copy'},
       desktopAppearance: DesktopAppearance(
         backgroundImagePath: '/tmp/background.png',
         backgroundOverlayOpacity: .4,
@@ -260,7 +248,6 @@ void main() {
     final restored = DeviceWorkspaceState.fromJson(state.toJson());
     expect(restored.view, WorkspaceView.multi);
     expect(restored.selectedTaskId, 'task');
-    expect(restored.seenTipIds, {'search', 'copy'});
     expect(restored.desktopAppearance.backgroundOverlayOpacity, .4);
     expect(
       restored.desktopAppearance.backgroundFit,

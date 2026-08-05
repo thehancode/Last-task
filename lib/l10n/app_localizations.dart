@@ -694,42 +694,6 @@ abstract class AppLocalizations {
   /// **'Tag names cannot be empty'**
   String get tagNamesCannotBeEmpty;
 
-  /// Settings label above the task-title scrolling speed slider.
-  ///
-  /// In en, this message translates to:
-  /// **'Marquee speed: {milliseconds} ms'**
-  String marqueeSpeed(int milliseconds);
-
-  /// Settings row label for the task-title scrolling speed preset.
-  ///
-  /// In en, this message translates to:
-  /// **'Marquee speed'**
-  String get marqueeSpeedLabel;
-
-  /// Slow marquee-speed preset.
-  ///
-  /// In en, this message translates to:
-  /// **'Slow'**
-  String get slow;
-
-  /// Normal marquee-speed preset.
-  ///
-  /// In en, this message translates to:
-  /// **'Normal'**
-  String get normal;
-
-  /// Fast marquee-speed preset.
-  ///
-  /// In en, this message translates to:
-  /// **'Fast'**
-  String get fast;
-
-  /// Setting that wraps rather than scrolls long task titles.
-  ///
-  /// In en, this message translates to:
-  /// **'Wrap long titles'**
-  String get wrapLongTitles;
-
   /// Settings label above the terminal font-size slider.
   ///
   /// In en, this message translates to:
@@ -784,12 +748,6 @@ abstract class AppLocalizations {
   /// **'d'**
   String get completionDaySuffix;
 
-  /// Setting that enables brief startup tips.
-  ///
-  /// In en, this message translates to:
-  /// **'Show entrance tips'**
-  String get showTips;
-
   /// Settings action that downloads all task lists as a JSON export.
   ///
   /// In en, this message translates to:
@@ -801,48 +759,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load data'**
   String get importData;
-
-  /// Setting that controls how long completion rewards remain visible.
-  ///
-  /// In en, this message translates to:
-  /// **'Reward duration'**
-  String get rewardDuration;
-
-  /// Heading for the complete list of usage tips.
-  ///
-  /// In en, this message translates to:
-  /// **'Tips'**
-  String get tipsTitle;
-
-  /// Tip explaining list navigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Use left and right to switch task lists.'**
-  String get tipNavigation;
-
-  /// Tip explaining keyboard reordering.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold Ctrl and press up or down to reorder a task subtree.'**
-  String get tipReorder;
-
-  /// Tip explaining subtask creation.
-  ///
-  /// In en, this message translates to:
-  /// **'Press Tab to add a subtask to the selected task.'**
-  String get tipSubtasks;
-
-  /// Tip explaining task search.
-  ///
-  /// In en, this message translates to:
-  /// **'Press Ctrl+F or / to search tasks.'**
-  String get tipSearch;
-
-  /// Tip explaining clipboard shortcuts.
-  ///
-  /// In en, this message translates to:
-  /// **'Ctrl+C copies one title; Ctrl+Shift+C copies its section.'**
-  String get tipCopy;
 
   /// Status message shown after copying a task title.
   ///
@@ -861,42 +777,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{1 task selected} other{{count} tasks selected}}'**
   String selectedTasksCount(num count);
-
-  /// Brief task-completion celebration.
-  ///
-  /// In en, this message translates to:
-  /// **'Great work!'**
-  String get rewardGreatWork;
-
-  /// Brief task-completion celebration.
-  ///
-  /// In en, this message translates to:
-  /// **'Nicely done!'**
-  String get rewardNicelyDone;
-
-  /// Brief task-completion encouragement.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep going!'**
-  String get rewardKeepGoing;
-
-  /// Brief task-completion encouragement.
-  ///
-  /// In en, this message translates to:
-  /// **'Momentum gained!'**
-  String get rewardMomentum;
-
-  /// Brief task-completion celebration.
-  ///
-  /// In en, this message translates to:
-  /// **'Task cleared!'**
-  String get rewardTaskCleared;
-
-  /// Brief task-completion celebration.
-  ///
-  /// In en, this message translates to:
-  /// **'Excellent!'**
-  String get rewardExcellent;
 
   /// Label for the task search input.
   ///
@@ -951,30 +831,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wrap all'**
   String get wrapAll;
-
-  /// Long-title mode that scrolls one character at a time.
-  ///
-  /// In en, this message translates to:
-  /// **'Marquee'**
-  String get marquee;
-
-  /// Short completion-reward duration.
-  ///
-  /// In en, this message translates to:
-  /// **'Short'**
-  String get shortDuration;
-
-  /// Medium completion-reward duration.
-  ///
-  /// In en, this message translates to:
-  /// **'Medium'**
-  String get mediumDuration;
-
-  /// Long completion-reward duration.
-  ///
-  /// In en, this message translates to:
-  /// **'Long'**
-  String get longDuration;
 
   /// Desktop setting and dialog title for a workspace background image.
   ///
@@ -1053,24 +909,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get clear;
-
-  /// One-time terminal award shown after completing every original tutorial task.
-  ///
-  /// In en, this message translates to:
-  /// **'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab'**
-  String get tutorialUnlockAward;
-
-  /// Button that dismisses the tutorial completion award.
-  ///
-  /// In en, this message translates to:
-  /// **'Great'**
-  String get great;
-
-  /// Accessible label for the star shown beside the product title after tutorial completion.
-  ///
-  /// In en, this message translates to:
-  /// **'Tutorial completed'**
-  String get tutorialAwardBadge;
 
   /// Title shown after login when a separate guest workspace exists.
   ///

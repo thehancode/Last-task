@@ -32,7 +32,7 @@ void main() {
     final store = _MemoryStore(const []);
     final settings = await LocalSettingsRepository(store).load();
 
-    expect(settings.marqueeSpeedMs, defaultMarqueeSpeedMs);
+    expect(settings.longTitleDisplay, LongTitleDisplay.wrapAll);
     expect(settings.themeId, 'classic');
     expect(store.settings, isNotNull);
   });
@@ -89,7 +89,6 @@ void main() {
       view: WorkspaceView.multi,
       currentListId: 'list',
       selectedTaskId: 'task',
-      seenTipIds: {'search'},
       composerDrafts: {'list': 'local draft'},
     );
 
@@ -98,7 +97,6 @@ void main() {
 
     expect(restored.view, WorkspaceView.multi);
     expect(restored.selectedTaskId, 'task');
-    expect(restored.seenTipIds, {'search'});
     expect(restored.composerDrafts, {'list': 'local draft'});
     expect(store.settings, isNull);
   });

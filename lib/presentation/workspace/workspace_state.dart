@@ -40,19 +40,6 @@ class WorkspaceSearchState {
   );
 }
 
-class RewardState {
-  const RewardState(this.messageIndex, this.taskId) : tutorialUnlock = false;
-
-  const RewardState.tutorial()
-    : messageIndex = 0,
-      taskId = null,
-      tutorialUnlock = true;
-
-  final int messageIndex;
-  final String? taskId;
-  final bool tutorialUnlock;
-}
-
 class WorkspaceState {
   const WorkspaceState({
     required this.phase,
@@ -69,8 +56,6 @@ class WorkspaceState {
     this.highlightedTaskIds = const {},
     this.multiSelectedTaskIds = const {},
     this.selectionAnchorTaskId,
-    this.tipId,
-    this.reward,
     this.search,
   });
 
@@ -89,8 +74,6 @@ class WorkspaceState {
       highlightedTaskIds = const {},
       multiSelectedTaskIds = const {},
       selectionAnchorTaskId = null,
-      tipId = null,
-      reward = null,
       search = null;
 
   final WorkspacePhase phase;
@@ -107,8 +90,6 @@ class WorkspaceState {
   final Set<String> highlightedTaskIds;
   final Set<String> multiSelectedTaskIds;
   final String? selectionAnchorTaskId;
-  final String? tipId;
-  final RewardState? reward;
   final WorkspaceSearchState? search;
 
   WorkspaceState copyWith({
@@ -132,10 +113,6 @@ class WorkspaceState {
     bool clearMultiSelection = false,
     String? selectionAnchorTaskId,
     bool clearSelectionAnchor = false,
-    String? tipId,
-    bool clearTip = false,
-    RewardState? reward,
-    bool clearReward = false,
     WorkspaceSearchState? search,
     bool clearSearch = false,
   }) => WorkspaceState(
@@ -161,8 +138,6 @@ class WorkspaceState {
     selectionAnchorTaskId: clearSelectionAnchor
         ? null
         : (selectionAnchorTaskId ?? this.selectionAnchorTaskId),
-    tipId: clearTip ? null : (tipId ?? this.tipId),
-    reward: clearReward ? null : (reward ?? this.reward),
     search: clearSearch ? null : (search ?? this.search),
   );
 }

@@ -9,91 +9,6 @@ import '../auth_view_model.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
 
-class WorkspaceTransientBanner extends StatelessWidget {
-  const WorkspaceTransientBanner({super.key, required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: TerminalPalette.of(context).panel,
-      border: Border.all(color: TerminalPalette.of(context).doing),
-    ),
-    child: Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: TerminalMetrics.cell(context),
-        vertical: 2,
-      ),
-      child: Text('TIP: $text'),
-    ),
-  );
-}
-
-class WorkspaceRewardOverlay extends StatelessWidget {
-  const WorkspaceRewardOverlay({
-    super.key,
-    required this.text,
-    this.actionLabel,
-    this.onAction,
-  });
-  final String text;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: TerminalPalette.of(context).background.withValues(alpha: .72),
-    child: Center(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: TerminalPalette.of(context).panel,
-          border: Border.all(color: TerminalPalette.of(context).done, width: 2),
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: TerminalMetrics.cell(context) * 3,
-            vertical: TerminalMetrics.line(context),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '✦  $text  ✦',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: TerminalPalette.of(context).done,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (actionLabel != null && onAction != null)
-                Semantics(
-                  button: true,
-                  label: actionLabel,
-                  child: InkWell(
-                    onTap: onAction,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: TerminalMetrics.cell(context),
-                        vertical: TerminalMetrics.line(context) * .1,
-                      ),
-                      child: Text(
-                        '< $actionLabel >',
-                        style: TextStyle(
-                          color: TerminalPalette.of(context).accent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
 class WorkspaceDesktopWindowDragArea extends StatelessWidget {
   const WorkspaceDesktopWindowDragArea({super.key});
 
@@ -159,11 +74,8 @@ class WorkspaceHeader extends ConsumerWidget {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        '${strings.workspaceTitle}'
-                        '${state.deviceState.tutorialAwardEarned ? ' ✪' : ''}',
-                        semanticsLabel: state.deviceState.tutorialAwardEarned
-                            ? '${strings.workspaceTitle}, ${strings.tutorialAwardBadge}'
-                            : strings.workspaceTitle,
+                        strings.workspaceTitle,
+                        semanticsLabel: strings.workspaceTitle,
                         style: TextStyle(
                           color: terminal
                               ? TerminalPalette.of(context).background

@@ -1037,39 +1037,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                   onOpenDrawer: _openAndroidSidebar,
                 ),
               ),
-            if (terminal && state.tipId != null)
-              Positioned(
-                left: TerminalMetrics.cell(context),
-                right: TerminalMetrics.cell(context),
-                bottom: TerminalMetrics.line(context) * 2,
-                child: IgnorePointer(
-                  child: WorkspaceTransientBanner(
-                    text: _tipText(AppLocalizations.of(context)!, state.tipId!),
-                  ),
-                ),
-              ),
-            if (terminal && state.reward != null)
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: !state.reward!.tutorialUnlock,
-                  child: WorkspaceRewardOverlay(
-                    text: state.reward!.tutorialUnlock
-                        ? AppLocalizations.of(context)!.tutorialUnlockAward
-                        : _rewardText(
-                            AppLocalizations.of(context)!,
-                            state.reward!.messageIndex,
-                          ),
-                    actionLabel: state.reward!.tutorialUnlock
-                        ? AppLocalizations.of(context)!.great
-                        : null,
-                    onAction: state.reward!.tutorialUnlock
-                        ? ref
-                              .read(workspaceViewModelProvider.notifier)
-                              .dismissReward
-                        : null,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -1402,21 +1369,3 @@ class _AndroidTaskContextMenu extends StatelessWidget {
     );
   }
 }
-
-String _tipText(AppLocalizations strings, String id) => switch (id) {
-  'navigation' => strings.tipNavigation,
-  'reorder' => strings.tipReorder,
-  'subtasks' => strings.tipSubtasks,
-  'search' => strings.tipSearch,
-  'copy' => strings.tipCopy,
-  _ => '',
-};
-
-String _rewardText(AppLocalizations strings, int index) => switch (index % 6) {
-  0 => strings.rewardGreatWork,
-  1 => strings.rewardNicelyDone,
-  2 => strings.rewardKeepGoing,
-  3 => strings.rewardMomentum,
-  4 => strings.rewardTaskCleared,
-  _ => strings.rewardExcellent,
-};

@@ -328,26 +328,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tagNamesCannotBeEmpty => 'Tag names cannot be empty';
 
   @override
-  String marqueeSpeed(int milliseconds) {
-    return 'Marquee speed: $milliseconds ms';
-  }
-
-  @override
-  String get marqueeSpeedLabel => 'Marquee speed';
-
-  @override
-  String get slow => 'Slow';
-
-  @override
-  String get normal => 'Normal';
-
-  @override
-  String get fast => 'Fast';
-
-  @override
-  String get wrapLongTitles => 'Wrap long titles';
-
-  @override
   String desktopFontSize(int points) {
     return 'Desktop font size: $points pt';
   }
@@ -379,36 +359,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completionDaySuffix => 'd';
 
   @override
-  String get showTips => 'Show entrance tips';
-
-  @override
   String get exportData => 'Export data';
 
   @override
   String get importData => 'Load data';
-
-  @override
-  String get rewardDuration => 'Reward duration';
-
-  @override
-  String get tipsTitle => 'Tips';
-
-  @override
-  String get tipNavigation => 'Use left and right to switch task lists.';
-
-  @override
-  String get tipReorder =>
-      'Hold Ctrl and press up or down to reorder a task subtree.';
-
-  @override
-  String get tipSubtasks => 'Press Tab to add a subtask to the selected task.';
-
-  @override
-  String get tipSearch => 'Press Ctrl+F or / to search tasks.';
-
-  @override
-  String get tipCopy =>
-      'Ctrl+C copies one title; Ctrl+Shift+C copies its section.';
 
   @override
   String get taskWasCopied => 'Task was copied';
@@ -426,24 +380,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get rewardGreatWork => 'Great work!';
-
-  @override
-  String get rewardNicelyDone => 'Nicely done!';
-
-  @override
-  String get rewardKeepGoing => 'Keep going!';
-
-  @override
-  String get rewardMomentum => 'Momentum gained!';
-
-  @override
-  String get rewardTaskCleared => 'Task cleared!';
-
-  @override
-  String get rewardExcellent => 'Excellent!';
 
   @override
   String get search => 'Search';
@@ -471,18 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wrapAll => 'Wrap all';
-
-  @override
-  String get marquee => 'Marquee';
-
-  @override
-  String get shortDuration => 'Short';
-
-  @override
-  String get mediumDuration => 'Medium';
-
-  @override
-  String get longDuration => 'Long';
 
   @override
   String get backgroundImage => 'Background image';
@@ -522,16 +446,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clear => 'Clear';
-
-  @override
-  String get tutorialUnlockAward =>
-      'Congratulations, Themes have been unlocked, you can change themes by pressing G and going to the themes tab';
-
-  @override
-  String get great => 'Great';
-
-  @override
-  String get tutorialAwardBadge => 'Tutorial completed';
 
   @override
   String get guestImportTitle => 'Import local tasks?';

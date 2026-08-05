@@ -13,7 +13,6 @@ void main() {
       strings.deleteListBody('Inbox'),
       'Delete "Inbox" and all its tasks?',
     );
-    expect(strings.marqueeSpeed(180), 'Marquee speed: 180 ms');
     expect(strings.completionDatePattern, 'MM-dd-yyyy');
     expect(strings.completionDaySuffix, 'd');
   });

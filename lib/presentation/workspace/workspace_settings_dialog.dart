@@ -130,8 +130,7 @@ class _WorkspaceSettingsDialogState
     final tabs = [
       SettingsTab.config,
       if (supportsDesktopBackground) SettingsTab.background,
-      if (usesTerminalPresentation && state.deviceState.themesUnlocked)
-        SettingsTab.themes,
+      if (usesTerminalPresentation) SettingsTab.themes,
     ];
     final selectedTab = tabs.contains(_selectedTab)
         ? _selectedTab
@@ -256,51 +255,10 @@ class _ConfigSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
-    final marqueePreset = _MarqueePreset.nearest(settings.marqueeSpeedMs);
     if (!usesTerminalPresentation) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(strings.longTitleMode),
-            subtitle: Text(_longTitleLabel(strings, settings.longTitleDisplay)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => onUpdate(
-              settings.copyWith(
-                longTitleDisplay: settings.longTitleDisplay.next,
-              ),
-            ),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            enabled: settings.longTitleDisplay == LongTitleDisplay.marquee,
-            title: Text(strings.marqueeSpeedLabel),
-            subtitle: Text(marqueePreset.label(strings)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: settings.longTitleDisplay == LongTitleDisplay.marquee
-                ? () => onUpdate(
-                    settings.copyWith(
-                      marqueeSpeedMs: marqueePreset.next.milliseconds,
-                    ),
-                  )
-                : null,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(strings.rewardDuration),
-            subtitle: Text(
-              _rewardDurationLabel(strings, settings.rewardDuration),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => onUpdate(
-              settings.copyWith(
-                rewardDuration:
-                    RewardDuration.values[(settings.rewardDuration.index + 1) %
-                        RewardDuration.values.length],
-              ),
-            ),
-          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(strings.fontFamily),
@@ -374,41 +332,6 @@ class _ConfigSettings extends StatelessWidget {
             onTap: () => onUpdate(
               settings.copyWith(
                 longTitleDisplay: settings.longTitleDisplay.next,
-              ),
-            ),
-          ),
-        ),
-        _SettingsRow(
-          label: strings.marqueeSpeedLabel,
-          control: _CycleButton(
-            value: marqueePreset.label(strings),
-            onTap: settings.longTitleDisplay == LongTitleDisplay.marquee
-                ? () {
-                    final next = marqueePreset.next;
-                    onUpdate(
-                      settings.copyWith(marqueeSpeedMs: next.milliseconds),
-                    );
-                  }
-                : null,
-          ),
-        ),
-        _SettingsRow(
-          label: strings.showTips,
-          control: _ToggleButton(
-            value: settings.tipsEnabled,
-            onChanged: (value) =>
-                onUpdate(settings.copyWith(tipsEnabled: value)),
-          ),
-        ),
-        _SettingsRow(
-          label: strings.rewardDuration,
-          control: _CycleButton(
-            value: _rewardDurationLabel(strings, settings.rewardDuration),
-            onTap: () => onUpdate(
-              settings.copyWith(
-                rewardDuration:
-                    RewardDuration.values[(settings.rewardDuration.index + 1) %
-                        RewardDuration.values.length],
               ),
             ),
           ),
@@ -791,28 +714,6 @@ class _CycleButton extends StatelessWidget {
       _TextAction(value: '< $value >', onTap: onTap, fillWidth: true);
 }
 
-class _ToggleButton extends StatelessWidget {
-  const _ToggleButton({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!usesTerminalPresentation) {
-      return Switch(value: value, onChanged: onChanged);
-    }
-    return Semantics(
-      toggled: value,
-      child: _TextAction(
-        value: value ? '[x]' : '[ ]',
-        onTap: () => onChanged(!value),
-        fillWidth: true,
-      ),
-    );
-  }
-}
-
 class _StepControl extends StatelessWidget {
   const _StepControl({
     required this.value,
@@ -912,51 +813,10 @@ class _TextAction extends StatelessWidget {
   }
 }
 
-enum _MarqueePreset {
-  slow(slowMarqueeSpeedMs),
-  normal(normalMarqueeSpeedMs),
-  fast(fastMarqueeSpeedMs);
-
-  const _MarqueePreset(this.milliseconds);
-
-  final int milliseconds;
-
-  _MarqueePreset get next => values[(index + 1) % values.length];
-
-  String label(AppLocalizations strings) => switch (this) {
-    _MarqueePreset.slow => strings.slow,
-    _MarqueePreset.normal => strings.normal,
-    _MarqueePreset.fast => strings.fast,
-  };
-
-  static _MarqueePreset nearest(int milliseconds) {
-    var nearest = values.first;
-    var distance = (milliseconds - nearest.milliseconds).abs();
-    for (final preset in values.skip(1)) {
-      final candidateDistance = (milliseconds - preset.milliseconds).abs();
-      if (candidateDistance < distance) {
-        nearest = preset;
-        distance = candidateDistance;
-      }
-    }
-    return nearest;
-  }
-}
-
-String _rewardDurationLabel(
-  AppLocalizations strings,
-  RewardDuration duration,
-) => switch (duration) {
-  RewardDuration.short => strings.shortDuration,
-  RewardDuration.medium => strings.mediumDuration,
-  RewardDuration.long => strings.longDuration,
-};
-
 String _longTitleLabel(AppLocalizations strings, LongTitleDisplay display) =>
     switch (display) {
       LongTitleDisplay.wrapSelected => strings.wrapSelected,
       LongTitleDisplay.wrapAll => strings.wrapAll,
-      LongTitleDisplay.marquee => strings.marquee,
     };
 
 String _languageLabel(String localeName) =>

@@ -9,7 +9,6 @@ import '../../app/ui_mode.dart';
 import '../../l10n/app_localizations.dart';
 import '../terminal_style.dart';
 import '../workspace_view_model.dart';
-import 'workspace_dialog_tabs.dart';
 import 'workspace_theme_preview.dart';
 
 EdgeInsetsGeometry? get _dialogTitlePadding =>
@@ -21,15 +20,8 @@ EdgeInsetsGeometry? get _dialogContentPadding =>
 TextStyle? _dialogInputStyle(BuildContext context) =>
     usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
 
-class WorkspaceHelpDialog extends StatefulWidget {
+class WorkspaceHelpDialog extends StatelessWidget {
   const WorkspaceHelpDialog({super.key});
-
-  @override
-  State<WorkspaceHelpDialog> createState() => _WorkspaceHelpDialogState();
-}
-
-class _WorkspaceHelpDialogState extends State<WorkspaceHelpDialog> {
-  var _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -42,36 +34,7 @@ class _WorkspaceHelpDialogState extends State<WorkspaceHelpDialog> {
         width: 680,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            WorkspaceDialogTabs(
-              labels: [strings.keyboardShortcuts, strings.tipsTitle],
-              selectedIndex: _selectedTab,
-              onSelected: (index) => setState(() => _selectedTab = index),
-            ),
-            SizedBox(height: TerminalMetrics.line(context) * .35),
-            IndexedStack(
-              index: _selectedTab,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(strings.keyboardShortcutsHelp),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final id in const [
-                      'navigation',
-                      'reorder',
-                      'subtasks',
-                      'search',
-                      'copy',
-                    ])
-                      Text('• ${_helpTipText(strings, id)}'),
-                  ],
-                ),
-              ],
-            ),
-          ],
+          children: [Text(strings.keyboardShortcutsHelp)],
         ),
       ),
       actions: [
@@ -83,15 +46,6 @@ class _WorkspaceHelpDialogState extends State<WorkspaceHelpDialog> {
     );
   }
 }
-
-String _helpTipText(AppLocalizations strings, String id) => switch (id) {
-  'navigation' => strings.tipNavigation,
-  'reorder' => strings.tipReorder,
-  'subtasks' => strings.tipSubtasks,
-  'search' => strings.tipSearch,
-  'copy' => strings.tipCopy,
-  _ => '',
-};
 
 class WorkspaceThemePickerDialog extends ConsumerWidget {
   const WorkspaceThemePickerDialog({super.key});

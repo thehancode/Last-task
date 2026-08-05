@@ -81,10 +81,9 @@ class WorkspaceTaskRow extends ConsumerWidget {
     final title = _TaskTitle(
       value: task.title,
       selected: visuallySelected,
-      display: state.search == null
-          ? state.settings.longTitleDisplay
-          : LongTitleDisplay.wrapAll,
-      speed: state.settings.marqueeSpeedMs,
+      display: !terminal || state.search != null
+          ? LongTitleDisplay.wrapAll
+          : state.settings.longTitleDisplay,
       searchQuery: search?.query,
       currentSearchMatch: search?.currentTaskId == task.id,
       style: TextStyle(
@@ -446,12 +445,11 @@ class WorkspaceEmptyState extends StatelessWidget {
   );
 }
 
-class _TaskTitle extends StatefulWidget {
+class _TaskTitle extends StatelessWidget {
   const _TaskTitle({
     required this.value,
     required this.selected,
     required this.display,
-    required this.speed,
     required this.style,
     this.searchQuery,
     this.currentSearchMatch = false,
@@ -459,145 +457,21 @@ class _TaskTitle extends StatefulWidget {
   final String value;
   final bool selected;
   final LongTitleDisplay display;
-  final int speed;
   final TextStyle style;
   final String? searchQuery;
   final bool currentSearchMatch;
 
   @override
-  State<_TaskTitle> createState() => _TaskTitleState();
-}
-
-class _TaskTitleState extends State<_TaskTitle> {
-  static const _marqueeSeparator = '  ▢  ';
-  static const _marqueeFrameInterval = Duration(milliseconds: 16);
-  static const _marqueeStartDelay = Duration(milliseconds: 900);
-
-  Timer? _timer;
-  Timer? _marqueeStartTimer;
-  final _marqueeScrollController = ScrollController();
-  var _marqueeOffset = 0.0;
-  var _available = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _configureTimer();
-  }
-
-  @override
-  void didUpdateWidget(covariant _TaskTitle oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selected != widget.selected ||
-        oldWidget.display != widget.display ||
-        oldWidget.speed != widget.speed) {
-      _marqueeOffset = 0;
-      _configureTimer(resetMarquee: true);
-    }
-  }
-
-  void _configureTimer({bool resetMarquee = false}) {
-    _timer?.cancel();
-    _marqueeStartTimer?.cancel();
-    if (!widget.selected || _available == 0) return;
-    if (widget.display == LongTitleDisplay.marquee) {
-      final length = widget.value
-          .replaceAll(RegExp(r'[\r\n]+'), ' ')
-          .characters
-          .length;
-      final cycleWidth =
-          (length + _marqueeSeparator.characters.length) *
-          TerminalMetrics.cell(context);
-      if (resetMarquee) _marqueeOffset = 0;
-      _marqueeStartTimer = Timer(_marqueeStartDelay, () {
-        if (!mounted ||
-            !widget.selected ||
-            widget.display != LongTitleDisplay.marquee) {
-          return;
-        }
-        _timer = Timer.periodic(_marqueeFrameInterval, (_) {
-          if (!mounted) return;
-          setState(() {
-            _marqueeOffset =
-                (_marqueeOffset +
-                    _marqueeFrameInterval.inMilliseconds *
-                        TerminalMetrics.cell(context) /
-                        widget.speed) %
-                cycleWidth;
-          });
-          if (_marqueeScrollController.hasClients) {
-            _marqueeScrollController.jumpTo(_marqueeOffset);
-          }
-        });
-      });
-      return;
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _marqueeStartTimer?.cancel();
-    _marqueeScrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.display == LongTitleDisplay.wrapAll ||
-        (widget.display == LongTitleDisplay.wrapSelected && widget.selected)) {
-      return _searchHighlightedTitle(context, widget.value, widget.style);
+    if (display == LongTitleDisplay.wrapAll ||
+        (display == LongTitleDisplay.wrapSelected && selected)) {
+      return _searchHighlightedTitle(context, value, style);
     }
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final source = widget.value.replaceAll(RegExp(r'[\r\n]+'), ' ');
-        final characters = source.characters.toList(growable: false);
-        final available = (constraints.maxWidth / TerminalMetrics.cell(context))
-            .floor()
-            .clamp(1, 10000)
-            .toInt();
-        if (_available != available) {
-          _available = available;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _configureTimer(resetMarquee: true);
-          });
-        }
-        if (!widget.selected ||
-            characters.length <= available ||
-            characters.length <= 12) {
-          return Text(
-            source,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: widget.style,
-          );
-        }
-        if (widget.display == LongTitleDisplay.marquee) {
-          final loop = [...characters, ..._marqueeSeparator.characters].join();
-          return SizedBox(
-            width: constraints.maxWidth,
-            child: SingleChildScrollView(
-              key: const ValueKey('marquee-title'),
-              controller: _marqueeScrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(loop, maxLines: 1, softWrap: false, style: widget.style),
-                  Text(loop, maxLines: 1, softWrap: false, style: widget.style),
-                ],
-              ),
-            ),
-          );
-        }
-        return Text(
-          source,
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          style: widget.style,
-        );
-      },
+    return Text(
+      value.replaceAll(RegExp(r'[\r\n]+'), ' '),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
     );
   }
 
@@ -606,7 +480,7 @@ class _TaskTitleState extends State<_TaskTitle> {
     String value,
     TextStyle style,
   ) {
-    final query = widget.searchQuery;
+    final query = searchQuery;
     if (query == null || query.isEmpty) return Text(value, style: style);
     final lower = value.toLowerCase();
     final needle = query.toLowerCase();
@@ -626,7 +500,7 @@ class _TaskTitleState extends State<_TaskTitle> {
           text: value.substring(match, match + needle.length),
           style: style.copyWith(
             color: TerminalPalette.of(context).background,
-            backgroundColor: widget.currentSearchMatch
+            backgroundColor: currentSearchMatch
                 ? TerminalPalette.of(context).pending
                 : TerminalPalette.of(context).doing,
           ),

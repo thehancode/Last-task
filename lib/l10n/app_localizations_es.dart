@@ -329,26 +329,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Los nombres de etiquetas no pueden estar vacíos';
 
   @override
-  String marqueeSpeed(int milliseconds) {
-    return 'Velocidad de desplazamiento: $milliseconds ms';
-  }
-
-  @override
-  String get marqueeSpeedLabel => 'Velocidad de marquesina';
-
-  @override
-  String get slow => 'Lenta';
-
-  @override
-  String get normal => 'Normal';
-
-  @override
-  String get fast => 'Rápida';
-
-  @override
-  String get wrapLongTitles => 'Ajustar títulos';
-
-  @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente de escritorio: $points pt';
   }
@@ -380,37 +360,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get completionDaySuffix => 'd';
 
   @override
-  String get showTips => 'Mostrar consejos al inicio';
-
-  @override
   String get exportData => 'Exportar datos';
 
   @override
   String get importData => 'Cargar datos';
-
-  @override
-  String get rewardDuration => 'Duración de recompensa';
-
-  @override
-  String get tipsTitle => 'Consejos';
-
-  @override
-  String get tipNavigation => 'Usa izquierda y derecha para cambiar de lista.';
-
-  @override
-  String get tipReorder =>
-      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
-
-  @override
-  String get tipSubtasks =>
-      'Pulsa Tab para añadir una subtarea a la tarea seleccionada.';
-
-  @override
-  String get tipSearch => 'Pulsa Ctrl+F o / para buscar tareas.';
-
-  @override
-  String get tipCopy =>
-      'Ctrl+C copia un título; Ctrl+Mayús+C copia su sección.';
 
   @override
   String get taskWasCopied => 'Se copió la tarea';
@@ -428,24 +381,6 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get rewardGreatWork => '¡Gran trabajo!';
-
-  @override
-  String get rewardNicelyDone => '¡Bien hecho!';
-
-  @override
-  String get rewardKeepGoing => '¡Sigue así!';
-
-  @override
-  String get rewardMomentum => '¡Buen ritmo!';
-
-  @override
-  String get rewardTaskCleared => '¡Tarea completada!';
-
-  @override
-  String get rewardExcellent => '¡Excelente!';
 
   @override
   String get search => 'Buscar';
@@ -473,18 +408,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wrapAll => 'Ajustar todos';
-
-  @override
-  String get marquee => 'Marquesina';
-
-  @override
-  String get shortDuration => 'Corta';
-
-  @override
-  String get mediumDuration => 'Media';
-
-  @override
-  String get longDuration => 'Larga';
 
   @override
   String get backgroundImage => 'Imagen de fondo';
@@ -524,16 +447,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get clear => 'Quitar';
-
-  @override
-  String get tutorialUnlockAward =>
-      'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
-
-  @override
-  String get great => 'Genial';
-
-  @override
-  String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
   String get guestImportTitle => '¿Importar tareas locales?';
@@ -877,26 +790,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
       'Los nombres de las etiquetas no pueden estar vacíos';
 
   @override
-  String marqueeSpeed(int milliseconds) {
-    return 'Velocidad de desplazamiento: $milliseconds ms';
-  }
-
-  @override
-  String get marqueeSpeedLabel => 'Velocidad de marquesina';
-
-  @override
-  String get slow => 'Lenta';
-
-  @override
-  String get normal => 'Normal';
-
-  @override
-  String get fast => 'Rápida';
-
-  @override
-  String get wrapLongTitles => 'Ajustar títulos';
-
-  @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente en escritorio: $points pt';
   }
@@ -928,37 +821,10 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get completionDaySuffix => 'd';
 
   @override
-  String get showTips => 'Mostrar consejos al inicio';
-
-  @override
   String get exportData => 'Exportar datos';
 
   @override
   String get importData => 'Importar datos';
-
-  @override
-  String get rewardDuration => 'Duración de recompensa';
-
-  @override
-  String get tipsTitle => 'Consejos';
-
-  @override
-  String get tipNavigation => 'Usa izquierda y derecha para cambiar de lista.';
-
-  @override
-  String get tipReorder =>
-      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
-
-  @override
-  String get tipSubtasks =>
-      'Presiona Tab para agregar una subtarea a la tarea seleccionada.';
-
-  @override
-  String get tipSearch => 'Presiona Ctrl+F o / para buscar tareas.';
-
-  @override
-  String get tipCopy =>
-      'Ctrl+C copia un título; Ctrl+Mayús+C copia su sección.';
 
   @override
   String get taskWasCopied => 'Se copió la tarea';
@@ -976,24 +842,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
     );
     return '$_temp0';
   }
-
-  @override
-  String get rewardGreatWork => '¡Gran trabajo!';
-
-  @override
-  String get rewardNicelyDone => '¡Bien hecho!';
-
-  @override
-  String get rewardKeepGoing => '¡Sigue así!';
-
-  @override
-  String get rewardMomentum => '¡Buen ritmo!';
-
-  @override
-  String get rewardTaskCleared => '¡Tarea completada!';
-
-  @override
-  String get rewardExcellent => '¡Excelente!';
 
   @override
   String get search => 'Buscar';
@@ -1021,18 +869,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get wrapAll => 'Ajustar todos';
-
-  @override
-  String get marquee => 'Marquesina';
-
-  @override
-  String get shortDuration => 'Corta';
-
-  @override
-  String get mediumDuration => 'Media';
-
-  @override
-  String get longDuration => 'Larga';
 
   @override
   String get backgroundImage => 'Imagen de fondo';
@@ -1072,16 +908,6 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get clear => 'Quitar';
-
-  @override
-  String get tutorialUnlockAward =>
-      'Felicitaciones, se desbloquearon los temas. Puedes cambiarlos presionando G y entrando a la pestaña Temas';
-
-  @override
-  String get great => 'Genial';
-
-  @override
-  String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
   String get guestImportTitle => '¿Importar tareas locales?';
@@ -1425,26 +1251,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
       'Los nombres de etiquetas no pueden estar vacíos';
 
   @override
-  String marqueeSpeed(int milliseconds) {
-    return 'Velocidad de desplazamiento: $milliseconds ms';
-  }
-
-  @override
-  String get marqueeSpeedLabel => 'Velocidad de marquesina';
-
-  @override
-  String get slow => 'Lenta';
-
-  @override
-  String get normal => 'Normal';
-
-  @override
-  String get fast => 'Rápida';
-
-  @override
-  String get wrapLongTitles => 'Ajustar títulos';
-
-  @override
   String desktopFontSize(int points) {
     return 'Tamaño de fuente de escritorio: $points pt';
   }
@@ -1476,37 +1282,10 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get completionDaySuffix => 'd';
 
   @override
-  String get showTips => 'Mostrar consejos al inicio';
-
-  @override
   String get exportData => 'Exportar datos';
 
   @override
   String get importData => 'Importar datos';
-
-  @override
-  String get rewardDuration => 'Duración de recompensa';
-
-  @override
-  String get tipsTitle => 'Consejos';
-
-  @override
-  String get tipNavigation => 'Usa izquierda y derecha para cambiar de lista.';
-
-  @override
-  String get tipReorder =>
-      'Mantén Ctrl y pulsa arriba o abajo para reordenar una tarea.';
-
-  @override
-  String get tipSubtasks =>
-      'Pulsa Tab para añadir una subtarea a la tarea seleccionada.';
-
-  @override
-  String get tipSearch => 'Pulsa Ctrl+F o / para buscar tareas.';
-
-  @override
-  String get tipCopy =>
-      'Ctrl+C copia un título; Ctrl+Mayús+C copia su sección.';
 
   @override
   String get taskWasCopied => 'Se copió la tarea';
@@ -1524,24 +1303,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
     );
     return '$_temp0';
   }
-
-  @override
-  String get rewardGreatWork => '¡Gran trabajo!';
-
-  @override
-  String get rewardNicelyDone => '¡Bien hecho!';
-
-  @override
-  String get rewardKeepGoing => '¡Sigue así!';
-
-  @override
-  String get rewardMomentum => '¡Buen ritmo!';
-
-  @override
-  String get rewardTaskCleared => '¡Tarea completada!';
-
-  @override
-  String get rewardExcellent => '¡Excelente!';
 
   @override
   String get search => 'Buscar';
@@ -1569,18 +1330,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get wrapAll => 'Ajustar todos';
-
-  @override
-  String get marquee => 'Marquesina';
-
-  @override
-  String get shortDuration => 'Corta';
-
-  @override
-  String get mediumDuration => 'Media';
-
-  @override
-  String get longDuration => 'Larga';
 
   @override
   String get backgroundImage => 'Imagen de fondo';
@@ -1620,16 +1369,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get clear => 'Quitar';
-
-  @override
-  String get tutorialUnlockAward =>
-      'Enhorabuena, se han desbloqueado los temas. Puedes cambiarlos pulsando G y entrando en la pestaña Temas';
-
-  @override
-  String get great => 'Genial';
-
-  @override
-  String get tutorialAwardBadge => 'Tutorial completado';
 
   @override
   String get guestImportTitle => '¿Importar tareas locales?';

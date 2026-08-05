@@ -1,12 +1,6 @@
 import 'dart:collection';
 
 const int currentSchemaVersion = 1;
-const int slowMarqueeSpeedMs = 325;
-const int normalMarqueeSpeedMs = 200;
-const int fastMarqueeSpeedMs = 150;
-const int defaultMarqueeSpeedMs = normalMarqueeSpeedMs;
-const int minMarqueeSpeedMs = 50;
-const int maxMarqueeSpeedMs = 1000;
 
 enum TaskStatus { pending, doing, done, archived }
 
@@ -59,44 +53,25 @@ extension TaskStatusX on TaskStatus {
 
 enum WorkspaceView { list, completed, multi }
 
-enum LongTitleDisplay { wrapSelected, wrapAll, marquee }
+enum LongTitleDisplay { wrapSelected, wrapAll }
 
 extension LongTitleDisplayX on LongTitleDisplay {
   String get wireName => name;
   String get label => switch (this) {
     LongTitleDisplay.wrapSelected => 'Wrap selected',
     LongTitleDisplay.wrapAll => 'Wrap all',
-    LongTitleDisplay.marquee => 'Marquee',
   };
 
   LongTitleDisplay get next =>
       LongTitleDisplay.values[(index + 1) % LongTitleDisplay.values.length];
 
   static LongTitleDisplay fromWireName(Object? value) => switch (value) {
-    null => LongTitleDisplay.wrapSelected,
-    'marquee' => LongTitleDisplay.marquee,
+    null => LongTitleDisplay.wrapAll,
+    'marquee' => LongTitleDisplay.wrapAll,
     'wrap' || 'wrapAll' => LongTitleDisplay.wrapAll,
     'wrapSelected' => LongTitleDisplay.wrapSelected,
-    'slidingWindow' => LongTitleDisplay.marquee,
+    'slidingWindow' => LongTitleDisplay.wrapAll,
     _ => throw FormatException('Unknown long title display: $value'),
-  };
-}
-
-enum RewardDuration { short, medium, long }
-
-extension RewardDurationX on RewardDuration {
-  String get wireName => name;
-  Duration get duration => switch (this) {
-    RewardDuration.short => const Duration(milliseconds: 400),
-    RewardDuration.medium => const Duration(milliseconds: 800),
-    RewardDuration.long => const Duration(milliseconds: 1400),
-  };
-
-  static RewardDuration fromWireName(Object? value) => switch (value) {
-    null || 'medium' => RewardDuration.medium,
-    'short' => RewardDuration.short,
-    'long' => RewardDuration.long,
-    _ => throw FormatException('Unknown reward duration: $value'),
   };
 }
 
@@ -116,9 +91,9 @@ extension AppFontFamilyX on AppFontFamily {
   };
 
   String get label => switch (this) {
-    AppFontFamily.ubuntuMonoNerd => 'Ubuntu Mono Nerd Font',
-    AppFontFamily.comicShannsMonoNerd => 'Comic Shanns Mono Nerd Font',
-    AppFontFamily.goMonoNerd => 'Go Mono Nerd Font',
+    AppFontFamily.ubuntuMonoNerd => 'Classic',
+    AppFontFamily.comicShannsMonoNerd => 'Comic',
+    AppFontFamily.goMonoNerd => 'Mono',
   };
 
   AppFontFamily get next =>
@@ -193,11 +168,7 @@ class DeviceWorkspaceState {
     this.currentListId,
     this.selectedTaskId,
     this.soundEnabled = true,
-    this.seenTipIds = const {},
     this.desktopAppearance = const DesktopAppearance(),
-    this.terminalLaunchCount = 0,
-    this.themesUnlocked = false,
-    this.tutorialAwardEarned = false,
     this.composerDrafts = const {},
   });
 
@@ -205,11 +176,7 @@ class DeviceWorkspaceState {
   final String? currentListId;
   final String? selectedTaskId;
   final bool soundEnabled;
-  final Set<String> seenTipIds;
   final DesktopAppearance desktopAppearance;
-  final int terminalLaunchCount;
-  final bool themesUnlocked;
-  final bool tutorialAwardEarned;
   final Map<String, String> composerDrafts;
 
   DeviceWorkspaceState copyWith({
@@ -217,22 +184,14 @@ class DeviceWorkspaceState {
     String? currentListId,
     String? selectedTaskId,
     bool? soundEnabled,
-    Set<String>? seenTipIds,
     DesktopAppearance? desktopAppearance,
-    int? terminalLaunchCount,
-    bool? themesUnlocked,
-    bool? tutorialAwardEarned,
     Map<String, String>? composerDrafts,
   }) => DeviceWorkspaceState(
     view: view ?? this.view,
     currentListId: currentListId ?? this.currentListId,
     selectedTaskId: selectedTaskId ?? this.selectedTaskId,
     soundEnabled: soundEnabled ?? this.soundEnabled,
-    seenTipIds: seenTipIds ?? this.seenTipIds,
     desktopAppearance: desktopAppearance ?? this.desktopAppearance,
-    terminalLaunchCount: terminalLaunchCount ?? this.terminalLaunchCount,
-    themesUnlocked: themesUnlocked ?? this.themesUnlocked,
-    tutorialAwardEarned: tutorialAwardEarned ?? this.tutorialAwardEarned,
     composerDrafts: composerDrafts ?? this.composerDrafts,
   );
 
@@ -241,11 +200,7 @@ class DeviceWorkspaceState {
     if (currentListId != null) 'current_list_id': currentListId,
     if (selectedTaskId != null) 'selected_task_id': selectedTaskId,
     'sound_enabled': soundEnabled,
-    'seen_tips': seenTipIds.toList()..sort(),
     'desktop_appearance': desktopAppearance.toJson(),
-    'terminal_launch_count': terminalLaunchCount,
-    'themes_unlocked': themesUnlocked,
-    'tutorial_award_earned': tutorialAwardEarned,
     if (composerDrafts.isNotEmpty) 'composer_drafts': composerDrafts,
   };
 
@@ -258,17 +213,11 @@ class DeviceWorkspaceState {
       currentListId: json['current_list_id'] as String?,
       selectedTaskId: json['selected_task_id'] as String?,
       soundEnabled: json['sound_enabled'] as bool? ?? true,
-      seenTipIds: Set<String>.from(
-        (json['seen_tips'] as List<Object?>? ?? const []).whereType<String>(),
-      ),
       desktopAppearance: DesktopAppearance.fromJson(
         json['desktop_appearance'] == null
             ? null
             : Map<String, Object?>.from(json['desktop_appearance']! as Map),
       ),
-      terminalLaunchCount: json['terminal_launch_count'] as int? ?? 0,
-      themesUnlocked: json['themes_unlocked'] as bool? ?? false,
-      tutorialAwardEarned: json['tutorial_award_earned'] as bool? ?? false,
       composerDrafts: {
         for (final entry
             in (json['composer_drafts'] as Map<Object?, Object?>? ?? const {})
@@ -277,9 +226,6 @@ class DeviceWorkspaceState {
             entry.key! as String: entry.value! as String,
       },
     );
-    if (state.terminalLaunchCount < 0) {
-      throw const FormatException('terminal_launch_count must not be negative');
-    }
     state.desktopAppearance.validate();
     return state;
   }
@@ -590,18 +536,14 @@ class TagNames {
 
 class AppSettings {
   const AppSettings({
-    this.marqueeSpeedMs = defaultMarqueeSpeedMs,
-    this.longTitleDisplay = LongTitleDisplay.wrapSelected,
+    this.longTitleDisplay = LongTitleDisplay.wrapAll,
     this.fontFamily = AppFontFamily.ubuntuMonoNerd,
     this.nativeFontSize = 23,
     this.tagNames = const TagNames(),
     this.languageLocale = 'en',
     this.themeId = 'classic',
-    this.tipsEnabled = false,
-    this.rewardDuration = RewardDuration.medium,
   });
 
-  final int marqueeSpeedMs;
   final LongTitleDisplay longTitleDisplay;
   final AppFontFamily fontFamily;
   final int nativeFontSize;
@@ -611,45 +553,33 @@ class AppSettings {
   /// The presentation layer matches this against generated localization catalogs.
   final String languageLocale;
   final String themeId;
-  final bool tipsEnabled;
-  final RewardDuration rewardDuration;
 
   AppSettings copyWith({
-    int? marqueeSpeedMs,
     LongTitleDisplay? longTitleDisplay,
     AppFontFamily? fontFamily,
     int? nativeFontSize,
     TagNames? tagNames,
     String? languageLocale,
     String? themeId,
-    bool? tipsEnabled,
-    RewardDuration? rewardDuration,
   }) => AppSettings(
-    marqueeSpeedMs: marqueeSpeedMs ?? this.marqueeSpeedMs,
     longTitleDisplay: longTitleDisplay ?? this.longTitleDisplay,
     fontFamily: fontFamily ?? this.fontFamily,
     nativeFontSize: nativeFontSize ?? this.nativeFontSize,
     tagNames: tagNames ?? this.tagNames,
     languageLocale: languageLocale ?? this.languageLocale,
     themeId: themeId ?? this.themeId,
-    tipsEnabled: tipsEnabled ?? this.tipsEnabled,
-    rewardDuration: rewardDuration ?? this.rewardDuration,
   );
 
   Map<String, Object?> toJson() => {
-    'marquee_speed_ms': marqueeSpeedMs,
     'long_title_display': longTitleDisplay.wireName,
     'font_family': fontFamily.wireName,
     'native_font_size': nativeFontSize,
     'tag_names': tagNames.toJson(),
     'language': languageLocale,
     'theme': themeId,
-    'tips_enabled': tipsEnabled,
-    'reward_duration': rewardDuration.wireName,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
-    marqueeSpeedMs: json['marquee_speed_ms'] as int? ?? defaultMarqueeSpeedMs,
     longTitleDisplay: LongTitleDisplayX.fromWireName(
       json['long_title_display'],
     ),
@@ -662,17 +592,9 @@ class AppSettings {
     ),
     languageLocale: json['language'] as String? ?? 'en',
     themeId: json['theme'] as String? ?? 'classic',
-    tipsEnabled: json['tips_enabled'] as bool? ?? false,
-    rewardDuration: RewardDurationX.fromWireName(json['reward_duration']),
   );
 
   void validate() {
-    if (marqueeSpeedMs < minMarqueeSpeedMs ||
-        marqueeSpeedMs > maxMarqueeSpeedMs) {
-      throw const FormatException(
-        'marquee_speed_ms must be between $minMarqueeSpeedMs and $maxMarqueeSpeedMs',
-      );
-    }
     if (nativeFontSize < 10 || nativeFontSize > 28) {
       throw const FormatException('native_font_size must be between 10 and 28');
     }

@@ -19,8 +19,6 @@ final workspaceViewModelProvider =
       WorkspaceViewModel.new,
     );
 
-final workspaceRandomProvider = Provider<Random>((ref) => Random());
-
 const tutorialTaskIds = [
   'tutorial-navigation',
   'tutorial-new-task',
@@ -34,7 +32,7 @@ const tutorialTaskTitles = [
   'Press N to create a new task (press Enter to save it)',
   'Space then Space moves a task directly to Done',
   'Ctrl+N creates a new list',
-  'Completing every task on this list might unlock a surprise.',
+  'Complete this tutorial list to practice the workflow.',
 ];
 
 class WorkspaceViewModel extends Notifier<WorkspaceState> {
@@ -43,8 +41,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   Timer? _animationTimer;
   Timer? _deviceSaveTimer;
   Timer? _highlightTimer;
-  Timer? _tipTimer;
-  Timer? _rewardTimer;
   StreamSubscription<Object>? _syncErrorSubscription;
   StreamSubscription<void>? _remoteChangeSubscription;
   Object? _pendingSyncError;
@@ -54,7 +50,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   TaskListRepository get _lists => ref.read(taskListRepositoryProvider);
   SettingsRepository get _settings => ref.read(settingsRepositoryProvider);
   DeviceStateRepository get _device => ref.read(deviceStateRepositoryProvider);
-  Random get _random => ref.read(workspaceRandomProvider);
 
   @override
   WorkspaceState build() {
@@ -71,8 +66,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       _animationTimer?.cancel();
       _deviceSaveTimer?.cancel();
       _highlightTimer?.cancel();
-      _tipTimer?.cancel();
-      _rewardTimer?.cancel();
       unawaited(_syncErrorSubscription?.cancel());
       unawaited(_remoteChangeSubscription?.cancel());
     });
@@ -119,7 +112,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         device = const DeviceWorkspaceState();
       }
       var lists = List<TaskList>.from(loaded.lists);
-      final hadPersistedLists = lists.isNotEmpty;
       if (lists.isEmpty) {
         final list = usesTerminalPresentation
             ? _newTutorialList()
@@ -128,29 +120,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         lists = [list];
       }
       lists = await _resetExpiredDailyTasks(lists);
-      var showTutorialAward = false;
-      if (usesTerminalPresentation) {
-        final launchCount = device.terminalLaunchCount + 1;
-        final tutorialComplete = _tutorialIsComplete(lists);
-        final existingInstallation =
-            hadPersistedLists && !lists.any((list) => list.isTutorial);
-        showTutorialAward = tutorialComplete && !device.tutorialAwardEarned;
-        device = device.copyWith(
-          terminalLaunchCount: launchCount,
-          themesUnlocked:
-              device.themesUnlocked ||
-              tutorialComplete ||
-              launchCount >= 2 ||
-              existingInstallation,
-          tutorialAwardEarned: device.tutorialAwardEarned || tutorialComplete,
-        );
-        try {
-          await _device.save(device);
-        } on Object {
-          // The in-memory launch still works. A later state save or launch
-          // retries persistence.
-        }
-      }
       final restoredList = lists.any((list) => list.id == device.currentListId)
           ? device.currentListId
           : lists.first.id;
@@ -186,8 +155,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         _pendingSyncError = null;
         _handleSyncError(pendingSyncError);
       }
-      if (showTutorialAward) _showTutorialAward();
-      _showEntranceTipIfNeeded();
       if (loaded.warnings.isNotEmpty) _expireNotice(const Duration(seconds: 8));
     } on Object catch (error) {
       state = WorkspaceState(
@@ -332,11 +299,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   }
 
   void dismissNotice() => state = state.copyWith(clearNotice: true);
-
-  void dismissReward() {
-    _rewardTimer?.cancel();
-    state = state.copyWith(clearReward: true);
-  }
 
   void showNotice(String message, {bool usesDoingColor = false}) =>
       _showNotice(NoticeState(message, usesDoingColor: usesDoingColor));
@@ -909,13 +871,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     if (success && state.view == WorkspaceView.multi && to == TaskStatus.done) {
       state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
     }
-    final tutorialUnlocked =
-        success &&
-        to == TaskStatus.done &&
-        await _unlockThemesForCompletedTutorialIfNeeded();
-    if (success && to == TaskStatus.done && !tutorialUnlocked) {
-      _maybeShowReward(selected.id);
-    }
     return success;
   }
 
@@ -961,9 +916,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       if (!state.visibleTaskIds.contains(state.selectedTaskId)) {
         state = _withFirstVisibleSelected(state.copyWith(clearSelection: true));
       }
-      final tutorialUnlocked =
-          await _unlockThemesForCompletedTutorialIfNeeded();
-      if (!tutorialUnlocked) _maybeShowReward(selected.id);
     }
     return success;
   }
@@ -1136,7 +1088,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         notice: const NoticeState('Settings saved'),
       );
       _expireNotice(const Duration(seconds: 2));
-      if (!next.tipsEnabled) dismissTip();
     } on Object catch (error) {
       _error('Settings save failed: $error');
     }
@@ -1490,11 +1441,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   void closeSearch() => state = state.copyWith(clearSearch: true);
 
-  void dismissTip() {
-    _tipTimer?.cancel();
-    state = state.copyWith(clearTip: true);
-  }
-
   Future<void> updateDesktopAppearance(DesktopAppearance appearance) async {
     final device = state.deviceState.copyWith(desktopAppearance: appearance);
     state = state.copyWith(deviceState: device);
@@ -1526,71 +1472,6 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       ),
     );
     _scheduleDeviceSave(immediate: immediate);
-  }
-
-  void _showEntranceTipIfNeeded() {
-    if (!state.settings.tipsEnabled) return;
-    const tipIds = ['navigation', 'reorder', 'subtasks', 'search', 'copy'];
-    final unseen = tipIds.where(
-      (id) => !state.deviceState.seenTipIds.contains(id),
-    );
-    if (unseen.isEmpty) return;
-    final id = unseen.first;
-    final seen = {...state.deviceState.seenTipIds, id};
-    state = state.copyWith(
-      tipId: id,
-      deviceState: state.deviceState.copyWith(seenTipIds: seen),
-    );
-    _scheduleDeviceSave(immediate: true);
-    _tipTimer = Timer(const Duration(seconds: 3), dismissTip);
-  }
-
-  void _maybeShowReward(String taskId) {
-    if (_random.nextDouble() >= .2) return;
-    final reward = RewardState(_random.nextInt(6), taskId);
-    state = state.copyWith(reward: reward);
-    _rewardTimer?.cancel();
-    _rewardTimer = Timer(state.settings.rewardDuration.duration, dismissReward);
-  }
-
-  bool _tutorialIsComplete(List<TaskList> lists) {
-    TaskList? tutorial;
-    for (final list in lists) {
-      if (list.isTutorial) {
-        tutorial = list;
-        break;
-      }
-    }
-    if (tutorial == null) return false;
-    final tasksById = {for (final task in tutorial.tasks) task.id: task};
-    return tutorialTaskIds.every(
-      (id) => tasksById[id]?.status == TaskStatus.done,
-    );
-  }
-
-  Future<bool> _unlockThemesForCompletedTutorialIfNeeded() async {
-    if (state.deviceState.tutorialAwardEarned ||
-        !_tutorialIsComplete(state.lists)) {
-      return false;
-    }
-    final device = _currentDeviceState().copyWith(
-      themesUnlocked: true,
-      tutorialAwardEarned: true,
-    );
-    try {
-      await _device.save(device);
-      state = state.copyWith(deviceState: device);
-      _showTutorialAward();
-      return true;
-    } on Object catch (error) {
-      _error('Tutorial unlock save failed: $error');
-      return false;
-    }
-  }
-
-  void _showTutorialAward() {
-    state = state.copyWith(reward: const RewardState.tutorial());
-    _rewardTimer?.cancel();
   }
 
   _HistoryEntry _captureHistory() => _HistoryEntry(

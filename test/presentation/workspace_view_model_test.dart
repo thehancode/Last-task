@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -652,19 +651,6 @@ void main() {
     expect(state.soundEnabled, isFalse);
   });
 
-  test('completion rewards use the injectable random source', () async {
-    final list = _list('tasks', 'Tasks', [_task('task', 'Task')]);
-    final container = _container([list], random: _FixedRandom());
-    addTearDown(container.dispose);
-    final vm = await _ready(container);
-
-    expect(await vm.completeSelectedTask(), isTrue);
-    final reward = container.read(workspaceViewModelProvider).reward;
-    expect(reward, isNotNull);
-    expect(reward!.messageIndex, 2);
-    expect(reward.taskId, 'task');
-  });
-
   test('fresh Windows launch seeds and persists the tutorial', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -688,8 +674,6 @@ void main() {
       tutorialTaskTitles,
     );
     expect(repository.lists.single.isTutorial, isTrue);
-    expect(device.state.terminalLaunchCount, 1);
-    expect(device.state.themesUnlocked, isFalse);
   });
 
   test('fresh Android launch retains the empty Tasks list', () async {
@@ -706,109 +690,6 @@ void main() {
     expect(state.currentList!.isTutorial, isFalse);
     expect(state.currentList!.tasks, isEmpty);
   });
-
-  test(
-    'second terminal launch unlocks themes without earning the star',
-    () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-      final repository = _TaskLists([]);
-      final device = _RecordingDeviceState(const DeviceWorkspaceState());
-      final first = _container(
-        const [],
-        repository: repository,
-        device: device,
-      );
-      await _ready(first);
-      first.dispose();
-
-      final second = _container(
-        repository.lists,
-        repository: repository,
-        device: device,
-      );
-      addTearDown(second.dispose);
-      await _ready(second);
-
-      final state = second.read(workspaceViewModelProvider);
-      expect(state.deviceState.terminalLaunchCount, 2);
-      expect(state.deviceState.themesUnlocked, isTrue);
-      expect(state.deviceState.tutorialAwardEarned, isFalse);
-    },
-  );
-
-  test('existing terminal users retain theme access on upgrade', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final list = _list('tasks', 'Tasks', [_task('task', 'Task')]);
-    final device = _RecordingDeviceState(const DeviceWorkspaceState());
-    final container = _container([list], device: device);
-    addTearDown(container.dispose);
-
-    await _ready(container);
-
-    expect(
-      container.read(workspaceViewModelProvider).deviceState.themesUnlocked,
-      isTrue,
-    );
-    expect(device.state.terminalLaunchCount, 1);
-  });
-
-  test(
-    'finishing seeded tutorial tasks unlocks themes despite an added task',
-    () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-      final tasks = [
-        for (var index = 0; index < tutorialTaskIds.length; index++)
-          _task(
-            tutorialTaskIds[index],
-            tutorialTaskTitles[index],
-            status: index == tutorialTaskIds.length - 1
-                ? TaskStatus.pending
-                : TaskStatus.done,
-          ),
-        _task('user-task', 'A user task'),
-      ];
-      final tutorial = _list('tutorial', 'Tutorial', tasks, isTutorial: true);
-      final device = _RecordingDeviceState(
-        const DeviceWorkspaceState(terminalLaunchCount: 1),
-      );
-      final container = _container([tutorial], device: device);
-      addTearDown(container.dispose);
-      final vm = await _ready(container);
-      vm.selectTask(tutorialTaskIds.last);
-
-      expect(await vm.completeSelectedTask(), isTrue);
-
-      final state = container.read(workspaceViewModelProvider);
-      expect(state.deviceState.themesUnlocked, isTrue);
-      expect(state.deviceState.tutorialAwardEarned, isTrue);
-      expect(state.reward?.tutorialUnlock, isTrue);
-      expect(
-        state.currentList!.tasks
-            .singleWhere((task) => task.id == 'user-task')
-            .status,
-        TaskStatus.pending,
-      );
-      expect(device.state.tutorialAwardEarned, isTrue);
-    },
-  );
-
-  test('one unseen entrance tip is recorded per device', () async {
-    final list = _list('tasks', 'Tasks', [_task('task', 'Task')]);
-    final device = _RecordingDeviceState(const DeviceWorkspaceState());
-    final settings = _Settings()
-      ..settings = const AppSettings(tipsEnabled: true);
-    final container = _container([list], device: device, settings: settings);
-    addTearDown(container.dispose);
-    await _ready(container);
-    await Future<void>.delayed(Duration.zero);
-
-    final state = container.read(workspaceViewModelProvider);
-    expect(state.tipId, 'navigation');
-    expect(device.state.seenTipIds, contains('navigation'));
-  });
 }
 
 ProviderContainer _container(
@@ -816,7 +697,6 @@ ProviderContainer _container(
   TaskListRepository? repository,
   DeviceStateRepository? device,
   SettingsRepository? settings,
-  Random? random,
 }) => ProviderContainer(
   overrides: [
     deviceStateRepositoryProvider.overrideWithValue(
@@ -826,7 +706,6 @@ ProviderContainer _container(
       repository ?? _TaskLists(lists),
     ),
     settingsRepositoryProvider.overrideWithValue(settings ?? _Settings()),
-    if (random != null) workspaceRandomProvider.overrideWithValue(random),
   ],
 );
 
@@ -941,15 +820,4 @@ class _RecordingDeviceState implements DeviceStateRepository {
 
   @override
   Future<void> save(DeviceWorkspaceState value) async => state = value;
-}
-
-class _FixedRandom implements Random {
-  @override
-  bool nextBool() => true;
-
-  @override
-  double nextDouble() => 0;
-
-  @override
-  int nextInt(int max) => 2 % max;
 }

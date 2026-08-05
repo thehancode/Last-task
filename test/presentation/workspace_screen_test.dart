@@ -60,7 +60,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
     await tester.pumpAndSettle();
-    expect(find.text('Themes'), findsNothing);
+    expect(find.text('Themes'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -257,40 +257,6 @@ void main() {
     }
     debugDefaultTargetPlatformOverride = null;
   });
-
-  testWidgets(
-    'entrance tip appears near the bottom above the terminal footer',
-    (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-      await tester.binding.setSurfaceSize(const Size(1000, 700));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            deviceStateRepositoryProvider.overrideWithValue(
-              const _DeviceState(),
-            ),
-            taskListRepositoryProvider.overrideWithValue(_Lists()),
-            settingsRepositoryProvider.overrideWithValue(
-              const _Settings(AppSettings(tipsEnabled: true)),
-            ),
-          ],
-          child: const LastTaskApp(),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 20));
-
-      final tip = find.textContaining('TIP:');
-      expect(tip, findsOneWidget);
-      final tipBottom = tester.getBottomLeft(tip).dy;
-      final lineHeight = TerminalMetrics.line(tester.element(tip));
-      expect(tipBottom, greaterThan(700 / 2));
-      expect(700 - tipBottom, lessThan(lineHeight * 3));
-      expect(tester.takeException(), isNull);
-      debugDefaultTargetPlatformOverride = null;
-    },
-  );
 
   testWidgets('pointer-down selects a terminal task before tap resolution', (
     tester,
@@ -901,62 +867,6 @@ void main() {
     },
   );
 
-  testWidgets('marquee loops through a visible cycle marker', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await tester.binding.setSurfaceSize(const Size(420, 360));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final now = DateTime.utc(2026, 1, 1);
-    final task = Task(
-      id: 'task-1',
-      title:
-          'A long task title that must scroll continuously through its cycle marker before it starts again',
-      status: TaskStatus.pending,
-      createdAt: now,
-      updatedAt: now,
-      completedAt: null,
-      daily: false,
-      completionHistory: const [],
-    );
-    final list = TaskList(
-      schemaVersion: currentSchemaVersion,
-      id: 'list-1',
-      name: 'Tasks',
-      createdAt: now,
-      tasks: [task],
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
-          taskListRepositoryProvider.overrideWithValue(_Lists([list])),
-          settingsRepositoryProvider.overrideWithValue(
-            const _Settings(
-              AppSettings(
-                longTitleDisplay: LongTitleDisplay.marquee,
-                marqueeSpeedMs: minMarqueeSpeedMs,
-              ),
-            ),
-          ),
-        ],
-        child: const LastTaskApp(),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 20));
-
-    final marquee = find.byKey(const ValueKey('marquee-title'));
-    expect(marquee, findsOneWidget);
-    final scrollView = tester.widget<SingleChildScrollView>(marquee);
-    final initialOffset = scrollView.controller!.offset;
-    await tester.pump(const Duration(milliseconds: 750));
-    expect(scrollView.controller!.offset, initialOffset);
-    await tester.pump(const Duration(milliseconds: 300));
-    final movedOffset = scrollView.controller!.offset;
-    expect(movedOffset, greaterThan(initialOffset));
-    expect(tester.takeException(), isNull);
-    debugDefaultTargetPlatformOverride = null;
-  });
-
   testWidgets('T opens the terminal theme picker and arrows cycle themes', (
     tester,
   ) async {
@@ -1004,70 +914,6 @@ void main() {
     expect(find.text('▲'), findsOneWidget);
     debugDefaultTargetPlatformOverride = null;
   });
-
-  testWidgets(
-    'completed tutorial startup reveals Themes, its award, and title star',
-    (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-      await tester.binding.setSurfaceSize(const Size(1000, 700));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final now = DateTime.utc(2026, 1, 1);
-      final tutorial = TaskList(
-        schemaVersion: currentSchemaVersion,
-        id: 'tutorial',
-        name: 'Tutorial',
-        createdAt: now,
-        isTutorial: true,
-        tasks: [
-          for (var index = 0; index < tutorialTaskIds.length; index++)
-            Task(
-              id: tutorialTaskIds[index],
-              title: tutorialTaskTitles[index],
-              status: TaskStatus.done,
-              createdAt: now,
-              updatedAt: now,
-              completedAt: now,
-              daily: false,
-              completionHistory: const [],
-            ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            deviceStateRepositoryProvider.overrideWithValue(
-              const _DeviceState(),
-            ),
-            taskListRepositoryProvider.overrideWithValue(_Lists([tutorial])),
-            settingsRepositoryProvider.overrideWithValue(const _Settings()),
-          ],
-          child: const LastTaskApp(),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 20));
-
-      expect(
-        find.textContaining('Congratulations, Themes have been unlocked'),
-        findsOneWidget,
-      );
-      expect(find.text('< Great >'), findsOneWidget);
-      expect(find.textContaining('✪'), findsOneWidget);
-
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.text('< Great >'), findsOneWidget);
-
-      await tester.tap(find.text('< Great >'));
-      await tester.pump();
-      expect(find.text('< Great >'), findsNothing);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
-      await tester.pumpAndSettle();
-      expect(find.text('Themes'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      debugDefaultTargetPlatformOverride = null;
-    },
-  );
 
   testWidgets('terminal nested rows indent and H persists collapsed children', (
     tester,
@@ -2909,7 +2755,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('settings use two table tabs without tag configuration', (
+  testWidgets('terminal settings expose themes and two wrap modes', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
@@ -2946,10 +2792,11 @@ void main() {
 
     expect(find.text('Config'), findsOneWidget);
     expect(find.text('Background'), findsOneWidget);
+    expect(find.text('Themes'), findsOneWidget);
     expect(find.text('Long-title mode'), findsOneWidget);
-    expect(find.text('Marquee speed'), findsOneWidget);
-    expect(find.text('< Wrap selected >'), findsOneWidget);
-    expect(find.text('< Normal >'), findsOneWidget);
+    expect(find.text('Marquee speed'), findsNothing);
+    expect(find.text('< Wrap all >'), findsOneWidget);
+    expect(find.text('< Classic >'), findsOneWidget);
     expect(find.text('23pt'), findsOneWidget);
     expect(find.text('Tag names'), findsNothing);
     expect(find.byKey(const ValueKey('tag-name-heart')), findsNothing);
@@ -2971,25 +2818,13 @@ void main() {
       greaterThan(tester.getTopLeft(find.text('Load data').last).dy),
     );
 
+    await tester.tap(find.text('< Wrap all >'));
+    await tester.pump();
+    expect(find.text('< Wrap selected >'), findsOneWidget);
+
     await tester.tap(find.text('< Wrap selected >'));
     await tester.pump();
     expect(find.text('< Wrap all >'), findsOneWidget);
-
-    await tester.tap(find.text('< Wrap all >'));
-    await tester.pump();
-    expect(find.text('< Marquee >'), findsOneWidget);
-
-    await tester.tap(find.text('< Normal >'));
-    await tester.pump();
-    expect(find.text('< Fast >'), findsOneWidget);
-
-    await tester.tap(find.text('< Marquee >'));
-    await tester.pump();
-    expect(find.text('< Wrap selected >'), findsOneWidget);
-    final disabledSpeed = tester.widget<InkWell>(
-      find.ancestor(of: find.text('< Fast >'), matching: find.byType(InkWell)),
-    );
-    expect(disabledSpeed.onTap, isNull);
 
     await tester.tap(find.text('[+]'));
     await tester.pump();
@@ -3060,8 +2895,9 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
     await tester.pumpAndSettle();
 
-    expect(find.text('Long-title mode'), findsOneWidget);
-    expect(find.text('Marquee speed'), findsOneWidget);
+    expect(find.text('Long-title mode'), findsNothing);
+    expect(find.text('Marquee speed'), findsNothing);
+    expect(find.text('Reward duration'), findsNothing);
     expect(find.text('Show entrance tips'), findsNothing);
     expect(find.byType(Switch), findsNothing);
     expect(find.text('Use Backend'), findsNothing);
@@ -3271,7 +3107,13 @@ void main() {
         ],
       );
       for (final theme in catalog.themes) {
-        expect(find.text(theme.name, skipOffstage: false), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(ValueKey('theme-choice-${theme.id}')),
+            matching: find.text(theme.name),
+          ),
+          findsOneWidget,
+        );
       }
       final preview = find.byKey(const Key('mobile-theme-preview'));
       expect(preview, findsOneWidget);
@@ -3360,7 +3202,7 @@ void main() {
         child: const LastTaskApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 20));
 
     final workspaceTheme = Theme.of(
       tester.element(find.byKey(const ValueKey('task-panel-list'))),
