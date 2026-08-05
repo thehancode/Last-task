@@ -164,16 +164,19 @@ class DesktopAppearance {
     'background_fit': backgroundFit.name,
   };
 
-  factory DesktopAppearance.fromJson(Map<String, Object?>? json) =>
-      DesktopAppearance(
-        backgroundImagePath: json?['background_image'] as String?,
-        backgroundOverlayOpacity:
-            (json?['background_opacity'] as num?)?.toDouble() ?? 1,
-        backgroundFit: switch (json?['background_fit']) {
-          'contain' => DesktopBackgroundFit.contain,
-          _ => DesktopBackgroundFit.cover,
-        },
-      );
+  factory DesktopAppearance.fromJson(Map<String, Object?>? json) {
+    final backgroundImagePath = json?['background_image'] as String?;
+    return DesktopAppearance(
+      backgroundImagePath: backgroundImagePath,
+      backgroundOverlayOpacity:
+          (json?['background_opacity'] as num?)?.toDouble() ??
+          (backgroundImagePath == null ? 1 : .7),
+      backgroundFit: switch (json?['background_fit']) {
+        'contain' => DesktopBackgroundFit.contain,
+        _ => DesktopBackgroundFit.cover,
+      },
+    );
+  }
 
   void validate() {
     if (!backgroundOverlayOpacity.isFinite ||

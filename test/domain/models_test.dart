@@ -267,6 +267,18 @@ void main() {
       DesktopBackgroundFit.contain,
     );
   });
+
+  test('a legacy configured background defaults to 30% transparency', () {
+    final appearance = DesktopAppearance.fromJson({
+      'background_image': '/tmp/background.png',
+    });
+    expect(appearance.backgroundOverlayOpacity, .7);
+  });
+
+  test('a background without an image keeps an opaque overlay default', () {
+    final appearance = DesktopAppearance.fromJson(const {});
+    expect(appearance.backgroundOverlayOpacity, 1);
+  });
 }
 
 Map<String, Object?> _taskJson() => {

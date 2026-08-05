@@ -785,10 +785,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       false;
 
   Future<void> _showSettings() async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => const WorkspaceSettingsDialog(),
-    );
+    if (usesTerminalPresentation) {
+      await showDialog<void>(
+        context: context,
+        builder: (_) => const WorkspaceSettingsDialog(),
+      );
+    } else {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(builder: (_) => const WorkspaceSettingsDialog()),
+      );
+    }
     _focusNode.requestFocus();
   }
 

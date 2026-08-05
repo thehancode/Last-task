@@ -35,7 +35,7 @@ void main() {
     }
   });
 
-  test('desktop backgrounds are limited to native Linux and Windows', () {
+  test('native backgrounds are available on desktop and Android', () {
     for (final platform in const [
       TargetPlatform.linux,
       TargetPlatform.windows,
@@ -45,8 +45,14 @@ void main() {
         isTrue,
       );
     }
+    expect(
+      supportsDesktopBackgroundFor(
+        isWeb: false,
+        platform: TargetPlatform.android,
+      ),
+      isTrue,
+    );
     for (final platform in const [
-      TargetPlatform.android,
       TargetPlatform.iOS,
       TargetPlatform.macOS,
       TargetPlatform.fuchsia,

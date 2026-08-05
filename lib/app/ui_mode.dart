@@ -13,7 +13,7 @@ bool usesTerminalPresentationFor({
     platform == TargetPlatform.linux ||
     platform == TargetPlatform.windows;
 
-/// Native desktop backgrounds are available where an IO image picker and
+/// Native background images are available where an IO image picker and
 /// filesystem-backed image loading are supported.
 bool get supportsDesktopBackground => supportsDesktopBackgroundFor(
   isWeb: kIsWeb,
@@ -25,7 +25,9 @@ bool supportsDesktopBackgroundFor({
   required TargetPlatform platform,
 }) =>
     !isWeb &&
-    (platform == TargetPlatform.linux || platform == TargetPlatform.windows);
+    (platform == TargetPlatform.linux ||
+        platform == TargetPlatform.windows ||
+        platform == TargetPlatform.android);
 
 /// Linux and Windows use a frameless native window, so Flutter provides the
 /// replacement drag area.

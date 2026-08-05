@@ -2991,7 +2991,8 @@ void main() {
     expect(find.byType(Switch), findsNothing);
     expect(find.text('Use Backend'), findsNothing);
     expect(find.text('Desktop font size'), findsNothing);
-    expect(find.text('Background'), findsNothing);
+    expect(find.text('Background'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-settings-close')), findsOneWidget);
     expect(find.text('Tag names'), findsNothing);
     final androidThemesAction = find.byKey(const Key('settings-themes-action'));
     expect(androidThemesAction, findsOneWidget);
@@ -3019,6 +3020,23 @@ void main() {
       tester.getTopLeft(androidLogOutAction).dy,
       greaterThan(tester.getTopLeft(androidThemesAction).dy),
     );
+    final backgroundAction = find.byKey(
+      const Key('settings-background-action'),
+    );
+    await tester.ensureVisible(backgroundAction);
+    await tester.tap(backgroundAction);
+    await tester.pumpAndSettle();
+    expect(find.text('No image selected'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-background-close')), findsOneWidget);
+    expect(
+      tester
+          .widget<TextButton>(find.widgetWithText(TextButton, '[+]'))
+          .onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const Key('mobile-background-close')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mobile-settings-close')), findsOneWidget);
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
@@ -3056,6 +3074,7 @@ void main() {
 
       expect(find.text('Long-title mode'), findsNothing);
       expect(find.text('Themes'), findsOneWidget);
+      expect(find.byKey(const Key('mobile-themes-close')), findsOneWidget);
       expect(catalog.themes, hasLength(7));
       expect(
         catalog.themes.where((theme) => theme.isLight).map((theme) => theme.id),
@@ -3143,13 +3162,6 @@ void main() {
       expect(pickerTheme.colorScheme.surface, lightTheme.background);
       expect(pickerTheme.colorScheme.onSurface, lightTheme.text);
       expect(pickerTheme.dialogTheme.backgroundColor, lightTheme.background);
-      final taskPanel = tester.widget<Container>(
-        find.byKey(const ValueKey('task-panel-list')),
-      );
-      expect(
-        (taskPanel.decoration! as BoxDecoration).color,
-        lightTheme.background,
-      );
       expect(
         tester
             .widget<Text>(
@@ -3158,6 +3170,17 @@ void main() {
             .style
             ?.color,
         lightTheme.doing,
+      );
+      await tester.tap(find.byKey(const Key('mobile-themes-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('mobile-settings-close')));
+      await tester.pumpAndSettle();
+      final taskPanel = tester.widget<Container>(
+        find.byKey(const ValueKey('task-panel-list')),
+      );
+      expect(
+        (taskPanel.decoration! as BoxDecoration).color,
+        lightTheme.background,
       );
       expect(tester.takeException(), isNull);
       debugDefaultTargetPlatformOverride = null;

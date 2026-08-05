@@ -94,7 +94,10 @@ class _WorkspaceSettingsDialogState
     await ref
         .read(workspaceViewModelProvider.notifier)
         .updateDesktopAppearance(
-          appearance.copyWith(backgroundImagePath: selectedPath),
+          appearance.copyWith(
+            backgroundImagePath: selectedPath,
+            backgroundOverlayOpacity: .7,
+          ),
         );
   }
 
@@ -110,10 +113,19 @@ class _WorkspaceSettingsDialogState
     }
 
     void showMobileThemes() {
-      Navigator.of(context).pushReplacement<void, void>(
-        DialogRoute<void>(
-          context: context,
-          builder: (_) => const WorkspaceThemePickerDialog(),
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(builder: (_) => const WorkspaceThemePickerDialog()),
+      );
+    }
+
+    void showMobileBackground() {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => _MobileBackgroundSettingsPage(
+            appearance: state.deviceState.desktopAppearance,
+            onPickImage: _pickBackground,
+            onUpdate: vm.updateDesktopAppearance,
+          ),
         ),
       );
     }
@@ -128,61 +140,93 @@ class _WorkspaceSettingsDialogState
         ? _selectedTab
         : SettingsTab.config;
 
+    final content = SizedBox(
+      width: 680,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (tabs.length > 1)
+              WorkspaceDialogTabs(
+                labels: [
+                  for (final tab in tabs)
+                    switch (tab) {
+                      SettingsTab.config => strings.configTab,
+                      SettingsTab.background => strings.backgroundTab,
+                      SettingsTab.themes => strings.themes,
+                    },
+                ],
+                selectedIndex: tabs.indexOf(selectedTab),
+                onSelected: (index) =>
+                    setState(() => _selectedTab = tabs[index]),
+              ),
+            SizedBox(height: TerminalMetrics.line(context) * .35),
+            IndexedStack(
+              index: tabs.indexOf(selectedTab),
+              children: [
+                for (final tab in tabs)
+                  switch (tab) {
+                    SettingsTab.config => _ConfigSettings(
+                      settings: settings,
+                      onUpdate: vm.updateSettings,
+                      onLogOut: logOut,
+                      onShowThemes: showMobileThemes,
+                      onShowBackground: showMobileBackground,
+                      onExportData: _exportData,
+                      onImportData: _importData,
+                    ),
+                    SettingsTab.background => _BackgroundSettings(
+                      appearance: state.deviceState.desktopAppearance,
+                      onPickImage: _pickBackground,
+                      onUpdate: vm.updateDesktopAppearance,
+                    ),
+                    SettingsTab.themes => _ThemeSettings(
+                      themeId: settings.themeId,
+                      onSelect: (id) =>
+                          vm.updateSettings(settings.copyWith(themeId: id)),
+                    ),
+                  },
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!usesTerminalPresentation) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(strings.settings),
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              key: const Key('mobile-settings-close'),
+              icon: const Icon(Icons.close),
+              tooltip: strings.close,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: _ConfigSettings(
+              settings: settings,
+              onUpdate: vm.updateSettings,
+              onLogOut: logOut,
+              onShowThemes: showMobileThemes,
+              onShowBackground: showMobileBackground,
+              onExportData: _exportData,
+              onImportData: _importData,
+            ),
+          ),
+        ),
+      );
+    }
     return AlertDialog(
       titlePadding: _dialogTitlePadding,
       contentPadding: _dialogContentPadding,
       title: Text(strings.settings),
-      content: SizedBox(
-        width: 680,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (tabs.length > 1)
-                WorkspaceDialogTabs(
-                  labels: [
-                    for (final tab in tabs)
-                      switch (tab) {
-                        SettingsTab.config => strings.configTab,
-                        SettingsTab.background => strings.backgroundTab,
-                        SettingsTab.themes => strings.themes,
-                      },
-                  ],
-                  selectedIndex: tabs.indexOf(selectedTab),
-                  onSelected: (index) =>
-                      setState(() => _selectedTab = tabs[index]),
-                ),
-              SizedBox(height: TerminalMetrics.line(context) * .35),
-              IndexedStack(
-                index: tabs.indexOf(selectedTab),
-                children: [
-                  for (final tab in tabs)
-                    switch (tab) {
-                      SettingsTab.config => _ConfigSettings(
-                        settings: settings,
-                        onUpdate: vm.updateSettings,
-                        onLogOut: logOut,
-                        onShowThemes: showMobileThemes,
-                        onExportData: _exportData,
-                        onImportData: _importData,
-                      ),
-                      SettingsTab.background => _BackgroundSettings(
-                        appearance: state.deviceState.desktopAppearance,
-                        onPickImage: _pickBackground,
-                        onUpdate: vm.updateDesktopAppearance,
-                      ),
-                      SettingsTab.themes => _ThemeSettings(
-                        themeId: settings.themeId,
-                        onSelect: (id) =>
-                            vm.updateSettings(settings.copyWith(themeId: id)),
-                      ),
-                    },
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      content: content,
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -199,6 +243,7 @@ class _ConfigSettings extends StatelessWidget {
     required this.onUpdate,
     required this.onLogOut,
     required this.onShowThemes,
+    required this.onShowBackground,
     required this.onExportData,
     required this.onImportData,
   });
@@ -207,6 +252,7 @@ class _ConfigSettings extends StatelessWidget {
   final ValueChanged<AppSettings> onUpdate;
   final Future<void> Function() onLogOut;
   final VoidCallback onShowThemes;
+  final VoidCallback onShowBackground;
   final Future<void> Function() onExportData;
   final Future<void> Function() onImportData;
 
@@ -285,6 +331,14 @@ class _ConfigSettings extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: onShowThemes,
           ),
+          if (supportsDesktopBackground)
+            ListTile(
+              key: const Key('settings-background-action'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(strings.backgroundTab),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: onShowBackground,
+            ),
           if (usesTerminalPresentation) ...[
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -573,21 +627,23 @@ class _BackgroundSettings extends StatelessWidget {
             value: appearance.backgroundFit == DesktopBackgroundFit.cover
                 ? strings.cover
                 : strings.contain,
-            onTap: () => onUpdate(
-              appearance.copyWith(
-                backgroundFit:
-                    appearance.backgroundFit == DesktopBackgroundFit.cover
-                    ? DesktopBackgroundFit.contain
-                    : DesktopBackgroundFit.cover,
-              ),
-            ),
+            onTap: selectedPath == null
+                ? null
+                : () => onUpdate(
+                    appearance.copyWith(
+                      backgroundFit:
+                          appearance.backgroundFit == DesktopBackgroundFit.cover
+                          ? DesktopBackgroundFit.contain
+                          : DesktopBackgroundFit.cover,
+                    ),
+                  ),
           ),
         ),
         _SettingsRow(
           label: strings.backgroundTransparency,
           control: _StepControl(
             value: '$transparency%',
-            onDecrease: transparency > 0
+            onDecrease: selectedPath != null && transparency > 0
                 ? () => onUpdate(
                     appearance.copyWith(
                       backgroundOverlayOpacity:
@@ -597,7 +653,7 @@ class _BackgroundSettings extends StatelessWidget {
                     ),
                   )
                 : null,
-            onIncrease: transparency < 100
+            onIncrease: selectedPath != null && transparency < 100
                 ? () => onUpdate(
                     appearance.copyWith(
                       backgroundOverlayOpacity:
@@ -610,6 +666,47 @@ class _BackgroundSettings extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MobileBackgroundSettingsPage extends StatelessWidget {
+  const _MobileBackgroundSettingsPage({
+    required this.appearance,
+    required this.onPickImage,
+    required this.onUpdate,
+  });
+
+  final DesktopAppearance appearance;
+  final VoidCallback onPickImage;
+  final ValueChanged<DesktopAppearance> onUpdate;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(strings.backgroundTab),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            key: const Key('mobile-background-close'),
+            icon: const Icon(Icons.close),
+            tooltip: strings.close,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: _BackgroundSettings(
+            appearance: appearance,
+            onPickImage: onPickImage,
+            onUpdate: onUpdate,
+          ),
+        ),
+      ),
     );
   }
 }

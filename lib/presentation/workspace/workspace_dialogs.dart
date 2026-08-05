@@ -108,40 +108,60 @@ class WorkspaceThemePickerDialog extends ConsumerWidget {
     final state = ref.watch(workspaceViewModelProvider);
     final catalog = ref.watch(themeCatalogProvider);
     final theme = catalog.byId(state.settings.themeId);
-    return AlertDialog(
-      title: Text(strings.themes),
-      content: SizedBox(
-        width: 420,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              WorkspaceThemePreview(
-                key: const Key('mobile-theme-preview'),
-                theme: theme,
-              ),
-              const SizedBox(height: 12),
-              for (final item in catalog.themes)
-                Semantics(
+    final content = SizedBox(
+      width: 420,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            WorkspaceThemePreview(
+              key: const Key('mobile-theme-preview'),
+              theme: theme,
+            ),
+            const SizedBox(height: 12),
+            for (final item in catalog.themes)
+              Semantics(
+                selected: item.id == theme.id,
+                child: ListTile(
+                  key: ValueKey('theme-choice-${item.id}'),
                   selected: item.id == theme.id,
-                  child: ListTile(
-                    key: ValueKey('theme-choice-${item.id}'),
-                    selected: item.id == theme.id,
-                    selectedColor: Theme.of(context).colorScheme.primary,
-                    leading: Icon(
-                      item.id == theme.id
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                    ),
-                    title: Text(item.name),
-                    onTap: () => _select(ref, item.id),
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  leading: Icon(
+                    item.id == theme.id
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
                   ),
+                  title: Text(item.name),
+                  onTap: () => _select(ref, item.id),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
+    );
+    if (!usesTerminalPresentation) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(strings.themes),
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              key: const Key('mobile-themes-close'),
+              icon: const Icon(Icons.close),
+              tooltip: strings.close,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(padding: const EdgeInsets.all(16), child: content),
+        ),
+      );
+    }
+    return AlertDialog(
+      title: Text(strings.themes),
+      content: content,
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
