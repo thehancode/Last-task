@@ -1243,6 +1243,79 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('Android notice floats without resizing panel or background', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          desktopBackgroundServiceProvider.overrideWithValue(
+            _BackgroundService(),
+          ),
+          deviceStateRepositoryProvider.overrideWithValue(
+            const _DeviceState(
+              DeviceWorkspaceState(
+                desktopAppearance: DesktopAppearance(
+                  backgroundImagePath: '/background.png',
+                ),
+              ),
+            ),
+          ),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final panel = find.byKey(const ValueKey('task-panel-list'));
+    final composer = find.byKey(const ValueKey('android-task-composer'));
+    final background = find.descendant(of: panel, matching: find.byType(Image));
+    expect(background, findsOneWidget);
+    final panelRect = tester.getRect(panel);
+    final composerRect = tester.getRect(composer);
+    final backgroundRect = tester.getRect(background);
+
+    final container = riverpod.ProviderScope.containerOf(
+      tester.element(composer),
+    );
+    container
+        .read(workspaceViewModelProvider.notifier)
+        .showNotice('Moved Pending → Done');
+    await tester.pump();
+
+    final notice = find.byKey(const ValueKey('android-floating-notice'));
+    expect(notice, findsOneWidget);
+    expect(find.byKey(const ValueKey('android-composer-notice')), findsNothing);
+    expect(find.text('Moved Pending → Done'), findsOneWidget);
+    expect(tester.getRect(panel), panelRect);
+    expect(tester.getRect(composer), composerRect);
+    expect(tester.getRect(background), backgroundRect);
+    expect(
+      panelRect.bottom - tester.getRect(notice).bottom,
+      greaterThanOrEqualTo(7),
+    );
+    expect(
+      tester
+          .widget<IgnorePointer>(
+            find
+                .ancestor(of: notice, matching: find.byType(IgnorePointer))
+                .first,
+          )
+          .ignoring,
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets(
     'Android composer keeps per-list drafts and unfocuses outside or on back',
     (tester) async {

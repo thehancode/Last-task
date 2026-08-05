@@ -942,6 +942,17 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                               ),
                             ],
                           ),
+                          if (state.notice != null)
+                            Positioned(
+                              left: 8,
+                              right: 8,
+                              bottom: 16,
+                              child: IgnorePointer(
+                                child: _AndroidNoticeBanner(
+                                  notice: state.notice!,
+                                ),
+                              ),
+                            ),
                           if (_contextualTaskId != null) ...[
                             Positioned.fill(
                               child: GestureDetector(
@@ -1121,29 +1132,6 @@ class _AndroidTaskComposer extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (state.notice != null)
-                Container(
-                  key: const ValueKey('android-composer-notice'),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (state.notice!.error ? palette.error : palette.done)
-                        .withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    state.notice!.text,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: state.notice!.error ? palette.error : palette.done,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
               if (mode == _ComposerMode.subtask &&
                   contextTask != null &&
                   focusNode.hasFocus)
@@ -1244,6 +1232,32 @@ class _AndroidTaskComposer extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AndroidNoticeBanner extends StatelessWidget {
+  const _AndroidNoticeBanner({required this.notice});
+
+  final NoticeState notice;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = TerminalPalette.of(context);
+    final color = notice.error ? palette.error : palette.done;
+    return Container(
+      key: const ValueKey('android-floating-notice'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        notice.text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600),
       ),
     );
   }
