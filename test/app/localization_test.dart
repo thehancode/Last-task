@@ -14,6 +14,8 @@ void main() {
       'Delete "Inbox" and all its tasks?',
     );
     expect(strings.marqueeSpeed(180), 'Marquee speed: 180 ms');
+    expect(strings.completionDatePattern, 'MM-dd-yyyy');
+    expect(strings.completionDaySuffix, 'd');
   });
 
   test('Spanish catalog translates task-list UI text', () {
@@ -24,6 +26,8 @@ void main() {
       strings.deleteListBody('Bandeja'),
       '¿Eliminar "Bandeja" y todas sus tareas?',
     );
+    expect(strings.completionDatePattern, 'dd/MM/yyyy');
+    expect(strings.completionDaySuffix, 'd');
   });
 
   test(
@@ -37,6 +41,11 @@ void main() {
         lookupAppLocalizations(const Locale('es', '419')).languageName,
         'Español Latino',
       );
+      for (final locale in AppLocalizations.supportedLocales) {
+        final strings = lookupAppLocalizations(locale);
+        expect(strings.completionDatePattern, isNotEmpty);
+        expect(strings.completionDaySuffix, isNotEmpty);
+      }
     },
   );
 }

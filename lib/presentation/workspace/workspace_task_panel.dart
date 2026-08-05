@@ -15,6 +15,13 @@ import '../workspace_view_model.dart';
 import 'workspace_presenters.dart';
 import 'workspace_task_row.dart';
 
+DateTime? _statusChangedAt(Task task, TaskStatus sectionStatus) =>
+    switch (sectionStatus) {
+      TaskStatus.done => task.completedAt,
+      TaskStatus.archived => task.updatedAt,
+      TaskStatus.pending || TaskStatus.doing => null,
+    };
+
 TextStyle? _dialogInputStyle(BuildContext context) =>
     usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
 
@@ -886,7 +893,7 @@ class _CompletedContent extends StatelessWidget {
           WorkspaceTaskRow(
             task: rows[index].task,
             state: state,
-            completedAt: rows[index].completedAt,
+            statusChangedAt: rows[index].completedAt,
             showMobileDivider:
                 index < rows.length - 1 &&
                 rows[index].task.parentId == null &&
@@ -1178,6 +1185,7 @@ class _AndroidTaskSectionSliver extends StatelessWidget {
             (context, index) => WorkspaceTaskRow(
               task: tasks[index],
               state: state,
+              statusChangedAt: _statusChangedAt(tasks[index], status),
               showMobileDivider:
                   index < tasks.length - 1 &&
                   tasks[index].parentId == null &&
@@ -1260,6 +1268,7 @@ class _TaskSection extends StatelessWidget {
               WorkspaceTaskRow(
                 task: tasks[index],
                 state: state,
+                statusChangedAt: _statusChangedAt(tasks[index], status),
                 showMobileDivider:
                     index < tasks.length - 1 &&
                     tasks[index].parentId == null &&

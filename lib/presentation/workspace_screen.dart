@@ -26,6 +26,9 @@ EdgeInsetsGeometry? get _dialogTitlePadding =>
 EdgeInsetsGeometry? get _dialogContentPadding =>
     usesTerminalPresentation ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : null;
 
+DateTime _localCalendarDay(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
 enum _ComposerMode { create, subtask, edit, duplicate }
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
@@ -55,14 +58,17 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   String? _contextualTaskId;
   Offset? _contextMenuPosition;
   bool _androidSecondaryListPage = false;
+  late DateTime _completionLabelDay;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _completionLabelDay = _localCalendarDay(DateTime.now());
     _composerController.addListener(_onComposerChanged);
     _composerFocusNode.addListener(_onComposerFocusChanged);
     _dailyRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      _refreshCompletionLabels();
       unawaited(
         ref.read(workspaceViewModelProvider.notifier).refreshDailyTasks(),
       );
@@ -97,6 +103,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _refreshCompletionLabels();
       unawaited(
         ref.read(workspaceViewModelProvider.notifier).refreshDailyTasks(),
       );
@@ -107,6 +114,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         state == AppLifecycleState.inactive) {
       _setSyncInterval(const Duration(seconds: 90));
     }
+  }
+
+  void _refreshCompletionLabels() {
+    final today = _localCalendarDay(DateTime.now());
+    if (today == _completionLabelDay || !mounted) return;
+    setState(() => _completionLabelDay = today);
   }
 
   void _setSyncInterval(Duration interval) {
@@ -482,7 +495,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
           unawaited(vm.archiveSelectedTask());
         }
       } else if (_grabbed) {
-        unawaited(vm.completeSelectedTask());
+        final selected = ref.read(workspaceViewModelProvider).selectedTask;
+        unawaited(
+          selected?.status == TaskStatus.done ||
+                  selected?.status == TaskStatus.archived
+              ? vm.restoreSelectedTaskToPending()
+              : vm.completeSelectedTask(),
+        );
         _releaseGrab();
       } else {
         _armGrab();
@@ -534,15 +553,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       _releaseGrab();
       return KeyEventResult.handled;
     }
+    if (usesTerminalPresentation && key == LogicalKeyboardKey.enter) {
+      unawaited(
+        _showTaskEditor(edit: HardwareKeyboard.instance.isShiftPressed),
+      );
+      return KeyEventResult.handled;
+    }
     if (key == LogicalKeyboardKey.f2) {
       unawaited(_showListEditor(rename: true));
-    } else if (key == LogicalKeyboardKey.keyN) {
+    } else if (!usesTerminalPresentation && key == LogicalKeyboardKey.keyN) {
       unawaited(_showTaskEditor());
     } else if (key == LogicalKeyboardKey.keyA) {
       unawaited(_showTaskEditor(subtask: true));
     } else if (key == LogicalKeyboardKey.keyH) {
       unawaited(vm.toggleSelectedCollapsed());
-    } else if (key == LogicalKeyboardKey.keyE) {
+    } else if (!usesTerminalPresentation && key == LogicalKeyboardKey.keyE) {
       unawaited(_showTaskEditor(edit: true));
     } else if (key == LogicalKeyboardKey.keyD) {
       unawaited(_showTaskEditor(duplicate: true));

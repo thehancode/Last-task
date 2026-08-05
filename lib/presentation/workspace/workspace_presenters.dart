@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../domain/models.dart';
 import '../../l10n/app_localizations.dart';
@@ -27,11 +28,24 @@ Color workspaceStatusColor(BuildContext context, TaskStatus status) =>
       TaskStatus.archived => TerminalPalette.of(context).muted,
     };
 
-String workspaceLocalStamp(DateTime value) {
+String workspaceCompletionStamp(
+  DateTime value,
+  AppLocalizations strings, {
+  DateTime? now,
+}) {
   final local = value.toLocal();
+  final localNow = (now ?? DateTime.now()).toLocal();
   String two(int number) => number.toString().padLeft(2, '0');
-  return '${local.year}-${two(local.month)}-${two(local.day)} '
-      '${two(local.hour)}:${two(local.minute)}';
+  final completionDay = DateTime.utc(local.year, local.month, local.day);
+  final currentDay = DateTime.utc(localNow.year, localNow.month, localNow.day);
+  final daysAgo = currentDay.difference(completionDay).inDays;
+  if (daysAgo == 0) {
+    return '${two(local.hour)}:${two(local.minute)}';
+  }
+  if (daysAgo >= 1 && daysAgo <= 30) {
+    return '$daysAgo${strings.completionDaySuffix}';
+  }
+  return DateFormat(strings.completionDatePattern).format(local);
 }
 
 String workspaceDailyActivity(Task task, {DateTime? today}) {

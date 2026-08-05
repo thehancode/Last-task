@@ -1037,12 +1037,19 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   }
 
   Future<bool> revertSelectedCompletedTask() async {
+    final task = state.selectedTask;
+    if (task?.status != TaskStatus.done) return false;
+    return restoreSelectedTaskToPending();
+  }
+
+  Future<bool> restoreSelectedTaskToPending() async {
     final list = state.selectedTaskList;
     final task = state.selectedTask;
     if (list == null ||
         task == null ||
         task.parentId != null ||
-        task.status != TaskStatus.done) {
+        (task.status != TaskStatus.done &&
+            task.status != TaskStatus.archived)) {
       return false;
     }
     final now = DateTime.now().toUtc();
@@ -1059,7 +1066,8 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
                 status: TaskStatus.pending,
                 updatedAt: now,
                 clearCompletedAt: true,
-                completionHistory: candidate.daily
+                completionHistory:
+                    candidate.daily && task.status == TaskStatus.done
                     ? candidate.completionHistory
                           .where((entry) => !isSameLocalDay(entry, now))
                           .toList(growable: false)
@@ -1069,7 +1077,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
               candidate,
         ],
       ),
-      success: 'Done → Pending',
+      success: '${task.status.label} → Pending',
       view: WorkspaceView.list,
       animationTaskId: task.id,
     );

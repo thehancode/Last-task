@@ -46,14 +46,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
     super.key,
     required this.task,
     required this.state,
-    this.completedAt,
+    this.statusChangedAt,
     this.contextual = false,
     this.onLongPress,
     this.showMobileDivider = false,
   });
   final Task task;
   final WorkspaceState state;
-  final DateTime? completedAt;
+  final DateTime? statusChangedAt;
   final bool contextual;
   final void Function(Task task, Offset globalPosition)? onLongPress;
   final bool showMobileDivider;
@@ -132,6 +132,10 @@ class WorkspaceTaskRow extends ConsumerWidget {
                   task.status == TaskStatus.doing) {
                 vm.selectTask(task.id);
                 await vm.completeSelectedTask();
+              } else if (task.status == TaskStatus.done ||
+                  task.status == TaskStatus.archived) {
+                vm.selectTask(task.id);
+                await vm.restoreSelectedTaskToPending();
               }
               return;
             }
@@ -185,6 +189,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
             // The selected row supplies the violet background across its full
             // measured height, including the tag columns.
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (terminal)
                   Text(
@@ -253,16 +258,28 @@ class WorkspaceTaskRow extends ConsumerWidget {
                               ? TerminalPalette.of(context).background
                               : TerminalPalette.of(context).done,
                         ),
-                if (completedAt != null)
+                if (statusChangedAt != null)
                   Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(
-                      workspaceLocalStamp(completedAt!),
-                      style: TextStyle(
-                        color: visuallySelected
-                            ? TerminalPalette.of(context).background
-                            : TerminalPalette.of(context).muted,
-                        fontSize: terminal ? null : 12,
+                    padding: EdgeInsets.only(
+                      left: terminal ? TerminalMetrics.cell(context) : 8,
+                    ),
+                    child: SizedBox(
+                      key: ValueKey('status-stamp-${task.id}'),
+                      width: terminal
+                          ? TerminalMetrics.cell(context) * 10
+                          : null,
+                      child: Text(
+                        workspaceCompletionStamp(
+                          statusChangedAt!,
+                          AppLocalizations.of(context)!,
+                        ),
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: visuallySelected
+                              ? TerminalPalette.of(context).background
+                              : TerminalPalette.of(context).muted,
+                          fontSize: terminal ? null : 12,
+                        ),
                       ),
                     ),
                   ),

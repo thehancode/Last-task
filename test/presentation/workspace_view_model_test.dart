@@ -527,6 +527,46 @@ void main() {
   });
 
   test(
+    'restoring Done or Archived tasks returns their subtree to Pending',
+    () async {
+      final list = _list('tasks', 'Tasks', [
+        _task('done', 'Done', status: TaskStatus.done),
+        _task(
+          'done-child',
+          'Done child',
+          status: TaskStatus.done,
+          parentId: 'done',
+        ),
+        _task('archived', 'Archived', status: TaskStatus.archived),
+        _task(
+          'archived-child',
+          'Archived child',
+          status: TaskStatus.archived,
+          parentId: 'archived',
+        ),
+      ]);
+      final repository = _TaskLists([list]);
+      final container = _container([list], repository: repository);
+      addTearDown(container.dispose);
+      final vm = await _ready(container);
+
+      vm.selectTask('done');
+      expect(await vm.restoreSelectedTaskToPending(), isTrue);
+      expect(
+        repository.lists.single.tasks.take(2).map((task) => task.status),
+        everyElement(TaskStatus.pending),
+      );
+
+      vm.selectTask('archived');
+      expect(await vm.restoreSelectedTaskToPending(), isTrue);
+      expect(
+        repository.lists.single.tasks.skip(2).map((task) => task.status),
+        everyElement(TaskStatus.pending),
+      );
+    },
+  );
+
+  test(
     'search includes collapsed descendants and retains selected match',
     () async {
       final list = _list('tasks', 'Tasks', [

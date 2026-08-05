@@ -118,7 +118,7 @@ class WorkspaceFooter extends StatelessWidget {
             const _TerminalSeparator(),
             _TerminalCommand(
               accent: commandAccent,
-              keys: 'n',
+              keys: 'enter',
               label: AppLocalizations.of(context)!.commandNew,
               semanticsLabel: AppLocalizations.of(context)!.commandNewLegacy,
               onTap: onNewTask,

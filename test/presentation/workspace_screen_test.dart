@@ -165,6 +165,97 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('terminal Enter creates and Shift+Enter edits a task', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('New task'),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Edit task'),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('terminal Space twice restores Done and Archived tasks', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(700, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    for (final status in [TaskStatus.done, TaskStatus.archived]) {
+      final repository = _Lists([_listWithTask(status: status)]);
+      await tester.pumpWidget(
+        ProviderScope(
+          key: ValueKey('restore-$status'),
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(repository),
+            settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      await tester.tap(
+        find.bySemanticsLabel(RegExp('${status.label} task: Swipe me')),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(repository._lists.single.tasks.single.status, TaskStatus.pending);
+    }
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets(
     'entrance tip appears near the bottom above the terminal footer',
     (tester) async {
@@ -712,6 +803,101 @@ void main() {
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  testWidgets(
+    'terminal Done rows align completion stamps at maximum font size',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(700, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final now = DateTime.now().toUtc();
+      Task task(
+        String id,
+        String title,
+        Duration age, {
+        TaskStatus status = TaskStatus.done,
+      }) => Task(
+        id: id,
+        title: title,
+        status: status,
+        createdAt: now.subtract(const Duration(days: 40)),
+        updatedAt: now.subtract(age),
+        completedAt: status == TaskStatus.done ? now.subtract(age) : null,
+        daily: false,
+        completionHistory: const [],
+      );
+      final list = TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'done-list',
+        name: 'Done tasks',
+        createdAt: now,
+        tasks: [
+          task(
+            'wrapped-done',
+            'A completed terminal task\nthat wraps onto a second line',
+            const Duration(hours: 1),
+          ),
+          task(
+            'older-done',
+            'An older completed task',
+            const Duration(days: 5),
+          ),
+          task(
+            'archived-task',
+            'An archived task',
+            const Duration(days: 2),
+            status: TaskStatus.archived,
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              const _DeviceState(),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists([list])),
+            settingsRepositoryProvider.overrideWithValue(
+              const _Settings(
+                AppSettings(
+                  nativeFontSize: 28,
+                  longTitleDisplay: LongTitleDisplay.wrapAll,
+                ),
+              ),
+            ),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      final wrappedStamp = find.byKey(
+        const ValueKey('status-stamp-wrapped-done'),
+      );
+      final olderStamp = find.byKey(const ValueKey('status-stamp-older-done'));
+      final archivedStamp = find.byKey(
+        const ValueKey('status-stamp-archived-task'),
+      );
+      expect(wrappedStamp, findsOneWidget);
+      expect(olderStamp, findsOneWidget);
+      expect(archivedStamp, findsOneWidget);
+      expect(
+        tester.getRect(wrappedStamp).right,
+        closeTo(tester.getRect(olderStamp).right, 0.1),
+      );
+      expect(
+        tester.getRect(archivedStamp).right,
+        closeTo(tester.getRect(olderStamp).right, 0.1),
+      );
+      expect(
+        tester.getSize(find.textContaining('that wraps onto')).height,
+        greaterThan(tester.getSize(wrappedStamp).height),
+      );
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('marquee loops through a visible cycle marker', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
@@ -1421,55 +1607,59 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android double tap completes an active task directly', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await tester.binding.setSurfaceSize(const Size(420, 700));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    for (final status in [TaskStatus.pending, TaskStatus.doing]) {
-      final repository = _Lists([_listWithTask(status: status)]);
-      await tester.pumpWidget(
-        ProviderScope(
-          key: ValueKey(status),
-          overrides: [
-            deviceStateRepositoryProvider.overrideWithValue(
-              const _DeviceState(),
-            ),
-            taskListRepositoryProvider.overrideWithValue(repository),
-            settingsRepositoryProvider.overrideWithValue(const _Settings()),
-          ],
-          child: const LastTaskApp(),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 20));
+  testWidgets(
+    'Android double tap completes active tasks and restores Done or Archived tasks',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await tester.binding.setSurfaceSize(const Size(420, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      for (final status in [
+        TaskStatus.pending,
+        TaskStatus.doing,
+        TaskStatus.done,
+        TaskStatus.archived,
+      ]) {
+        final repository = _Lists([_listWithTask(status: status)]);
+        await tester.pumpWidget(
+          ProviderScope(
+            key: ValueKey(status),
+            overrides: [
+              deviceStateRepositoryProvider.overrideWithValue(
+                const _DeviceState(),
+              ),
+              taskListRepositoryProvider.overrideWithValue(repository),
+              settingsRepositoryProvider.overrideWithValue(const _Settings()),
+            ],
+            child: const LastTaskApp(),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
 
-      final task = find.bySemanticsLabel(
-        RegExp('${status.label} task: Swipe me'),
-      );
-      await tester.tap(task);
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(task);
-      await tester.pumpAndSettle();
+        if (status == TaskStatus.done || status == TaskStatus.archived) {
+          await tester.drag(
+            find.byKey(const ValueKey('task-panel-list')),
+            const Offset(-360, 0),
+          );
+          await tester.pumpAndSettle();
+        }
+        final task = find.bySemanticsLabel(
+          RegExp('${status.label} task: Swipe me'),
+        );
+        await tester.tap(task);
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(task);
+        await tester.pumpAndSettle();
 
-      expect(repository._lists.single.tasks.single.status, TaskStatus.done);
-      expect(
-        find.bySemanticsLabel(RegExp('Done task: Swipe me')),
-        findsNothing,
-      );
-      await tester.drag(
-        find.byKey(const ValueKey('task-panel-list')),
-        const Offset(-360, 0),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.bySemanticsLabel(RegExp('Done task: Swipe me')),
-        findsOneWidget,
-      );
-    }
-    debugDefaultTargetPlatformOverride = null;
-  });
+        final expected =
+            status == TaskStatus.pending || status == TaskStatus.doing
+            ? TaskStatus.done
+            : TaskStatus.pending;
+        expect(repository._lists.single.tasks.single.status, expected);
+      }
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('Android puts Done then Archived on the right page', (
     tester,
@@ -1540,6 +1730,24 @@ void main() {
     expect(
       tester.getTopLeft(firstDone).dy,
       lessThan(tester.getTopLeft(secondDone).dy),
+    );
+    final firstStamp = find.byKey(const ValueKey('status-stamp-done-first'));
+    final secondStamp = find.byKey(const ValueKey('status-stamp-done-second'));
+    final archivedStamp = find.byKey(const ValueKey('status-stamp-archived'));
+    expect(firstStamp, findsOneWidget);
+    expect(secondStamp, findsOneWidget);
+    expect(archivedStamp, findsOneWidget);
+    final firstRowRect = tester.getRect(firstDone);
+    final firstStampRect = tester.getRect(firstStamp);
+    expect(firstStampRect.right, closeTo(firstRowRect.right - 8, 1));
+    expect(firstStampRect.bottom, greaterThan(firstRowRect.center.dy));
+    expect(firstRowRect.bottom - firstStampRect.bottom, lessThanOrEqualTo(14));
+    final archivedRow = find.bySemanticsLabel(
+      RegExp('Archived task:.*archived'),
+    );
+    expect(
+      tester.getRect(archivedStamp).right,
+      closeTo(tester.getRect(archivedRow).right - 8, 1),
     );
     expect(find.bySemanticsLabel(RegExp('Pending task:')), findsNothing);
     debugDefaultTargetPlatformOverride = null;

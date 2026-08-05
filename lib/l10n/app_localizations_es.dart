@@ -92,7 +92,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nIntro / Mayús+Intro   Crear / editar tarea\nTab / D / X   Subtarea, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -374,6 +374,12 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get completionDatePattern => 'dd/MM/yyyy';
+
+  @override
+  String get completionDaySuffix => 'd';
+
+  @override
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
@@ -634,7 +640,7 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nIntro / Mayús+Intro   Crear / editar tarea\nTab / D / X   Subtarea, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Configuración\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -916,6 +922,12 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   }
 
   @override
+  String get completionDatePattern => 'dd/MM/yyyy';
+
+  @override
+  String get completionDaySuffix => 'd';
+
+  @override
   String get showTips => 'Mostrar consejos al inicio';
 
   @override
@@ -1176,7 +1188,7 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get keyboardShortcutsHelp =>
-      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nN / Tab / E / D / X   Crear, subtarea, editar, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
+      '↑/↓ o J/K   Mover selección\nMayús+↑/↓   Seleccionar tareas visibles\n←/→   Cambiar listas\nMantén Ctrl + ←/→   Reordenar listas\nEspacio y Espacio   Completar árbol\nMantén Ctrl + ↑/↓   Reordenar tarea\nIntro / Mayús+Intro   Crear / editar tarea\nTab / D / X   Subtarea, duplicar, eliminar\nH   Contraer / expandir subtareas\nW / Mayús+W   Cambiar etiquetas\nCtrl+C   Copiar tarea/selección\nCtrl+Mayús+C   Copiar sección\nEsc   Limpiar selección\nCtrl+A / Ctrl+Mayús+A   Seleccionar visibles / Vista múltiple\nCtrl+F o /   Buscar\nCtrl+Z / Ctrl+Mayús+Z   Deshacer / rehacer\nCtrl+N   Nueva lista\nF2 / Ctrl+R   Renombrar lista\nCtrl+X   Eliminar lista\nV   Historial completado\nG   Ajustes\nS   Sonido\nQ   Salir';
 
   @override
   String get couldNotLoad => 'No se pudo cargar Last Task';
@@ -1456,6 +1468,12 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String languageValue(Object language) {
     return 'Idioma: $language';
   }
+
+  @override
+  String get completionDatePattern => 'dd/MM/yyyy';
+
+  @override
+  String get completionDaySuffix => 'd';
 
   @override
   String get showTips => 'Mostrar consejos al inicio';
