@@ -121,11 +121,8 @@ class _WorkspaceSettingsDialogState
     void showMobileBackground() {
       Navigator.of(context).push<void>(
         MaterialPageRoute(
-          builder: (_) => _MobileBackgroundSettingsPage(
-            appearance: state.deviceState.desktopAppearance,
-            onPickImage: _pickBackground,
-            onUpdate: vm.updateDesktopAppearance,
-          ),
+          builder: (_) =>
+              _MobileBackgroundSettingsPage(onPickImage: _pickBackground),
         ),
       );
     }
@@ -670,20 +667,26 @@ class _BackgroundSettings extends StatelessWidget {
   }
 }
 
-class _MobileBackgroundSettingsPage extends StatelessWidget {
-  const _MobileBackgroundSettingsPage({
-    required this.appearance,
-    required this.onPickImage,
-    required this.onUpdate,
-  });
+class _MobileBackgroundSettingsPage extends ConsumerWidget {
+  const _MobileBackgroundSettingsPage({required this.onPickImage});
 
-  final DesktopAppearance appearance;
   final VoidCallback onPickImage;
-  final ValueChanged<DesktopAppearance> onUpdate;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final strings = AppLocalizations.of(context)!;
+    final appearance = ref.watch(
+      workspaceViewModelProvider.select(
+        (state) => state.deviceState.desktopAppearance,
+      ),
+    );
+    final onUpdate = ref
+        .read(workspaceViewModelProvider.notifier)
+        .updateDesktopAppearance;
+    final selectedPath = appearance.backgroundImagePath;
+    final background = selectedPath == null
+        ? null
+        : ref.watch(desktopBackgroundBytesProvider(selectedPath)).value;
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.backgroundTab),
@@ -697,15 +700,36 @@ class _MobileBackgroundSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: _BackgroundSettings(
-            appearance: appearance,
-            onPickImage: onPickImage,
-            onUpdate: onUpdate,
+      body: Stack(
+        key: const Key('mobile-background-preview'),
+        fit: StackFit.expand,
+        children: [
+          if (background != null)
+            Image.memory(
+              background,
+              key: const Key('mobile-background-preview-image'),
+              fit: appearance.backgroundFit == DesktopBackgroundFit.cover
+                  ? BoxFit.cover
+                  : BoxFit.contain,
+            ),
+          if (selectedPath != null)
+            ColoredBox(
+              key: const Key('mobile-background-preview-overlay'),
+              color: Theme.of(context).scaffoldBackgroundColor.withValues(
+                alpha: appearance.backgroundOverlayOpacity,
+              ),
+            ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _BackgroundSettings(
+                appearance: appearance,
+                onPickImage: onPickImage,
+                onUpdate: onUpdate,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -803,11 +827,12 @@ class _StepControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context)!;
+    final terminal = usesTerminalPresentation;
     return Row(
       children: [
         Expanded(
           child: _TextAction(
-            value: '[−]',
+            value: terminal ? '[−]' : '−',
             semanticsLabel: strings.decrease,
             onTap: onDecrease,
             fillWidth: true,
@@ -816,7 +841,7 @@ class _StepControl extends StatelessWidget {
         Expanded(child: Center(child: Text(value))),
         Expanded(
           child: _TextAction(
-            value: '[+]',
+            value: terminal ? '[+]' : '+',
             semanticsLabel: strings.increase,
             onTap: onIncrease,
             fillWidth: true,

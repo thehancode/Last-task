@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_app/app/last_task_app.dart';
+import 'package:flutter_app/app/desktop_background.dart';
 import 'package:flutter_app/app/theme_catalog.dart';
 import 'package:flutter_app/data/providers.dart';
 import 'package:flutter_app/domain/models.dart';
@@ -3029,14 +3031,92 @@ void main() {
     expect(find.text('No image selected'), findsOneWidget);
     expect(find.byKey(const Key('mobile-background-close')), findsOneWidget);
     expect(
-      tester
-          .widget<TextButton>(find.widgetWithText(TextButton, '[+]'))
-          .onPressed,
+      tester.widget<TextButton>(find.widgetWithText(TextButton, '+')).onPressed,
       isNull,
     );
     await tester.tap(find.byKey(const Key('mobile-background-close')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('mobile-settings-close')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android background settings update and preview immediately', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          desktopBackgroundServiceProvider.overrideWithValue(
+            _BackgroundService(),
+          ),
+          deviceStateRepositoryProvider.overrideWithValue(
+            const _DeviceState(
+              DeviceWorkspaceState(
+                desktopAppearance: DesktopAppearance(
+                  backgroundImagePath: '/background.png',
+                  backgroundOverlayOpacity: .7,
+                ),
+              ),
+            ),
+          ),
+          taskListRepositoryProvider.overrideWithValue(_Lists()),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settings-background-action')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('< Cover >'), findsOneWidget);
+    expect(find.text('30%'), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-background-preview-image')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Image>(
+            find.byKey(const Key('mobile-background-preview-image')),
+          )
+          .fit,
+      BoxFit.cover,
+    );
+
+    await tester.tap(find.text('< Cover >'));
+    await tester.pump();
+    expect(find.text('< Contain >'), findsOneWidget);
+    expect(
+      tester
+          .widget<Image>(
+            find.byKey(const Key('mobile-background-preview-image')),
+          )
+          .fit,
+      BoxFit.contain,
+    );
+
+    expect(find.widgetWithText(TextButton, '[+]'), findsNothing);
+    expect(find.widgetWithText(TextButton, '[−]'), findsNothing);
+    await tester.tap(find.widgetWithText(TextButton, '+'));
+    await tester.pump();
+    expect(find.text('40%'), findsOneWidget);
+    expect(
+      tester
+          .widget<ColoredBox>(
+            find.byKey(const Key('mobile-background-preview-overlay')),
+          )
+          .color
+          .a,
+      closeTo(.6, .001),
+    );
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
@@ -3676,6 +3756,16 @@ class _RecordingDeviceState implements DeviceStateRepository {
   Future<void> save(DeviceWorkspaceState state) async {
     this.state = state;
   }
+}
+
+class _BackgroundService implements DesktopBackgroundService {
+  @override
+  Future<Uint8List?> loadImageBytes(String path) async => base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  );
+
+  @override
+  Future<String?> pickImagePath() async => '/background.png';
 }
 
 /// Workspace widget tests exercise the signed-in product surface. Keeping the
