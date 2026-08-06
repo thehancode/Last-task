@@ -73,14 +73,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
     this.statusChangedAt,
     this.contextual = false,
     this.onLongPress,
-    this.showMobileDivider = false,
   });
   final Task task;
   final WorkspaceState state;
   final DateTime? statusChangedAt;
   final bool contextual;
   final void Function(Task task, Offset globalPosition)? onLongPress;
-  final bool showMobileDivider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -226,8 +224,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
                           Padding(
                             padding: EdgeInsets.only(
                               right:
-                                  TerminalMetrics.cell(context) *
-                                  metadataCells,
+                                  TerminalMetrics.cell(context) * metadataCells,
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,43 +302,45 @@ class WorkspaceTaskRow extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                        width: 32,
-                        child: hasChildren
-                            ? IconButton(
-                                key: ValueKey('task-collapse-${task.id}'),
-                                padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                                tooltip: task.collapsed
-                                    ? AppLocalizations.of(
-                                        context,
-                                      )!.expandSubtasks
-                                    : AppLocalizations.of(
-                                        context,
-                                      )!.collapseSubtasks,
-                                onPressed: () {
-                                  final vm = ref.read(
-                                    workspaceViewModelProvider.notifier,
-                                  );
-                                  vm.selectTask(task.id);
-                                  unawaited(vm.toggleSelectedCollapsed());
-                                },
-                                icon: Icon(
-                                  task.collapsed
-                                      ? Icons.arrow_right
-                                      : Icons.arrow_drop_down,
-                                ),
-                              )
-                            : Text(
-                                '-',
-                                key: ValueKey('task-prefix-${task.id}'),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: visuallySelected
-                                      ? TerminalPalette.of(context).background
-                                      : TerminalPalette.of(context).muted,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            width: 32,
+                            child: hasChildren
+                                ? IconButton(
+                                    key: ValueKey('task-collapse-${task.id}'),
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                    tooltip: task.collapsed
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.expandSubtasks
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.collapseSubtasks,
+                                    onPressed: () {
+                                      final vm = ref.read(
+                                        workspaceViewModelProvider.notifier,
+                                      );
+                                      vm.selectTask(task.id);
+                                      unawaited(vm.toggleSelectedCollapsed());
+                                    },
+                                    icon: Icon(
+                                      task.collapsed
+                                          ? Icons.arrow_right
+                                          : Icons.arrow_drop_down,
+                                    ),
+                                  )
+                                : Text(
+                                    '-',
+                                    key: ValueKey('task-prefix-${task.id}'),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: visuallySelected
+                                          ? TerminalPalette.of(
+                                              context,
+                                            ).background
+                                          : TerminalPalette.of(context).muted,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                           Expanded(child: title),
                           _TaskTags(task: task, selected: visuallySelected),
@@ -355,25 +354,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
                             ),
                         ],
                       ),
-                      if (statusChangedAt != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 32, top: 2),
-                          child: Text(
-                            workspaceCompletionStamp(
-                              statusChangedAt!,
-                              AppLocalizations.of(context)!,
-                            ),
-                            key: ValueKey('status-stamp-${task.id}'),
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              color: visuallySelected
-                                  ? TerminalPalette.of(context).background
-                                  : TerminalPalette.of(context).muted,
-                              fontSize: 11,
-                              height: 1,
-                            ),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 32, top: 2),
+                        child: _MobileTaskMetadata(
+                          taskId: task.id,
+                          statusChangedAt: statusChangedAt,
+                          selected: visuallySelected,
                         ),
+                      ),
                     ],
                   ),
           ),
@@ -403,26 +391,59 @@ class WorkspaceTaskRow extends ConsumerWidget {
       selected: terminal && selected,
       first: visibleTaskIds.isNotEmpty && visibleTaskIds.first == task.id,
       last: visibleTaskIds.isNotEmpty && visibleTaskIds.last == task.id,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          dropAwareRow,
-          if (!terminal && showMobileDivider)
-            FractionallySizedBox(
-              widthFactor: 0.75,
-              child: SizedBox(
-                key: ValueKey('task-divider-${task.id}'),
-                height: 10,
-                child: CustomPaint(
-                  painter: _DottedTaskDividerPainter(
-                    color: TerminalPalette.of(context).muted,
-                    gap: _twoSpaceWidth(context),
-                  ),
-                ),
-              ),
-            ),
-        ],
+      child: Column(mainAxisSize: MainAxisSize.min, children: [dropAwareRow]),
+    );
+  }
+}
+
+class _MobileTaskMetadata extends StatelessWidget {
+  const _MobileTaskMetadata({
+    required this.taskId,
+    required this.statusChangedAt,
+    required this.selected,
+  });
+
+  final String taskId;
+  final DateTime? statusChangedAt;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? TerminalPalette.of(context).background
+        : TerminalPalette.of(context).muted;
+    final divider = SizedBox(
+      key: ValueKey('task-divider-$taskId'),
+      height: 10,
+      child: CustomPaint(
+        painter: _DottedTaskDividerPainter(
+          color: color,
+          gap: _twoSpaceWidth(context),
+        ),
       ),
+    );
+    final changedAt = statusChangedAt;
+    if (changedAt == null) {
+      return FractionallySizedBox(widthFactor: 0.75, child: divider);
+    }
+
+    const metadataStyle = TextStyle(fontSize: 11, height: 1);
+    return Row(
+      children: [
+        Expanded(
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: 0.75,
+            child: divider,
+          ),
+        ),
+        Text(
+          workspaceCompletionStamp(changedAt, AppLocalizations.of(context)!),
+          key: ValueKey('status-stamp-$taskId'),
+          textAlign: TextAlign.right,
+          style: metadataStyle.copyWith(color: color),
+        ),
+      ],
     );
   }
 }
@@ -614,11 +635,7 @@ class _TerminalTaskDropTargetState
 }
 
 class _TaskTags extends StatelessWidget {
-  const _TaskTags({
-    required this.task,
-    required this.selected,
-    this.fontSize,
-  });
+  const _TaskTags({required this.task, required this.selected, this.fontSize});
   final Task task;
   final bool selected;
   final double? fontSize;

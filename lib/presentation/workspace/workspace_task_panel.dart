@@ -907,17 +907,13 @@ class _CompletedContent extends StatelessWidget {
           ? TerminalMetrics.panelPadding(context)
           : const EdgeInsets.all(12),
       children: [
-        for (var index = 0; index < rows.length; index++)
+        for (final row in rows)
           WorkspaceTaskRow(
-            task: rows[index].task,
+            task: row.task,
             state: state,
             statusChangedAt: state.settings.showStatusTime
-                ? rows[index].completedAt
+                ? row.completedAt
                 : null,
-            showMobileDivider:
-                index < rows.length - 1 &&
-                rows[index].task.parentId == null &&
-                rows[index + 1].task.parentId == null,
           ),
       ],
     );
@@ -1239,10 +1235,6 @@ class _AndroidTaskSectionSliver extends StatelessWidget {
                 status,
                 state.settings.showStatusTime,
               ),
-              showMobileDivider:
-                  index < tasks.length - 1 &&
-                  tasks[index].parentId == null &&
-                  tasks[index + 1].parentId == null,
             ),
             childCount: tasks.length,
           ),
@@ -1326,10 +1318,6 @@ class _TaskSection extends StatelessWidget {
                   status,
                   state.settings.showStatusTime,
                 ),
-                showMobileDivider:
-                    index < tasks.length - 1 &&
-                    tasks[index].parentId == null &&
-                    tasks[index + 1].parentId == null,
               ),
         ],
       ),
