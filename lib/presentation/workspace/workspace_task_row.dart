@@ -306,44 +306,17 @@ class WorkspaceTaskRow extends ConsumerWidget {
                         children: [
                           SizedBox(
                             width: 32,
-                            child: hasChildren
-                                ? IconButton(
-                                    key: ValueKey('task-collapse-${task.id}'),
-                                    padding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
-                                    tooltip: task.collapsed
-                                        ? AppLocalizations.of(
-                                            context,
-                                          )!.expandSubtasks
-                                        : AppLocalizations.of(
-                                            context,
-                                          )!.collapseSubtasks,
-                                    onPressed: () {
-                                      final vm = ref.read(
-                                        workspaceViewModelProvider.notifier,
-                                      );
-                                      vm.selectTask(task.id);
-                                      unawaited(vm.toggleSelectedCollapsed());
-                                    },
-                                    icon: Icon(
-                                      task.collapsed
-                                          ? Icons.arrow_right
-                                          : Icons.arrow_drop_down,
-                                    ),
-                                  )
-                                : Text(
-                                    '-',
-                                    key: ValueKey('task-prefix-${task.id}'),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: visuallySelected
-                                          ? TerminalPalette.of(
-                                              context,
-                                            ).background
-                                          : TerminalPalette.of(context).muted,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            child: Text(
+                              '-',
+                              key: ValueKey('task-prefix-${task.id}'),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: visuallySelected
+                                    ? TerminalPalette.of(context).background
+                                    : TerminalPalette.of(context).muted,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           Expanded(child: title),
                           _TaskTags(task: task, selected: visuallySelected),

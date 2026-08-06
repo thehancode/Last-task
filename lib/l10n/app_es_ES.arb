@@ -57,6 +57,7 @@
   "completed": "HECHAS",
   "multiView": "MULTIVISTA",
   "pending": "Pendiente",
+  "ongoing": "En curso",
   "doing": "En curso",
   "done": "Hecha",
   "noCompletedTasks": "Aún no hay tareas completadas; completa una desde sus controles.",

@@ -116,6 +116,8 @@
   "@multiView": {"description": "Uppercase header label for the cross-list view."},
   "pending": "Pending",
   "@pending": {"description": "Task status label."},
+  "ongoing": "On going",
+  "@ongoing": {"description": "Pending-section title in a habit list."},
   "doing": "Doing",
   "@doing": {"description": "Task status label for active work."},
   "done": "Done",

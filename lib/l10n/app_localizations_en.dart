@@ -195,6 +195,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pending => 'Pending';
 
   @override
+  String get ongoing => 'On going';
+
+  @override
   String get doing => 'Doing';
 
   @override

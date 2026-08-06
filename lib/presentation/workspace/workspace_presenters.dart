@@ -13,6 +13,14 @@ String workspaceStatusLabel(TaskStatus status, AppLocalizations strings) =>
       TaskStatus.archived => strings.archived,
     };
 
+String workspaceSectionLabel(
+  TaskStatus status,
+  AppLocalizations strings, {
+  required bool isHabit,
+}) => status == TaskStatus.pending && isHabit
+    ? strings.ongoing
+    : workspaceStatusLabel(status, strings);
+
 String workspaceStatusIcon(TaskStatus status) => switch (status) {
   TaskStatus.pending => '◌',
   TaskStatus.doing => '●',
@@ -27,6 +35,11 @@ Color workspaceStatusColor(BuildContext context, TaskStatus status) =>
       TaskStatus.done => TerminalPalette.of(context).done,
       TaskStatus.archived => TerminalPalette.of(context).muted,
     };
+
+Color workspaceSectionColor(BuildContext context, TaskStatus status) =>
+    status == TaskStatus.pending
+    ? TerminalPalette.of(context).doing
+    : workspaceStatusColor(context, status);
 
 String workspaceCompletionStamp(
   DateTime value,

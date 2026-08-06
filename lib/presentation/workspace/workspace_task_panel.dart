@@ -331,7 +331,11 @@ class _ListContent extends StatelessWidget {
         ])
           _TaskSection(
             state: state,
-            title: workspaceStatusLabel(status, AppLocalizations.of(context)!),
+            title: workspaceSectionLabel(
+              status,
+              AppLocalizations.of(context)!,
+              isHabit: state.currentList?.isHabit ?? false,
+            ),
             status: status,
             tasks: visible.where((task) {
               final rootStatus = taskRoot(state.currentList!, task).status;
@@ -775,9 +779,10 @@ class _AndroidPendingContent extends StatelessWidget {
       final status = taskRoot(state.currentList!, task).status;
       return status == TaskStatus.doing || status == TaskStatus.pending;
     }).toList();
-    final title = workspaceStatusLabel(
+    final title = workspaceSectionLabel(
       TaskStatus.pending,
       AppLocalizations.of(context)!,
+      isHabit: state.currentList?.isHabit ?? false,
     );
     if (state.search == null) {
       return _TaskScrollView.slivers(
@@ -979,9 +984,10 @@ class _MultiContent extends StatelessWidget {
           children.add(
             _TaskSection(
               state: state,
-              title: workspaceStatusLabel(
+              title: workspaceSectionLabel(
                 status,
                 AppLocalizations.of(context)!,
+                isHabit: list.isHabit,
               ),
               status: status,
               tasks: tasks,
@@ -1211,7 +1217,7 @@ class _AndroidTaskSectionSliver extends StatelessWidget {
           key: sectionKey,
           '${workspaceStatusIcon(status)} $title (${tasks.where((task) => task.parentId == null).length})',
           style: TextStyle(
-            color: workspaceStatusColor(context, status),
+            color: workspaceSectionColor(context, status),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1293,7 +1299,7 @@ class _TaskSection extends StatelessWidget {
           Text(
             '${workspaceStatusIcon(status)} $title (${tasks.where((task) => task.parentId == null).length})',
             style: TextStyle(
-              color: workspaceStatusColor(context, status),
+              color: workspaceSectionColor(context, status),
               fontWeight: FontWeight.bold,
             ),
           ),

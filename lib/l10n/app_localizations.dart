@@ -448,6 +448,12 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get pending;
 
+  /// Pending-section title in a habit list.
+  ///
+  /// In en, this message translates to:
+  /// **'On going'**
+  String get ongoing;
+
   /// Task status label for active work.
   ///
   /// In en, this message translates to:

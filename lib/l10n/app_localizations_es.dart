@@ -195,6 +195,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pending => 'Pendiente';
 
   @override
+  String get ongoing => 'En curso';
+
+  @override
   String get doing => 'En curso';
 
   @override
@@ -671,6 +674,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get pending => 'Pendiente';
 
   @override
+  String get ongoing => 'En curso';
+
+  @override
   String get doing => 'En curso';
 
   @override
@@ -1145,6 +1151,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get pending => 'Pendiente';
+
+  @override
+  String get ongoing => 'En curso';
 
   @override
   String get doing => 'En curso';
