@@ -32,6 +32,7 @@ String workspaceCompletionStamp(
   DateTime value,
   AppLocalizations strings, {
   DateTime? now,
+  bool compactElapsed = false,
 }) {
   final local = value.toLocal();
   final localNow = (now ?? DateTime.now()).toLocal();
@@ -44,6 +45,18 @@ String workspaceCompletionStamp(
   }
   if (daysAgo >= 1 && daysAgo <= 30) {
     return '$daysAgo${strings.completionDaySuffix}';
+  }
+  if (compactElapsed) {
+    final future = daysAgo < 0;
+    final elapsedDays = daysAgo.abs();
+    final prefix = future ? '+' : '';
+    if (elapsedDays <= 30) {
+      return '$prefix$elapsedDays${strings.completionDaySuffix}';
+    }
+    if (elapsedDays < 365) {
+      return '$prefix${elapsedDays ~/ 30}${strings.completionMonthSuffix}';
+    }
+    return '$prefix${elapsedDays ~/ 365}${strings.completionYearSuffix}';
   }
   return DateFormat(strings.completionDatePattern).format(local);
 }

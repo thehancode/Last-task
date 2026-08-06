@@ -748,6 +748,18 @@ abstract class AppLocalizations {
   /// **'d'**
   String get completionDaySuffix;
 
+  /// Compact suffix appended to the number of elapsed months in terminal task timestamps.
+  ///
+  /// In en, this message translates to:
+  /// **'mo'**
+  String get completionMonthSuffix;
+
+  /// Compact suffix appended to the number of elapsed years in terminal task timestamps.
+  ///
+  /// In en, this message translates to:
+  /// **'y'**
+  String get completionYearSuffix;
+
   /// Settings action that downloads all task lists as a JSON export.
   ///
   /// In en, this message translates to:
@@ -819,6 +831,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Long-title mode'**
   String get longTitleMode;
+
+  /// Setting that controls whether task creation and status-change timestamps are displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Show status time'**
+  String get showStatusTime;
+
+  /// Value label for an enabled boolean setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get enabled;
+
+  /// Value label for a disabled boolean setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get disabled;
 
   /// Long-title mode that wraps only the selected task.
   ///

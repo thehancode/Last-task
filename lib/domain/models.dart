@@ -542,6 +542,7 @@ class AppSettings {
     this.tagNames = const TagNames(),
     this.languageLocale = 'en',
     this.themeId = 'classic',
+    this.showStatusTime = true,
   });
 
   final LongTitleDisplay longTitleDisplay;
@@ -553,6 +554,7 @@ class AppSettings {
   /// The presentation layer matches this against generated localization catalogs.
   final String languageLocale;
   final String themeId;
+  final bool showStatusTime;
 
   AppSettings copyWith({
     LongTitleDisplay? longTitleDisplay,
@@ -561,6 +563,7 @@ class AppSettings {
     TagNames? tagNames,
     String? languageLocale,
     String? themeId,
+    bool? showStatusTime,
   }) => AppSettings(
     longTitleDisplay: longTitleDisplay ?? this.longTitleDisplay,
     fontFamily: fontFamily ?? this.fontFamily,
@@ -568,6 +571,7 @@ class AppSettings {
     tagNames: tagNames ?? this.tagNames,
     languageLocale: languageLocale ?? this.languageLocale,
     themeId: themeId ?? this.themeId,
+    showStatusTime: showStatusTime ?? this.showStatusTime,
   );
 
   Map<String, Object?> toJson() => {
@@ -577,6 +581,7 @@ class AppSettings {
     'tag_names': tagNames.toJson(),
     'language': languageLocale,
     'theme': themeId,
+    'show_status_time': showStatusTime,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
@@ -592,6 +597,7 @@ class AppSettings {
     ),
     languageLocale: json['language'] as String? ?? 'en',
     themeId: json['theme'] as String? ?? 'classic',
+    showStatusTime: json['show_status_time'] as bool? ?? true,
   );
 
   void validate() {

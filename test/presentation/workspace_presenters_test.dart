@@ -47,6 +47,46 @@ void main() {
     );
   });
 
+  test('compact completion stamps use months and years after day 30', () {
+    final now = DateTime(2027, 1, 1);
+    expect(
+      workspaceCompletionStamp(
+        now.subtract(const Duration(days: 31)),
+        english,
+        now: now,
+        compactElapsed: true,
+      ),
+      '1mo',
+    );
+    expect(
+      workspaceCompletionStamp(
+        now.subtract(const Duration(days: 364)),
+        english,
+        now: now,
+        compactElapsed: true,
+      ),
+      '12mo',
+    );
+    expect(
+      workspaceCompletionStamp(
+        now.subtract(const Duration(days: 365)),
+        english,
+        now: now,
+        compactElapsed: true,
+      ),
+      '1y',
+    );
+    expect(
+      workspaceCompletionStamp(
+        now.subtract(const Duration(days: 31)),
+        spanish,
+        now: now,
+        compactElapsed: true,
+      ),
+      '1m',
+    );
+  });
+
   test('completion stamp shows a full date for future calendar days', () {
     expect(
       workspaceCompletionStamp(
@@ -55,6 +95,18 @@ void main() {
         now: DateTime(2026, 12, 31, 23, 59),
       ),
       '01-01-2027',
+    );
+  });
+
+  test('compact completion stamp keeps future values within five cells', () {
+    expect(
+      workspaceCompletionStamp(
+        DateTime(2027, 1, 2),
+        english,
+        now: DateTime(2027, 1, 1),
+        compactElapsed: true,
+      ),
+      '+1d',
     );
   });
 }

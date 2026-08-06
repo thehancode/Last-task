@@ -359,6 +359,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completionDaySuffix => 'd';
 
   @override
+  String get completionMonthSuffix => 'mo';
+
+  @override
+  String get completionYearSuffix => 'y';
+
+  @override
   String get exportData => 'Export data';
 
   @override
@@ -401,6 +407,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get longTitleMode => 'Long-title mode';
+
+  @override
+  String get showStatusTime => 'Show status time';
+
+  @override
+  String get enabled => 'Enabled';
+
+  @override
+  String get disabled => 'Disabled';
 
   @override
   String get wrapSelected => 'Wrap selected';

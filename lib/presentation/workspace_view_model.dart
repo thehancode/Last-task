@@ -638,7 +638,8 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
               task,
         ],
       ),
-      success: 'Task updated',
+      success: null,
+      animationTaskId: id,
     );
   }
 
@@ -1251,7 +1252,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
 
   Future<bool> _saveList(
     TaskList next, {
-    required String success,
+    required String? success,
     String? selectedTaskId,
     WorkspaceView? view,
     String? animationTaskId,
@@ -1270,9 +1271,14 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         view: view,
         animatedTaskId: animationTaskId,
         clearAnimation: animationTaskId == null,
-        notice: NoticeState(success),
+        notice: success == null ? null : NoticeState(success),
+        clearNotice: success == null,
       );
-      _expireNotice(const Duration(seconds: 2));
+      if (success == null) {
+        _noticeTimer?.cancel();
+      } else {
+        _expireNotice(const Duration(seconds: 2));
+      }
       _pushHistory(before);
       _scheduleDeviceSave();
       _queueReorderSave([next]);
@@ -1292,7 +1298,8 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         view: view,
         animatedTaskId: animationTaskId,
         clearAnimation: animationTaskId == null,
-        notice: NoticeState(success),
+        notice: success == null ? null : NoticeState(success),
+        clearNotice: success == null,
       );
       if (animationTaskId != null) {
         _animationTimer?.cancel();
@@ -1300,7 +1307,11 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
           state = state.copyWith(clearAnimation: true);
         });
       }
-      _expireNotice(const Duration(seconds: 2));
+      if (success == null) {
+        _noticeTimer?.cancel();
+      } else {
+        _expireNotice(const Duration(seconds: 2));
+      }
       _pushHistory(before);
       _scheduleDeviceSave();
       return true;

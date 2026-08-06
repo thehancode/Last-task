@@ -34,7 +34,14 @@ void main() {
 
     expect(settings.longTitleDisplay, LongTitleDisplay.wrapAll);
     expect(settings.themeId, 'classic');
+    expect(settings.showStatusTime, isTrue);
     expect(store.settings, isNotNull);
+
+    await LocalSettingsRepository(
+      store,
+    ).save(settings.copyWith(showStatusTime: false));
+    final reloaded = await LocalSettingsRepository(store).load();
+    expect(reloaded.showStatusTime, isFalse);
   });
 
   test('repository preserves nested task links and collapsed state', () async {

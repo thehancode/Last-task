@@ -87,6 +87,21 @@ void main() {
     expect(state.selectedTaskId, 'personal-pending');
   });
 
+  test('editing a task flashes its row without a success notice', () async {
+    final list = _list('personal', 'Personal', [_task('one', 'Old title')]);
+    final repository = _TaskLists([list]);
+    final container = _container([list], repository: repository);
+    addTearDown(container.dispose);
+    final vm = await _ready(container);
+
+    expect(await vm.updateSelectedTask('New title'), isTrue);
+
+    var state = container.read(workspaceViewModelProvider);
+    expect(repository.lists.single.tasks.single.title, 'New title');
+    expect(state.animatedTaskId, 'one');
+    expect(state.notice, isNull);
+  });
+
   test(
     'visible task ranges stay in the current list and bulk delete once',
     () async {

@@ -279,6 +279,14 @@ class _ConfigSettings extends StatelessWidget {
               ),
             ),
           ),
+          SwitchListTile(
+            key: const Key('settings-show-status-time'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.showStatusTime),
+            value: settings.showStatusTime,
+            onChanged: (value) =>
+                onUpdate(settings.copyWith(showStatusTime: value)),
+          ),
           ListTile(
             key: const Key('settings-themes-action'),
             contentPadding: EdgeInsets.zero,
@@ -333,6 +341,15 @@ class _ConfigSettings extends StatelessWidget {
               settings.copyWith(
                 longTitleDisplay: settings.longTitleDisplay.next,
               ),
+            ),
+          ),
+        ),
+        _SettingsRow(
+          label: strings.showStatusTime,
+          control: _CycleButton(
+            value: settings.showStatusTime ? strings.enabled : strings.disabled,
+            onTap: () => onUpdate(
+              settings.copyWith(showStatusTime: !settings.showStatusTime),
             ),
           ),
         ),

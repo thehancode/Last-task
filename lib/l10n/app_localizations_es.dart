@@ -360,6 +360,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get completionDaySuffix => 'd';
 
   @override
+  String get completionMonthSuffix => 'm';
+
+  @override
+  String get completionYearSuffix => 'a';
+
+  @override
   String get exportData => 'Exportar datos';
 
   @override
@@ -402,6 +408,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get longTitleMode => 'Modo de títulos largos';
+
+  @override
+  String get showStatusTime => 'Mostrar hora de estado';
+
+  @override
+  String get enabled => 'Activado';
+
+  @override
+  String get disabled => 'Desactivado';
 
   @override
   String get wrapSelected => 'Ajustar seleccionado';
@@ -821,6 +836,12 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get completionDaySuffix => 'd';
 
   @override
+  String get completionMonthSuffix => 'm';
+
+  @override
+  String get completionYearSuffix => 'a';
+
+  @override
   String get exportData => 'Exportar datos';
 
   @override
@@ -863,6 +884,15 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
 
   @override
   String get longTitleMode => 'Modo de títulos largos';
+
+  @override
+  String get showStatusTime => 'Mostrar hora de estado';
+
+  @override
+  String get enabled => 'Activado';
+
+  @override
+  String get disabled => 'Desactivado';
 
   @override
   String get wrapSelected => 'Ajustar seleccionado';
@@ -1282,6 +1312,12 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   String get completionDaySuffix => 'd';
 
   @override
+  String get completionMonthSuffix => 'm';
+
+  @override
+  String get completionYearSuffix => 'a';
+
+  @override
   String get exportData => 'Exportar datos';
 
   @override
@@ -1324,6 +1360,15 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get longTitleMode => 'Modo de títulos largos';
+
+  @override
+  String get showStatusTime => 'Mostrar hora de estado';
+
+  @override
+  String get enabled => 'Activado';
+
+  @override
+  String get disabled => 'Desactivado';
 
   @override
   String get wrapSelected => 'Ajustar seleccionado';

@@ -727,7 +727,7 @@ void main() {
     final now = DateTime.utc(2026, 1, 1);
     final task = Task(
       id: 'task-1',
-      title: 'Large terminal text\non a second line',
+      title: 'Large text\nsecond line',
       status: TaskStatus.pending,
       createdAt: now,
       updatedAt: now,
@@ -752,6 +752,7 @@ void main() {
               const AppSettings(
                 nativeFontSize: 28,
                 longTitleDisplay: LongTitleDisplay.wrapAll,
+                showStatusTime: false,
               ),
             ),
           ),
@@ -762,13 +763,44 @@ void main() {
     await tester.pump(const Duration(milliseconds: 20));
 
     final taskRow = find.bySemanticsLabel(RegExp('Pending task'));
-    final taskText = find.text('Large terminal text\non a second line');
+    final taskText = find.text('Large text\nsecond line');
     expect(taskRow, findsOneWidget);
     expect(taskText, findsOneWidget);
     // bodyMedium is 14 px, scaled by 28 / 16 to 24.5 px. A normalized
     // two-line terminal paragraph should therefore occupy about 49 px.
     expect(tester.getSize(taskText).height, inInclusiveRange(49, 51));
+    final marker = find.byKey(const ValueKey('task-prefix-task-1'));
+    expect(marker, findsOneWidget);
+    expect(
+      tester.getCenter(marker).dy,
+      closeTo(tester.getTopLeft(taskText).dy + 12.25, 2),
+    );
     expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('status-time setting hides task timestamps', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(
+            _Lists([_listWithTask()]),
+          ),
+          settingsRepositoryProvider.overrideWithValue(
+            const _Settings(
+              AppSettings(nativeFontSize: 16, showStatusTime: false),
+            ),
+          ),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(find.byKey(const ValueKey('status-stamp-task-1')), findsNothing);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -850,6 +882,15 @@ void main() {
       expect(wrappedStamp, findsOneWidget);
       expect(olderStamp, findsOneWidget);
       expect(archivedStamp, findsOneWidget);
+      final cell = TerminalMetrics.cell(tester.element(olderStamp));
+      expect(tester.getSize(olderStamp).width, closeTo(cell * 5, 0.1));
+      final stampPadding = tester.widget<Padding>(
+        find.byKey(const ValueKey('status-stamp-gap-older-done')),
+      );
+      expect(
+        stampPadding.padding.resolve(TextDirection.ltr).left,
+        closeTo(cell, 0.1),
+      );
       expect(
         tester.getRect(wrappedStamp).right,
         closeTo(tester.getRect(olderStamp).right, 0.1),
@@ -1631,6 +1672,7 @@ void main() {
       find.bySemanticsLabel(RegExp('Pending task:.*pending')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('status-stamp-pending')), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Done task:')), findsNothing);
     expect(find.bySemanticsLabel(RegExp('Archived task:')), findsNothing);
 
@@ -1663,6 +1705,11 @@ void main() {
     expect(firstStampRect.right, closeTo(firstRowRect.right - 8, 1));
     expect(firstStampRect.bottom, greaterThan(firstRowRect.center.dy));
     expect(firstRowRect.bottom - firstStampRect.bottom, lessThanOrEqualTo(14));
+    final firstTitle = find.text('TaskStatus.done done-first');
+    expect(
+      firstStampRect.top,
+      greaterThanOrEqualTo(tester.getRect(firstTitle).bottom),
+    );
     final archivedRow = find.bySemanticsLabel(
       RegExp('Archived task:.*archived'),
     );
@@ -1671,6 +1718,15 @@ void main() {
       closeTo(tester.getRect(archivedRow).right - 8, 1),
     );
     expect(find.bySemanticsLabel(RegExp('Pending task:')), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Pending (1)'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Pending task:.*pending')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel(RegExp('Done task:')), findsNothing);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -2314,7 +2370,11 @@ void main() {
         overrides: [
           deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
           taskListRepositoryProvider.overrideWithValue(_Lists([list])),
-          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          settingsRepositoryProvider.overrideWithValue(
+            const _Settings(
+              AppSettings(nativeFontSize: 16, showStatusTime: false),
+            ),
+          ),
         ],
         child: const LastTaskApp(),
       ),
@@ -2794,6 +2854,8 @@ void main() {
     expect(find.text('Background'), findsOneWidget);
     expect(find.text('Themes'), findsOneWidget);
     expect(find.text('Long-title mode'), findsOneWidget);
+    expect(find.text('Show status time'), findsOneWidget);
+    expect(find.text('< Enabled >'), findsOneWidget);
     expect(find.text('Marquee speed'), findsNothing);
     expect(find.text('< Wrap all >'), findsOneWidget);
     expect(find.text('< Classic >'), findsOneWidget);
@@ -2879,12 +2941,13 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.binding.setSurfaceSize(const Size(700, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final settingsRepository = _RecordingSettings();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
           taskListRepositoryProvider.overrideWithValue(_Lists()),
-          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          settingsRepositoryProvider.overrideWithValue(settingsRepository),
         ],
         child: const LastTaskApp(),
       ),
@@ -2899,7 +2962,12 @@ void main() {
     expect(find.text('Marquee speed'), findsNothing);
     expect(find.text('Reward duration'), findsNothing);
     expect(find.text('Show entrance tips'), findsNothing);
-    expect(find.byType(Switch), findsNothing);
+    final statusTimeSwitch = find.byKey(const Key('settings-show-status-time'));
+    expect(statusTimeSwitch, findsOneWidget);
+    expect(tester.widget<SwitchListTile>(statusTimeSwitch).value, isTrue);
+    await tester.tap(statusTimeSwitch);
+    await tester.pump();
+    expect(settingsRepository.settings.showStatusTime, isFalse);
     expect(find.text('Use Backend'), findsNothing);
     expect(find.text('Desktop font size'), findsNothing);
     expect(find.text('Background'), findsOneWidget);
@@ -3202,7 +3270,7 @@ void main() {
         child: const LastTaskApp(),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pumpAndSettle();
 
     final workspaceTheme = Theme.of(
       tester.element(find.byKey(const ValueKey('task-panel-list'))),

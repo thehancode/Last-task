@@ -15,12 +15,17 @@ import '../workspace_view_model.dart';
 import 'workspace_presenters.dart';
 import 'workspace_task_row.dart';
 
-DateTime? _statusChangedAt(Task task, TaskStatus sectionStatus) =>
-    switch (sectionStatus) {
-      TaskStatus.done => task.completedAt,
-      TaskStatus.archived => task.updatedAt,
-      TaskStatus.pending || TaskStatus.doing => null,
-    };
+DateTime? _statusChangedAt(
+  Task task,
+  TaskStatus sectionStatus,
+  bool showStatusTime,
+) => showStatusTime
+    ? switch (sectionStatus) {
+        TaskStatus.done => task.completedAt,
+        TaskStatus.archived => task.updatedAt,
+        TaskStatus.pending || TaskStatus.doing => task.createdAt,
+      }
+    : null;
 
 TextStyle? _dialogInputStyle(BuildContext context) =>
     usesTerminalPresentation ? Theme.of(context).textTheme.bodyMedium : null;
@@ -33,6 +38,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     required this.backgroundConfigured,
     this.contextualTaskId,
     this.onTaskLongPress,
+    this.androidListPage = 0,
     this.onAndroidListPageChanged,
     this.onAndroidOpenDrawer,
   });
@@ -41,6 +47,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
   final bool backgroundConfigured;
   final String? contextualTaskId;
   final void Function(Task task, Offset globalPosition)? onTaskLongPress;
+  final int androidListPage;
   final ValueChanged<int>? onAndroidListPageChanged;
   final VoidCallback? onAndroidOpenDrawer;
 
@@ -55,6 +62,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
         android
             ? _AndroidListPages(
                 state: state,
+                currentPage: androidListPage,
                 onPageChanged: onAndroidListPageChanged,
                 onOpenDrawer: onAndroidOpenDrawer,
               )
@@ -437,11 +445,13 @@ enum _AndroidHorizontalGestureOwner { page, drawer, blocked }
 class _AndroidListPages extends StatefulWidget {
   const _AndroidListPages({
     required this.state,
+    required this.currentPage,
     this.onPageChanged,
     this.onOpenDrawer,
   });
 
   final WorkspaceState state;
+  final int currentPage;
   final ValueChanged<int>? onPageChanged;
   final VoidCallback? onOpenDrawer;
 
@@ -469,14 +479,22 @@ class _AndroidListPagesState extends State<_AndroidListPages> {
   @override
   void didUpdateWidget(covariant _AndroidListPages oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.state.currentListId == widget.state.currentListId) return;
-    _pageIndex = 0;
-    _gestureOwner = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_pageController.hasClients) _pageController.jumpToPage(0);
-      widget.onPageChanged?.call(0);
-    });
+    if (oldWidget.state.currentListId != widget.state.currentListId) {
+      _pageIndex = 0;
+      _gestureOwner = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_pageController.hasClients) _pageController.jumpToPage(0);
+        widget.onPageChanged?.call(0);
+      });
+      return;
+    }
+    if (oldWidget.currentPage != widget.currentPage &&
+        widget.currentPage != _pageIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _settleToPage(widget.currentPage);
+      });
+    }
   }
 
   @override
@@ -893,7 +911,9 @@ class _CompletedContent extends StatelessWidget {
           WorkspaceTaskRow(
             task: rows[index].task,
             state: state,
-            statusChangedAt: rows[index].completedAt,
+            statusChangedAt: state.settings.showStatusTime
+                ? rows[index].completedAt
+                : null,
             showMobileDivider:
                 index < rows.length - 1 &&
                 rows[index].task.parentId == null &&
@@ -1214,7 +1234,11 @@ class _AndroidTaskSectionSliver extends StatelessWidget {
             (context, index) => WorkspaceTaskRow(
               task: tasks[index],
               state: state,
-              statusChangedAt: _statusChangedAt(tasks[index], status),
+              statusChangedAt: _statusChangedAt(
+                tasks[index],
+                status,
+                state.settings.showStatusTime,
+              ),
               showMobileDivider:
                   index < tasks.length - 1 &&
                   tasks[index].parentId == null &&
@@ -1297,7 +1321,11 @@ class _TaskSection extends StatelessWidget {
               WorkspaceTaskRow(
                 task: tasks[index],
                 state: state,
-                statusChangedAt: _statusChangedAt(tasks[index], status),
+                statusChangedAt: _statusChangedAt(
+                  tasks[index],
+                  status,
+                  state.settings.showStatusTime,
+                ),
                 showMobileDivider:
                     index < tasks.length - 1 &&
                     tasks[index].parentId == null &&

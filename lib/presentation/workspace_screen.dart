@@ -937,6 +937,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
                                         backgroundPath != null,
                                     contextualTaskId: _contextualTaskId,
                                     onTaskLongPress: _showContextMenu,
+                                    androidListPage: _androidSecondaryListPage
+                                        ? 1
+                                        : 0,
                                     onAndroidListPageChanged:
                                         _setAndroidListPage,
                                     onAndroidOpenDrawer: _openAndroidSidebar,
@@ -1047,12 +1050,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     if (terminal) return focusedWorkspace;
     return PopScope(
       canPop:
+          !_androidSecondaryListPage &&
           !_composerFocusNode.hasFocus &&
           _composerMode == _ComposerMode.create &&
           state.selectedTaskId == null,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_composerFocusNode.hasFocus) {
+        if (_androidSecondaryListPage) {
+          setState(() => _androidSecondaryListPage = false);
+        } else if (_composerFocusNode.hasFocus) {
           _composerFocusNode.unfocus();
         } else if (_composerMode == _ComposerMode.edit ||
             _composerMode == _ComposerMode.duplicate) {

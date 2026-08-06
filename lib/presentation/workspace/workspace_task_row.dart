@@ -197,12 +197,12 @@ class WorkspaceTaskRow extends ConsumerWidget {
             decoration: BoxDecoration(
               color: highlighted
                   ? TerminalPalette.of(context).doing
+                  : animated
+                  ? workspaceStatusColor(context, task.status)
                   : visuallySelected
                   ? TerminalPalette.of(context).accent
                   : multiSelected
                   ? TerminalPalette.of(context).doing
-                  : animated
-                  ? workspaceStatusColor(context, task.status)
                   : Colors.transparent,
               borderRadius: terminal
                   ? BorderRadius.zero
@@ -211,98 +211,123 @@ class WorkspaceTaskRow extends ConsumerWidget {
             ),
             // The selected row supplies the violet background across its full
             // measured height, including the tag columns.
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (terminal)
-                  _TerminalTaskPrefix(
-                    task: task,
-                    depth: depth,
-                    hasChildren: hasChildren,
-                    selected: selected,
-                    draggable:
-                        state.view == WorkspaceView.list &&
-                        state.search == null,
-                  )
-                else
-                  SizedBox(
-                    width: 32,
-                    child: hasChildren
-                        ? IconButton(
-                            key: ValueKey('task-collapse-${task.id}'),
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                            tooltip: task.collapsed
-                                ? AppLocalizations.of(context)!.expandSubtasks
-                                : AppLocalizations.of(
-                                    context,
-                                  )!.collapseSubtasks,
-                            onPressed: () {
-                              final vm = ref.read(
-                                workspaceViewModelProvider.notifier,
-                              );
-                              vm.selectTask(task.id);
-                              unawaited(vm.toggleSelectedCollapsed());
-                            },
-                            icon: Icon(
-                              task.collapsed
-                                  ? Icons.arrow_right
-                                  : Icons.arrow_drop_down,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (terminal)
+                      _TerminalTaskPrefix(
+                        task: task,
+                        depth: depth,
+                        hasChildren: hasChildren,
+                        selected: selected,
+                        draggable:
+                            state.view == WorkspaceView.list &&
+                            state.search == null,
+                      )
+                    else
+                      SizedBox(
+                        width: 32,
+                        child: hasChildren
+                            ? IconButton(
+                                key: ValueKey('task-collapse-${task.id}'),
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                                tooltip: task.collapsed
+                                    ? AppLocalizations.of(
+                                        context,
+                                      )!.expandSubtasks
+                                    : AppLocalizations.of(
+                                        context,
+                                      )!.collapseSubtasks,
+                                onPressed: () {
+                                  final vm = ref.read(
+                                    workspaceViewModelProvider.notifier,
+                                  );
+                                  vm.selectTask(task.id);
+                                  unawaited(vm.toggleSelectedCollapsed());
+                                },
+                                icon: Icon(
+                                  task.collapsed
+                                      ? Icons.arrow_right
+                                      : Icons.arrow_drop_down,
+                                ),
+                              )
+                            : Text(
+                                '-',
+                                key: ValueKey('task-prefix-${task.id}'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: visuallySelected
+                                      ? TerminalPalette.of(context).background
+                                      : TerminalPalette.of(context).muted,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    Expanded(child: title),
+                    _TaskTags(task: task, selected: visuallySelected),
+                    if (task.daily)
+                      terminal
+                          ? Text(
+                              ' ↻',
+                              style: TextStyle(
+                                color: visuallySelected
+                                    ? TerminalPalette.of(context).background
+                                    : TerminalPalette.of(context).done,
+                              ),
+                            )
+                          : Icon(
+                              Icons.repeat,
+                              size: 16,
+                              color: visuallySelected
+                                  ? TerminalPalette.of(context).background
+                                  : TerminalPalette.of(context).done,
                             ),
-                          )
-                        : Text(
-                            '-',
-                            key: ValueKey('task-prefix-${task.id}'),
-                            textAlign: TextAlign.center,
+                    if (terminal && statusChangedAt != null)
+                      Padding(
+                        key: ValueKey('status-stamp-gap-${task.id}'),
+                        padding: EdgeInsets.only(
+                          left: TerminalMetrics.cell(context),
+                        ),
+                        child: SizedBox(
+                          key: ValueKey('status-stamp-${task.id}'),
+                          width: TerminalMetrics.cell(context) * 5,
+                          child: Text(
+                            workspaceCompletionStamp(
+                              statusChangedAt!,
+                              AppLocalizations.of(context)!,
+                              compactElapsed: true,
+                            ),
+                            textAlign: TextAlign.right,
                             style: TextStyle(
                               color: visuallySelected
                                   ? TerminalPalette.of(context).background
                                   : TerminalPalette.of(context).muted,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                  ),
-                Expanded(child: title),
-                _TaskTags(task: task, selected: visuallySelected),
-                if (task.daily)
-                  terminal
-                      ? Text(
-                          ' ↻',
-                          style: TextStyle(
-                            color: visuallySelected
-                                ? TerminalPalette.of(context).background
-                                : TerminalPalette.of(context).done,
-                          ),
-                        )
-                      : Icon(
-                          Icons.repeat,
-                          size: 16,
-                          color: visuallySelected
-                              ? TerminalPalette.of(context).background
-                              : TerminalPalette.of(context).done,
                         ),
-                if (statusChangedAt != null)
+                      ),
+                  ],
+                ),
+                if (!terminal && statusChangedAt != null)
                   Padding(
-                    padding: EdgeInsets.only(
-                      left: terminal ? TerminalMetrics.cell(context) : 8,
-                    ),
-                    child: SizedBox(
+                    padding: const EdgeInsets.only(left: 32, top: 2),
+                    child: Text(
+                      workspaceCompletionStamp(
+                        statusChangedAt!,
+                        AppLocalizations.of(context)!,
+                      ),
                       key: ValueKey('status-stamp-${task.id}'),
-                      width: terminal
-                          ? TerminalMetrics.cell(context) * 10
-                          : null,
-                      child: Text(
-                        workspaceCompletionStamp(
-                          statusChangedAt!,
-                          AppLocalizations.of(context)!,
-                        ),
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: visuallySelected
-                              ? TerminalPalette.of(context).background
-                              : TerminalPalette.of(context).muted,
-                          fontSize: terminal ? null : 12,
-                        ),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: visuallySelected
+                            ? TerminalPalette.of(context).background
+                            : TerminalPalette.of(context).muted,
+                        fontSize: 11,
+                        height: 1,
                       ),
                     ),
                   ),
@@ -422,7 +447,11 @@ class _TerminalTaskPrefix extends ConsumerWidget {
           : TerminalPalette.of(context).muted,
       fontWeight: FontWeight.bold,
     );
-    final label = Text(marker, style: style);
+    final label = Text(
+      marker,
+      key: ValueKey('task-prefix-${task.id}'),
+      style: style,
+    );
     if (!draggable) return label;
     return Semantics(
       label: 'Drag ${task.title} to reorder',

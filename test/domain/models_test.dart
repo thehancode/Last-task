@@ -164,6 +164,7 @@ void main() {
       expect(AppFontFamily.comicShannsMonoNerd.label, 'Comic');
       expect(AppFontFamily.goMonoNerd.label, 'Mono');
       expect(defaults.nativeFontSize, 23);
+      expect(defaults.showStatusTime, isTrue);
       expect(defaults.tagNames.nameFor(TaskTag.spade), 'Spade');
       expect(defaults.tagNames.nameFor(TaskTag.heart), 'Heart');
 
@@ -180,6 +181,13 @@ void main() {
       expect((settings.toJson()['tag_names']! as Map)['heart'], 'Important');
       expect(settings.toJson()['language'], 'en');
       expect(settings.toJson()['theme'], 'classic');
+      expect(settings.toJson()['show_status_time'], isTrue);
+
+      final hiddenStatusTime = AppSettings.fromJson({
+        'show_status_time': false,
+      });
+      expect(hiddenStatusTime.showStatusTime, isFalse);
+      expect(hiddenStatusTime.toJson()['show_status_time'], isFalse);
 
       final removedFont = AppSettings.fromJson({'font_family': 'arimo_nerd'});
       expect(removedFont.fontFamily, AppFontFamily.ubuntuMonoNerd);
