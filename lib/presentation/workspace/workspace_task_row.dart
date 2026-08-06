@@ -211,24 +211,100 @@ class WorkspaceTaskRow extends ConsumerWidget {
             ),
             // The selected row supplies the violet background across its full
             // measured height, including the tag columns.
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (terminal)
-                      _TerminalTaskPrefix(
-                        task: task,
-                        depth: depth,
-                        hasChildren: hasChildren,
-                        selected: selected,
-                        draggable:
-                            state.view == WorkspaceView.list &&
-                            state.search == null,
-                      )
-                    else
-                      SizedBox(
+            child: terminal
+                ? Builder(
+                    builder: (context) {
+                      final metadataFontSize =
+                          TerminalMetrics.fontSize(context) * .75;
+                      final metadataCells =
+                          (statusChangedAt == null ? 0 : 5) +
+                          (task.daily ? 1 : 0) +
+                          2;
+                      return Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              right:
+                                  TerminalMetrics.cell(context) *
+                                  metadataCells,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _TerminalTaskPrefix(
+                                  task: task,
+                                  depth: depth,
+                                  hasChildren: hasChildren,
+                                  selected: selected,
+                                  draggable:
+                                      state.view == WorkspaceView.list &&
+                                      state.search == null,
+                                ),
+                                Expanded(child: title),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (task.daily)
+                                SizedBox(
+                                  width: TerminalMetrics.cell(context),
+                                  child: Text(
+                                    '↻',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      color: visuallySelected
+                                          ? TerminalPalette.of(
+                                              context,
+                                            ).background
+                                          : TerminalPalette.of(context).done,
+                                      fontSize: metadataFontSize,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ),
+                              if (statusChangedAt != null)
+                                SizedBox(
+                                  key: ValueKey('status-stamp-${task.id}'),
+                                  width: TerminalMetrics.cell(context) * 5,
+                                  child: Text(
+                                    workspaceCompletionStamp(
+                                      statusChangedAt!,
+                                      AppLocalizations.of(context)!,
+                                      compactElapsed: true,
+                                    ),
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      color: visuallySelected
+                                          ? TerminalPalette.of(
+                                              context,
+                                            ).background
+                                          : TerminalPalette.of(context).muted,
+                                      fontSize: metadataFontSize,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ),
+                              _TaskTags(
+                                task: task,
+                                selected: visuallySelected,
+                                fontSize: metadataFontSize,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
                         width: 32,
                         child: hasChildren
                             ? IconButton(
@@ -266,73 +342,40 @@ class WorkspaceTaskRow extends ConsumerWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                      ),
-                    Expanded(child: title),
-                    _TaskTags(task: task, selected: visuallySelected),
-                    if (task.daily)
-                      terminal
-                          ? Text(
-                              ' ↻',
-                              style: TextStyle(
-                                color: visuallySelected
-                                    ? TerminalPalette.of(context).background
-                                    : TerminalPalette.of(context).done,
-                              ),
-                            )
-                          : Icon(
+                          ),
+                          Expanded(child: title),
+                          _TaskTags(task: task, selected: visuallySelected),
+                          if (task.daily)
+                            Icon(
                               Icons.repeat,
                               size: 16,
                               color: visuallySelected
                                   ? TerminalPalette.of(context).background
                                   : TerminalPalette.of(context).done,
                             ),
-                    if (terminal && statusChangedAt != null)
-                      Padding(
-                        key: ValueKey('status-stamp-gap-${task.id}'),
-                        padding: EdgeInsets.only(
-                          left: TerminalMetrics.cell(context),
-                        ),
-                        child: SizedBox(
-                          key: ValueKey('status-stamp-${task.id}'),
-                          width: TerminalMetrics.cell(context) * 5,
+                        ],
+                      ),
+                      if (statusChangedAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32, top: 2),
                           child: Text(
                             workspaceCompletionStamp(
                               statusChangedAt!,
                               AppLocalizations.of(context)!,
-                              compactElapsed: true,
                             ),
+                            key: ValueKey('status-stamp-${task.id}'),
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               color: visuallySelected
                                   ? TerminalPalette.of(context).background
                                   : TerminalPalette.of(context).muted,
+                              fontSize: 11,
+                              height: 1,
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                if (!terminal && statusChangedAt != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 32, top: 2),
-                    child: Text(
-                      workspaceCompletionStamp(
-                        statusChangedAt!,
-                        AppLocalizations.of(context)!,
-                      ),
-                      key: ValueKey('status-stamp-${task.id}'),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: visuallySelected
-                            ? TerminalPalette.of(context).background
-                            : TerminalPalette.of(context).muted,
-                        fontSize: 11,
-                        height: 1,
-                      ),
-                    ),
+                    ],
                   ),
-              ],
-            ),
           ),
         ),
       ),
@@ -571,9 +614,14 @@ class _TerminalTaskDropTargetState
 }
 
 class _TaskTags extends StatelessWidget {
-  const _TaskTags({required this.task, required this.selected});
+  const _TaskTags({
+    required this.task,
+    required this.selected,
+    this.fontSize,
+  });
   final Task task;
   final bool selected;
+  final double? fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -601,6 +649,8 @@ class _TaskTags extends StatelessWidget {
                       color: terminal && selected
                           ? TerminalPalette.of(context).background
                           : _tagColor(context, tag),
+                      fontSize: fontSize,
+                      height: fontSize == null ? null : 1,
                     ),
                   ),
                 ),
