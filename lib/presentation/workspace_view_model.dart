@@ -568,8 +568,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     final task = _newTask(title, list.isHabit);
     return _saveList(
       list.copyWith(tasks: [task, ...list.tasks]),
-      success: 'Task added',
+      success: null,
       selectedTaskId: task.id,
+      animationTaskId: task.id,
     );
   }
 

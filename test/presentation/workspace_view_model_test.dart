@@ -221,6 +221,10 @@ void main() {
 
       final saved = repository.lists.single;
       expect(saved.tasks.first.title, 'New pending');
+      final state = container.read(workspaceViewModelProvider);
+      expect(state.selectedTaskId, saved.tasks.first.id);
+      expect(state.animatedTaskId, saved.tasks.first.id);
+      expect(state.notice, isNull);
       expect(
         saved.tasks
             .where((task) => task.status == TaskStatus.pending)

@@ -1131,6 +1131,67 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('Android completion emits haptic feedback but restore does not', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final hapticTypes = <String?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          hapticTypes.add(call.arguments as String?);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final repository = _Lists([_listWithTask()]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final pendingTask = find.bySemanticsLabel(RegExp('Pending task: Swipe me'));
+    await tester.tap(pendingTask);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(pendingTask);
+    await tester.pumpAndSettle();
+
+    expect(repository._lists.single.tasks.single.status, TaskStatus.done);
+    expect(hapticTypes, ['HapticFeedbackType.mediumImpact']);
+
+    await tester.drag(
+      find.byKey(const ValueKey('task-panel-list')),
+      const Offset(-360, 0),
+    );
+    await tester.pumpAndSettle();
+    final doneTask = find.bySemanticsLabel(RegExp('Done task: Swipe me'));
+    await tester.tap(doneTask);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(doneTask);
+    await tester.pumpAndSettle();
+
+    expect(repository._lists.single.tasks.single.status, TaskStatus.pending);
+    expect(hapticTypes, ['HapticFeedbackType.mediumImpact']);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('Android notice floats without resizing panel or background', (
     tester,
   ) async {

@@ -152,7 +152,8 @@ class WorkspaceTaskRow extends ConsumerWidget {
               if (task.status == TaskStatus.pending ||
                   task.status == TaskStatus.doing) {
                 vm.selectTask(task.id);
-                await vm.completeSelectedTask();
+                final completed = await vm.completeSelectedTask();
+                if (completed) await HapticFeedback.mediumImpact();
               } else if (task.status == TaskStatus.done ||
                   task.status == TaskStatus.archived) {
                 vm.selectTask(task.id);
