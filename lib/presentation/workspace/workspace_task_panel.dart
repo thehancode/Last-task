@@ -1073,6 +1073,32 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
     });
   }
 
+  void _autoScrollForTaskDrag(Offset globalPosition) {
+    if (!usesTerminalPresentation || !_controller.hasClients) return;
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final local = renderBox.globalToLocal(globalPosition);
+    const edge = 48.0;
+    final position = _controller.position;
+    double? target;
+    if (local.dy < edge) {
+      target = position.pixels - (edge - local.dy).clamp(4.0, 24.0).toDouble();
+    } else if (local.dy > renderBox.size.height - edge) {
+      target =
+          position.pixels +
+          (local.dy - (renderBox.size.height - edge))
+              .clamp(4.0, 24.0)
+              .toDouble();
+    }
+    if (target != null) {
+      _controller.jumpTo(
+        target
+            .clamp(position.minScrollExtent, position.maxScrollExtent)
+            .toDouble(),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewport = widget.slivers != null
@@ -1120,22 +1146,25 @@ class _TaskScrollViewState extends State<_TaskScrollView> {
         child: viewport,
       );
     }
-    return Column(
-      children: [
-        if (_canScrollUp)
-          _TaskOverflowIndicator(
-            key: const ValueKey('task-overflow-up'),
-            glyph: '▲',
-            color: widget.indicatorColor,
-          ),
-        Expanded(child: viewport),
-        if (_canScrollDown)
-          _TaskOverflowIndicator(
-            key: const ValueKey('task-overflow-down'),
-            glyph: '▼',
-            color: widget.indicatorColor,
-          ),
-      ],
+    return TerminalTaskDragScrollScope(
+      onDragMove: _autoScrollForTaskDrag,
+      child: Column(
+        children: [
+          if (_canScrollUp)
+            _TaskOverflowIndicator(
+              key: const ValueKey('task-overflow-up'),
+              glyph: '▲',
+              color: widget.indicatorColor,
+            ),
+          Expanded(child: viewport),
+          if (_canScrollDown)
+            _TaskOverflowIndicator(
+              key: const ValueKey('task-overflow-down'),
+              glyph: '▼',
+              color: widget.indicatorColor,
+            ),
+        ],
+      ),
     );
   }
 }

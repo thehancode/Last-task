@@ -113,6 +113,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.inactive) {
       _setSyncInterval(const Duration(seconds: 90));
+      unawaited(
+        ref.read(workspaceViewModelProvider.notifier).flushPendingReorders(),
+      );
     }
   }
 

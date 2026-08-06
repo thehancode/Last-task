@@ -41,11 +41,14 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   Timer? _animationTimer;
   Timer? _deviceSaveTimer;
   Timer? _highlightTimer;
+  Timer? _reorderSaveTimer;
   StreamSubscription<Object>? _syncErrorSubscription;
   StreamSubscription<void>? _remoteChangeSubscription;
   Object? _pendingSyncError;
   final List<_HistoryEntry> _history = [];
   final List<_HistoryEntry> _redoHistory = [];
+  final Map<String, TaskList> _pendingReorderUpserts = {};
+  static const _reorderSaveDelay = Duration(milliseconds: 500);
 
   TaskListRepository get _lists => ref.read(taskListRepositoryProvider);
   SettingsRepository get _settings => ref.read(settingsRepositoryProvider);
@@ -66,6 +69,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       _animationTimer?.cancel();
       _deviceSaveTimer?.cancel();
       _highlightTimer?.cancel();
+      _reorderSaveTimer?.cancel();
       unawaited(_syncErrorSubscription?.cancel());
       unawaited(_remoteChangeSubscription?.cancel());
     });
@@ -445,19 +449,15 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
         reordered[index].copyWith(sortIndex: index),
     ];
     final before = _captureHistory();
-    try {
-      await _lists.commit(TaskListChangeSet(upserts: normalized));
-      state = state.copyWith(
-        lists: normalized,
-        notice: const NoticeState('List reordered'),
-      );
-      _expireNotice(const Duration(seconds: 2));
-      _pushHistory(before);
-      _scheduleDeviceSave();
-      return true;
-    } on Object catch (error) {
-      return _error('List reorder failed: $error');
-    }
+    state = state.copyWith(
+      lists: normalized,
+      notice: const NoticeState('List reordered'),
+    );
+    _expireNotice(const Duration(seconds: 2));
+    _pushHistory(before);
+    _scheduleDeviceSave();
+    _queueReorderSave(normalized);
+    return true;
   }
 
   void toggleMultiView() {
@@ -1068,7 +1068,49 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       ...middle,
       ...firstBlock,
     ]);
-    return _saveList(list.copyWith(tasks: tasks), success: 'Task reordered');
+    return _saveList(
+      list.copyWith(tasks: tasks),
+      success: 'Task reordered',
+      deferReorderSave: true,
+    );
+  }
+
+  /// Moves [taskId] and its complete preorder subtree next to [targetId].
+  /// The target must be a sibling in the same status section.
+  Future<bool> reorderTaskToSibling(
+    String taskId,
+    String targetId, {
+    required bool placeAfter,
+  }) async {
+    if (state.view == WorkspaceView.completed || state.search != null) {
+      return false;
+    }
+    final list = state.currentList;
+    if (list == null || taskId == targetId) return false;
+    final task = list.tasks.where((item) => item.id == taskId).firstOrNull;
+    final target = list.tasks.where((item) => item.id == targetId).firstOrNull;
+    if (task == null || target == null || task.parentId != target.parentId) {
+      return false;
+    }
+    if (task.parentId == null && task.status != target.status) return false;
+    final tasks = list.tasks.toList(growable: true);
+    final moved = [task, ...taskDescendants(list, task)];
+    final targetBlock = [target, ...taskDescendants(list, target)];
+    final movedIds = moved.map((item) => item.id).toSet();
+    tasks.removeWhere((item) => movedIds.contains(item.id));
+    final remainingTargetStart = tasks.indexWhere(
+      (item) => item.id == targetBlock.first.id,
+    );
+    if (remainingTargetStart < 0) return false;
+    final insertAt = placeAfter
+        ? remainingTargetStart + targetBlock.length
+        : remainingTargetStart;
+    tasks.insertAll(insertAt, moved);
+    return _saveList(
+      list.copyWith(tasks: tasks),
+      success: 'Task reordered',
+      deferReorderSave: true,
+    );
   }
 
   void toggleSound() {
@@ -1213,9 +1255,31 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     String? selectedTaskId,
     WorkspaceView? view,
     String? animationTaskId,
+    bool deferReorderSave = false,
   }) async {
     final before = _captureHistory();
+    if (deferReorderSave) {
+      final lists = [
+        for (final list in state.lists)
+          if (list.id == next.id) next else list,
+      ];
+      state = state.copyWith(
+        lists: lists,
+        currentListId: next.id,
+        selectedTaskId: selectedTaskId,
+        view: view,
+        animatedTaskId: animationTaskId,
+        clearAnimation: animationTaskId == null,
+        notice: NoticeState(success),
+      );
+      _expireNotice(const Duration(seconds: 2));
+      _pushHistory(before);
+      _scheduleDeviceSave();
+      _queueReorderSave([next]);
+      return true;
+    }
     try {
+      await flushPendingReorders();
       await _lists.save(next);
       final lists = [
         for (final list in state.lists)
@@ -1242,6 +1306,35 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       return true;
     } on Object catch (error) {
       return _error('Save failed: $error');
+    }
+  }
+
+  void _queueReorderSave(Iterable<TaskList> lists) {
+    for (final list in lists) {
+      _pendingReorderUpserts[list.id] = list;
+    }
+    _reorderSaveTimer?.cancel();
+    _reorderSaveTimer = Timer(
+      _reorderSaveDelay,
+      () => unawaited(flushPendingReorders()),
+    );
+  }
+
+  /// Makes the latest optimistic reorder durable without waiting for network
+  /// synchronization. Safe to call repeatedly from lifecycle boundaries.
+  Future<void> flushPendingReorders() async {
+    _reorderSaveTimer?.cancel();
+    _reorderSaveTimer = null;
+    if (_pendingReorderUpserts.isEmpty) return;
+    final pending = Map<String, TaskList>.from(_pendingReorderUpserts);
+    _pendingReorderUpserts.clear();
+    try {
+      await _lists.commit(TaskListChangeSet(upserts: pending.values.toList()));
+    } on Object catch (error) {
+      // Keep the final order queued for a later lifecycle/manual retry rather
+      // than silently reverting the already-visible workspace.
+      _pendingReorderUpserts.addAll(pending);
+      _showNotice(NoticeState('Reorder not saved: $error', error: true));
     }
   }
 

@@ -88,7 +88,12 @@ class OperationLogTaskListRepository
   final StreamController<void> _remoteChanges =
       StreamController<void>.broadcast(sync: true);
 
-  Future<void> _queue = Future<void>.value();
+  // Disk work and network work deliberately use separate queues. A slow
+  // snapshot/push/pull must never hold up an interaction which only needs to
+  // update the local source of truth.
+  Future<void> _localQueue = Future<void>.value();
+  Future<void> _syncQueue = Future<void>.value();
+  final Map<String, int> _localGenerations = {};
   _SyncState? _state;
   int _failureCount = 0;
   DateTime? _retryAfter;
@@ -112,11 +117,17 @@ class OperationLogTaskListRepository
 
   @override
   Future<void> commit(TaskListChangeSet changes) =>
-      _serialized(() => _commitNow(changes));
+      _serializedLocal(() => _commitNow(changes));
 
   Future<void> _commitNow(TaskListChangeSet changes) async {
     for (final list in changes.upserts) {
       list.validate();
+    }
+    for (final list in changes.upserts) {
+      _localGenerations[list.id] = (_localGenerations[list.id] ?? 0) + 1;
+    }
+    for (final id in changes.deletes) {
+      _localGenerations[id] = (_localGenerations[id] ?? 0) + 1;
     }
     final before = await _local.loadAll();
     final byId = {for (final list in before.lists) list.id: list};
@@ -184,9 +195,12 @@ class OperationLogTaskListRepository
     if (!_isSignedIn()) return Future<void>.value();
     final retryAfter = _retryAfter;
     if (!force && retryAfter != null && DateTime.now().isBefore(retryAfter)) {
-      return _queue;
+      return _syncQueue;
     }
-    return _serialized(() async {
+    return _serializedSync(() async {
+      // Wait for writes already in flight when synchronization was requested,
+      // but do not make later writes wait for the network request.
+      await _localQueue;
       try {
         await _synchronizeNow();
         _failureCount = 0;
@@ -202,15 +216,26 @@ class OperationLogTaskListRepository
     });
   }
 
-  Future<T> _serialized<T>(Future<T> Function() action) {
+  Future<T> _serializedLocal<T>(Future<T> Function() action) =>
+      _serialized(_localQueue, action, (next) => _localQueue = next);
+
+  Future<T> _serializedSync<T>(Future<T> Function() action) =>
+      _serialized(_syncQueue, action, (next) => _syncQueue = next);
+
+  Future<T> _serialized<T>(
+    Future<void> queue,
+    Future<T> Function() action,
+    void Function(Future<void>) replaceQueue,
+  ) {
     final completer = Completer<T>();
-    _queue = _queue.then((_) async {
+    final next = queue.then((_) async {
       try {
         completer.complete(await action());
       } on Object catch (error, stackTrace) {
         completer.completeError(error, stackTrace);
       }
     });
+    replaceQueue(next);
     return completer.future;
   }
 
@@ -219,9 +244,11 @@ class OperationLogTaskListRepository
   }
 
   Future<void> _synchronizeNow() async {
+    final generationsAtStart = Map<String, int>.from(_localGenerations);
     var state = await _loadState();
     if (!state.initialized) {
-      await _applySnapshot((await _gateway.getSnapshot()).snapshot);
+      final snapshot = (await _gateway.getSnapshot()).snapshot;
+      await _serializedLocal(() => _applySnapshot(snapshot));
       state = await _loadState();
     }
     final localTimezone = await _readTimezone();
@@ -241,8 +268,10 @@ class OperationLogTaskListRepository
           .toList(growable: false);
       final response = await _gateway.pushMutations(mutations);
       for (final result in response.results) {
-        await _applyResult(result);
-        await _syncStore.deletePendingMutation(result.mutationId);
+        await _serializedLocal(() => _applyResult(result, generationsAtStart));
+        await _serializedLocal(
+          () => _syncStore.deletePendingMutation(result.mutationId),
+        );
         state = state.applyResult(result);
       }
       await _saveState(state);
@@ -250,12 +279,15 @@ class OperationLogTaskListRepository
 
     final pulled = await _gateway.pullChanges(state.revision);
     if (pulled.resetRequired) {
-      await _applySnapshot((await _gateway.getSnapshot()).snapshot);
+      final snapshot = (await _gateway.getSnapshot()).snapshot;
+      await _serializedLocal(() => _applySnapshot(snapshot));
       return;
     }
     var changed = false;
     for (final change in pulled.changes) {
-      await _applyResult(change.result);
+      await _serializedLocal(
+        () => _applyResult(change.result, generationsAtStart),
+      );
       state = state.applyResult(change.result);
       changed = true;
     }
@@ -266,22 +298,25 @@ class OperationLogTaskListRepository
     if (changed && !_remoteChanges.isClosed) _remoteChanges.add(null);
   }
 
-  Future<void> _applyResult(wire.MutationResult result) async {
+  Future<void> _applyResult(
+    wire.MutationResult result,
+    Map<String, int> generationsAtStart,
+  ) async {
     final current = await _local.loadAll();
     final currentById = {for (final list in current.lists) list.id: list};
-    await _local.commit(
-      TaskListChangeSet(
-        upserts: result.changedLists
-            .map(
-              (list) => _preserveDeviceState(
-                listFromWire(list),
-                currentById[list.id],
-              ),
-            )
-            .toList(growable: false),
-        deletes: result.deletedListIds,
-      ),
-    );
+    final upserts = result.changedLists
+        .where(
+          (list) => _localGenerations[list.id] == generationsAtStart[list.id],
+        )
+        .map(
+          (list) =>
+              _preserveDeviceState(listFromWire(list), currentById[list.id]),
+        )
+        .toList(growable: false);
+    final deletes = result.deletedListIds
+        .where((id) => _localGenerations[id] == generationsAtStart[id])
+        .toList(growable: false);
+    await _local.commit(TaskListChangeSet(upserts: upserts, deletes: deletes));
     for (final list in result.changedLists) {
       await _syncStore.writeCanonicalList(list.id, list.writeToBuffer());
     }

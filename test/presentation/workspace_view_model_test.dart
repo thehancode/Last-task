@@ -143,9 +143,50 @@ void main() {
 
       vm.selectTask('second');
       await vm.reorderSelected(-1);
+      await vm.flushPendingReorders();
 
       final saved = repository.lists.single;
       expect(saved.tasks.map((task) => task.id), ['second', 'doing', 'first']);
+    },
+  );
+
+  test(
+    'drag reorder updates state immediately and persists only when flushed',
+    () async {
+      final list = _list('tasks', 'Tasks', [
+        _task('first', 'First'),
+        _task('second', 'Second'),
+        _task('third', 'Third'),
+      ]);
+      final repository = _TaskLists([list]);
+      final container = _container([list], repository: repository);
+      addTearDown(container.dispose);
+      final vm = await _ready(container);
+
+      expect(
+        await vm.reorderTaskToSibling('first', 'third', placeAfter: true),
+        isTrue,
+      );
+      expect(
+        container
+            .read(workspaceViewModelProvider)
+            .currentList!
+            .tasks
+            .map((task) => task.id),
+        ['second', 'third', 'first'],
+      );
+      expect(repository.lists.single.tasks.map((task) => task.id), [
+        'first',
+        'second',
+        'third',
+      ]);
+
+      await vm.flushPendingReorders();
+      expect(repository.lists.single.tasks.map((task) => task.id), [
+        'second',
+        'third',
+        'first',
+      ]);
     },
   );
 
@@ -431,6 +472,7 @@ void main() {
 
       vm.selectTask('second');
       await vm.reorderSelected(-1);
+      await vm.flushPendingReorders();
       expect(repository.lists.single.tasks.map((task) => task.id), [
         'root',
         'second',

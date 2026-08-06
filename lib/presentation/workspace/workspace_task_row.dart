@@ -41,6 +41,30 @@ class WorkspaceTaskInteractions extends InheritedWidget {
       onLongPress != oldWidget.onLongPress;
 }
 
+/// Lets terminal task rows request a small edge-scroll while a drag is active
+/// without coupling rows to the panel's scroll implementation.
+class TerminalTaskDragScrollScope extends InheritedWidget {
+  const TerminalTaskDragScrollScope({
+    super.key,
+    required this.onDragMove,
+    required super.child,
+  });
+
+  final ValueChanged<Offset> onDragMove;
+
+  static TerminalTaskDragScrollScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TerminalTaskDragScrollScope>();
+
+  @override
+  bool updateShouldNotify(TerminalTaskDragScrollScope oldWidget) =>
+      onDragMove != oldWidget.onDragMove;
+}
+
+class _TaskDragPayload {
+  const _TaskDragPayload(this.task);
+  final Task task;
+}
+
 class WorkspaceTaskRow extends ConsumerWidget {
   const WorkspaceTaskRow({
     super.key,
@@ -191,14 +215,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (terminal)
-                  Text(
-                    '${'  ' * depth}${hasChildren ? (task.collapsed ? '▸ ' : '▾ ') : (selected ? '› ' : '- ')}',
-                    style: TextStyle(
-                      color: selected
-                          ? TerminalPalette.of(context).background
-                          : TerminalPalette.of(context).muted,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  _TerminalTaskPrefix(
+                    task: task,
+                    depth: depth,
+                    hasChildren: hasChildren,
+                    selected: selected,
+                    draggable:
+                        state.view == WorkspaceView.list &&
+                        state.search == null,
                   )
                 else
                   SizedBox(
@@ -296,6 +320,15 @@ class WorkspaceTaskRow extends ConsumerWidget {
             child: row,
           )
         : row;
+    final desktopDragEnabled =
+        terminal && state.view == WorkspaceView.list && state.search == null;
+    final dropAwareRow = desktopDragEnabled
+        ? _TerminalTaskDropTarget(
+            task: task,
+            state: state,
+            child: interactiveRow,
+          )
+        : interactiveRow;
     return WorkspaceKeepSelectedTaskVisible(
       // Android does not expose keyboard selection; automatically revealing
       // the view-model selection would override its Done/Pending entry point.
@@ -305,7 +338,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          interactiveRow,
+          dropAwareRow,
           if (!terminal && showMobileDivider)
             FractionallySizedBox(
               widthFactor: 0.75,
@@ -362,6 +395,150 @@ class _DottedTaskDividerPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DottedTaskDividerPainter oldDelegate) =>
       color != oldDelegate.color || gap != oldDelegate.gap;
+}
+
+class _TerminalTaskPrefix extends ConsumerWidget {
+  const _TerminalTaskPrefix({
+    required this.task,
+    required this.depth,
+    required this.hasChildren,
+    required this.selected,
+    required this.draggable,
+  });
+
+  final Task task;
+  final int depth;
+  final bool hasChildren;
+  final bool selected;
+  final bool draggable;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final marker =
+        '${'  ' * depth}${hasChildren ? (task.collapsed ? '▸ ' : '▾ ') : (selected ? '› ' : '- ')}';
+    final style = TextStyle(
+      color: selected
+          ? TerminalPalette.of(context).background
+          : TerminalPalette.of(context).muted,
+      fontWeight: FontWeight.bold,
+    );
+    final label = Text(marker, style: style);
+    if (!draggable) return label;
+    return Semantics(
+      label: 'Drag ${task.title} to reorder',
+      child: Tooltip(
+        message: 'Drag to reorder',
+        child: MouseRegion(
+          cursor: SystemMouseCursors.grab,
+          child: Draggable<_TaskDragPayload>(
+            data: _TaskDragPayload(task),
+            feedback: Material(
+              color: Colors.transparent,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: TerminalPalette.of(context).panel,
+                  border: Border.all(color: TerminalPalette.of(context).accent),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: TerminalMetrics.cell(context),
+                  ),
+                  child: Text(task.title, style: style),
+                ),
+              ),
+            ),
+            childWhenDragging: Opacity(opacity: .35, child: label),
+            onDragStarted: () => ref
+                .read(workspaceViewModelProvider.notifier)
+                .selectTask(task.id),
+            child: label,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TerminalTaskDropTarget extends ConsumerStatefulWidget {
+  const _TerminalTaskDropTarget({
+    required this.task,
+    required this.state,
+    required this.child,
+  });
+
+  final Task task;
+  final WorkspaceState state;
+  final Widget child;
+
+  @override
+  ConsumerState<_TerminalTaskDropTarget> createState() =>
+      _TerminalTaskDropTargetState();
+}
+
+class _TerminalTaskDropTargetState
+    extends ConsumerState<_TerminalTaskDropTarget> {
+  bool _placeAfter = false;
+
+  bool _accepts(_TaskDragPayload? payload) {
+    if (payload == null || payload.task.id == widget.task.id) return false;
+    final dragged = payload.task;
+    final target = widget.task;
+    return dragged.parentId == target.parentId &&
+        (dragged.parentId != null || dragged.status == target.status);
+  }
+
+  void _updatePlacement(Offset localPosition, Size size) {
+    final next = localPosition.dy >= size.height / 2;
+    if (next != _placeAfter) setState(() => _placeAfter = next);
+  }
+
+  @override
+  Widget build(BuildContext context) => DragTarget<_TaskDragPayload>(
+    onWillAcceptWithDetails: (details) => _accepts(details.data),
+    onMove: (details) {
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        _updatePlacement(
+          renderBox.globalToLocal(details.offset),
+          renderBox.size,
+        );
+      }
+      TerminalTaskDragScrollScope.maybeOf(context)?.onDragMove(details.offset);
+    },
+    onAcceptWithDetails: (details) {
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        _updatePlacement(
+          renderBox.globalToLocal(details.offset),
+          renderBox.size,
+        );
+      }
+      unawaited(
+        ref
+            .read(workspaceViewModelProvider.notifier)
+            .reorderTaskToSibling(
+              details.data.task.id,
+              widget.task.id,
+              placeAfter: _placeAfter,
+            ),
+      );
+    },
+    builder: (context, candidates, _) {
+      final hovering = candidates.any(_accepts);
+      final line = Container(
+        height: 1,
+        color: TerminalPalette.of(context).accent,
+      );
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hovering && !_placeAfter) line,
+          widget.child,
+          if (hovering && _placeAfter) line,
+        ],
+      );
+    },
+  );
 }
 
 class _TaskTags extends StatelessWidget {
