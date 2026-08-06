@@ -216,8 +216,8 @@ class WorkspaceTaskRow extends ConsumerWidget {
             // The selected row supplies the violet background across its full
             // measured height, including the tag columns.
             child: terminal
-                ? LayoutBuilder(
-                    builder: (context, constraints) {
+                ? Builder(
+                    builder: (context) {
                       final cell = TerminalMetrics.cell(context);
                       final metadataFontSize =
                           TerminalMetrics.fontSize(context) * .75;
@@ -225,23 +225,10 @@ class WorkspaceTaskRow extends ConsumerWidget {
                           (statusChangedAt == null ? 0 : 5) +
                           (task.daily ? 1 : 0) +
                           (task.tags.length < 2 ? 2 : task.tags.length);
-                      final titleWidth =
-                          constraints.maxWidth - cell * (depth * 2 + 2);
                       final wrapsTitle =
                           titleDisplay == LongTitleDisplay.wrapAll ||
                           (titleDisplay == LongTitleDisplay.wrapSelected &&
                               visuallySelected);
-                      final measuredTitle = !wrapsTitle
-                          ? task.title.replaceAll(RegExp(r'[\r\n]+'), ' ')
-                          : task.title;
-                      final keepMetadataOnLastTitleLine = _lastTextLineHasRoom(
-                        context,
-                        measuredTitle,
-                        titleStyle,
-                        maxWidth: titleWidth,
-                        trailingWidth: cell * (metadataCells + 1),
-                        wraps: wrapsTitle,
-                      );
                       final taskTitle = Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -312,24 +299,42 @@ class WorkspaceTaskRow extends ConsumerWidget {
                           ],
                         );
                       }
-                      if (keepMetadataOnLastTitleLine) {
-                        return Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            taskTitle,
-                            Positioned(right: 0, bottom: 0, child: metadata),
-                          ],
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          taskTitle,
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: metadata,
-                          ),
-                        ],
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final titleWidth =
+                              constraints.maxWidth - cell * (depth * 2 + 2);
+                          final keepMetadataOnLastTitleLine =
+                              _lastTextLineHasRoom(
+                                context,
+                                task.title,
+                                titleStyle,
+                                maxWidth: titleWidth,
+                                trailingWidth: cell * (metadataCells + 1),
+                              );
+                          if (keepMetadataOnLastTitleLine) {
+                            return Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                taskTitle,
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: metadata,
+                                ),
+                              ],
+                            );
+                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              taskTitle,
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: metadata,
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   )
@@ -478,15 +483,12 @@ bool _lastTextLineHasRoom(
   TextStyle style, {
   required double maxWidth,
   required double trailingWidth,
-  required bool wraps,
 }) {
   if (maxWidth <= 0) return false;
   final painter = TextPainter(
     text: TextSpan(text: text, style: style),
     textDirection: Directionality.of(context),
     textScaler: MediaQuery.textScalerOf(context),
-    maxLines: wraps ? null : 1,
-    ellipsis: wraps ? null : '…',
   )..layout(maxWidth: maxWidth);
   if (painter.didExceedMaxLines) return false;
   final lines = painter.computeLineMetrics();
