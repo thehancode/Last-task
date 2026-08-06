@@ -3158,93 +3158,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No image selected'), findsOneWidget);
     expect(find.byKey(const Key('mobile-background-close')), findsOneWidget);
-    expect(
-      tester.widget<TextButton>(find.widgetWithText(TextButton, '+')).onPressed,
-      isNull,
-    );
     await tester.tap(find.byKey(const Key('mobile-background-close')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('mobile-settings-close')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    debugDefaultTargetPlatformOverride = null;
-  });
-
-  testWidgets('Android background settings update and preview immediately', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await tester.binding.setSurfaceSize(const Size(420, 700));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          desktopBackgroundServiceProvider.overrideWithValue(
-            _BackgroundService(),
-          ),
-          deviceStateRepositoryProvider.overrideWithValue(
-            const _DeviceState(
-              DeviceWorkspaceState(
-                desktopAppearance: DesktopAppearance(
-                  backgroundImagePath: '/background.png',
-                  backgroundOverlayOpacity: .7,
-                ),
-              ),
-            ),
-          ),
-          taskListRepositoryProvider.overrideWithValue(_Lists()),
-          settingsRepositoryProvider.overrideWithValue(const _Settings()),
-        ],
-        child: const LastTaskApp(),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 20));
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('settings-background-action')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('< Cover >'), findsOneWidget);
-    expect(find.text('30%'), findsOneWidget);
-    expect(
-      find.byKey(const Key('mobile-background-preview-image')),
-      findsOneWidget,
-    );
-    expect(
-      tester
-          .widget<Image>(
-            find.byKey(const Key('mobile-background-preview-image')),
-          )
-          .fit,
-      BoxFit.cover,
-    );
-
-    await tester.tap(find.text('< Cover >'));
-    await tester.pump();
-    expect(find.text('< Contain >'), findsOneWidget);
-    expect(
-      tester
-          .widget<Image>(
-            find.byKey(const Key('mobile-background-preview-image')),
-          )
-          .fit,
-      BoxFit.contain,
-    );
-
-    expect(find.widgetWithText(TextButton, '[+]'), findsNothing);
-    expect(find.widgetWithText(TextButton, '[−]'), findsNothing);
-    await tester.tap(find.widgetWithText(TextButton, '+'));
-    await tester.pump();
-    expect(find.text('40%'), findsOneWidget);
-    expect(
-      tester
-          .widget<ColoredBox>(
-            find.byKey(const Key('mobile-background-preview-overlay')),
-          )
-          .color
-          .a,
-      closeTo(.6, .001),
-    );
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });

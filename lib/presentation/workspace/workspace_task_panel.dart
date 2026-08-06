@@ -57,6 +57,9 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     final hasBackground = background != null;
     final panelOpacity = backgroundConfigured ? 0.0 : 1.0;
     final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final backgroundOverlayOpacity = android
+        ? .82
+        : appearance.backgroundOverlayOpacity;
     final normalContent = switch (state.view) {
       WorkspaceView.list =>
         android
@@ -113,7 +116,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
                 ),
                 ColoredBox(
                   color: TerminalPalette.of(context).background.withValues(
-                    alpha: appearance.backgroundOverlayOpacity,
+                    alpha: backgroundOverlayOpacity,
                   ),
                 ),
                 content,

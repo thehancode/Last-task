@@ -96,7 +96,7 @@ class _WorkspaceSettingsDialogState
         .updateDesktopAppearance(
           appearance.copyWith(
             backgroundImagePath: selectedPath,
-            backgroundOverlayOpacity: .7,
+            backgroundOverlayOpacity: usesTerminalPresentation ? .7 : .82,
           ),
         );
   }
@@ -528,11 +528,13 @@ class _BackgroundSettings extends StatelessWidget {
     required this.appearance,
     required this.onPickImage,
     required this.onUpdate,
+    this.showTransparencyControl = true,
   });
 
   final DesktopAppearance appearance;
   final VoidCallback onPickImage;
   final ValueChanged<DesktopAppearance> onUpdate;
+  final bool showTransparencyControl;
 
   @override
   Widget build(BuildContext context) {
@@ -576,32 +578,33 @@ class _BackgroundSettings extends StatelessWidget {
                   ),
           ),
         ),
-        _SettingsRow(
-          label: strings.backgroundTransparency,
-          control: _StepControl(
-            value: '$transparency%',
-            onDecrease: selectedPath != null && transparency > 0
-                ? () => onUpdate(
-                    appearance.copyWith(
-                      backgroundOverlayOpacity:
-                          (appearance.backgroundOverlayOpacity + .1)
-                              .clamp(0.0, 1.0)
-                              .toDouble(),
-                    ),
-                  )
-                : null,
-            onIncrease: selectedPath != null && transparency < 100
-                ? () => onUpdate(
-                    appearance.copyWith(
-                      backgroundOverlayOpacity:
-                          (appearance.backgroundOverlayOpacity - .1)
-                              .clamp(0.0, 1.0)
-                              .toDouble(),
-                    ),
-                  )
-                : null,
+        if (showTransparencyControl)
+          _SettingsRow(
+            label: strings.backgroundTransparency,
+            control: _StepControl(
+              value: '$transparency%',
+              onDecrease: selectedPath != null && transparency > 0
+                  ? () => onUpdate(
+                      appearance.copyWith(
+                        backgroundOverlayOpacity:
+                            (appearance.backgroundOverlayOpacity + .1)
+                                .clamp(0.0, 1.0)
+                                .toDouble(),
+                      ),
+                    )
+                  : null,
+              onIncrease: selectedPath != null && transparency < 100
+                  ? () => onUpdate(
+                      appearance.copyWith(
+                        backgroundOverlayOpacity:
+                            (appearance.backgroundOverlayOpacity - .1)
+                                .clamp(0.0, 1.0)
+                                .toDouble(),
+                      ),
+                    )
+                  : null,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -656,7 +659,7 @@ class _MobileBackgroundSettingsPage extends ConsumerWidget {
             ColoredBox(
               key: const Key('mobile-background-preview-overlay'),
               color: Theme.of(context).scaffoldBackgroundColor.withValues(
-                alpha: appearance.backgroundOverlayOpacity,
+                alpha: .82,
               ),
             ),
           SafeArea(
@@ -666,6 +669,7 @@ class _MobileBackgroundSettingsPage extends ConsumerWidget {
                 appearance: appearance,
                 onPickImage: onPickImage,
                 onUpdate: onUpdate,
+                showTransparencyControl: false,
               ),
             ),
           ),
