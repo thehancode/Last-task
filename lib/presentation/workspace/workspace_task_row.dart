@@ -102,15 +102,11 @@ class WorkspaceTaskRow extends ConsumerWidget {
     final animated = task.id == state.animatedTaskId;
     final highlighted = state.highlightedTaskIds.contains(task.id);
     final search = state.search;
-    final title = _TaskTitle(
-      value: task.title,
-      selected: visuallySelected,
-      display: !terminal || state.search != null
-          ? LongTitleDisplay.wrapAll
-          : state.settings.longTitleDisplay,
-      searchQuery: search?.query,
-      currentSearchMatch: search?.currentTaskId == task.id,
-      style: TextStyle(
+    final titleDisplay = !terminal || state.search != null
+        ? LongTitleDisplay.wrapAll
+        : state.settings.longTitleDisplay;
+    final titleStyle = DefaultTextStyle.of(context).style.merge(
+      TextStyle(
         color: visuallySelected || multiSelected || highlighted
             ? TerminalPalette.of(context).background
             : done || archived
@@ -123,6 +119,14 @@ class WorkspaceTaskRow extends ConsumerWidget {
         decorationColor: TerminalPalette.of(context).muted,
         height: terminal ? null : 1.1,
       ),
+    );
+    final title = _TaskTitle(
+      value: task.title,
+      selected: visuallySelected,
+      display: titleDisplay,
+      searchQuery: search?.query,
+      currentSearchMatch: search?.currentTaskId == task.id,
+      style: titleStyle,
     );
     final row = Semantics(
       selected: visuallySelected || multiSelected,
@@ -212,87 +216,108 @@ class WorkspaceTaskRow extends ConsumerWidget {
             // The selected row supplies the violet background across its full
             // measured height, including the tag columns.
             child: terminal
-                ? Builder(
-                    builder: (context) {
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      final cell = TerminalMetrics.cell(context);
                       final metadataFontSize =
                           TerminalMetrics.fontSize(context) * .75;
                       final metadataCells =
                           (statusChangedAt == null ? 0 : 5) +
                           (task.daily ? 1 : 0) +
-                          2;
-                      return Stack(
-                        alignment: Alignment.bottomRight,
+                          (task.tags.length < 2 ? 2 : task.tags.length);
+                      final titleWidth =
+                          constraints.maxWidth - cell * (depth * 2 + 2);
+                      final wrapsTitle =
+                          titleDisplay == LongTitleDisplay.wrapAll ||
+                          (titleDisplay == LongTitleDisplay.wrapSelected &&
+                              visuallySelected);
+                      final measuredTitle = !wrapsTitle
+                          ? task.title.replaceAll(RegExp(r'[\r\n]+'), ' ')
+                          : task.title;
+                      final keepMetadataOnLastTitleLine = _lastTextLineHasRoom(
+                        context,
+                        measuredTitle,
+                        titleStyle,
+                        maxWidth: titleWidth,
+                        trailingWidth: cell * (metadataCells + 1),
+                        wraps: wrapsTitle,
+                      );
+                      final taskTitle = Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              right:
-                                  TerminalMetrics.cell(context) *
-                                  metadataCells,
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _TerminalTaskPrefix(
-                                  task: task,
-                                  depth: depth,
-                                  hasChildren: hasChildren,
-                                  selected: selected,
-                                  draggable:
-                                      state.view == WorkspaceView.list &&
-                                      state.search == null,
-                                ),
-                                Expanded(child: title),
-                              ],
-                            ),
+                          _TerminalTaskPrefix(
+                            task: task,
+                            depth: depth,
+                            hasChildren: hasChildren,
+                            selected: selected,
+                            draggable:
+                                state.view == WorkspaceView.list &&
+                                state.search == null,
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (task.daily)
-                                SizedBox(
-                                  width: TerminalMetrics.cell(context),
-                                  child: Text(
-                                    '↻',
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: visuallySelected
-                                          ? TerminalPalette.of(
-                                              context,
-                                            ).background
-                                          : TerminalPalette.of(context).done,
-                                      fontSize: metadataFontSize,
-                                      height: 1,
-                                    ),
-                                  ),
+                          Expanded(child: title),
+                        ],
+                      );
+                      final metadata = Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (task.daily)
+                            SizedBox(
+                              width: cell,
+                              child: Text(
+                                '↻',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: visuallySelected
+                                      ? TerminalPalette.of(context).background
+                                      : TerminalPalette.of(context).done,
+                                  fontSize: metadataFontSize,
+                                  height: 1,
                                 ),
-                              if (statusChangedAt != null)
-                                SizedBox(
-                                  key: ValueKey('status-stamp-${task.id}'),
-                                  width: TerminalMetrics.cell(context) * 5,
-                                  child: Text(
-                                    workspaceCompletionStamp(
-                                      statusChangedAt!,
-                                      AppLocalizations.of(context)!,
-                                      compactElapsed: true,
-                                    ),
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: visuallySelected
-                                          ? TerminalPalette.of(
-                                              context,
-                                            ).background
-                                          : TerminalPalette.of(context).muted,
-                                      fontSize: metadataFontSize,
-                                      height: 1,
-                                    ),
-                                  ),
-                                ),
-                              _TaskTags(
-                                task: task,
-                                selected: visuallySelected,
-                                fontSize: metadataFontSize,
                               ),
-                            ],
+                            ),
+                          if (statusChangedAt != null)
+                            SizedBox(
+                              key: ValueKey('status-stamp-${task.id}'),
+                              width: cell * 5,
+                              child: Text(
+                                workspaceCompletionStamp(
+                                  statusChangedAt!,
+                                  AppLocalizations.of(context)!,
+                                  compactElapsed: true,
+                                ),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: visuallySelected
+                                      ? TerminalPalette.of(context).background
+                                      : TerminalPalette.of(context).muted,
+                                  fontSize: metadataFontSize,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          _TaskTags(
+                            task: task,
+                            selected: visuallySelected,
+                            fontSize: metadataFontSize,
+                          ),
+                        ],
+                      );
+                      if (keepMetadataOnLastTitleLine) {
+                        return Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            taskTitle,
+                            Positioned(right: 0, bottom: 0, child: metadata),
+                          ],
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          taskTitle,
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: metadata,
                           ),
                         ],
                       );
@@ -305,43 +330,45 @@ class WorkspaceTaskRow extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                        width: 32,
-                        child: hasChildren
-                            ? IconButton(
-                                key: ValueKey('task-collapse-${task.id}'),
-                                padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                                tooltip: task.collapsed
-                                    ? AppLocalizations.of(
-                                        context,
-                                      )!.expandSubtasks
-                                    : AppLocalizations.of(
-                                        context,
-                                      )!.collapseSubtasks,
-                                onPressed: () {
-                                  final vm = ref.read(
-                                    workspaceViewModelProvider.notifier,
-                                  );
-                                  vm.selectTask(task.id);
-                                  unawaited(vm.toggleSelectedCollapsed());
-                                },
-                                icon: Icon(
-                                  task.collapsed
-                                      ? Icons.arrow_right
-                                      : Icons.arrow_drop_down,
-                                ),
-                              )
-                            : Text(
-                                '-',
-                                key: ValueKey('task-prefix-${task.id}'),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: visuallySelected
-                                      ? TerminalPalette.of(context).background
-                                      : TerminalPalette.of(context).muted,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            width: 32,
+                            child: hasChildren
+                                ? IconButton(
+                                    key: ValueKey('task-collapse-${task.id}'),
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                    tooltip: task.collapsed
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.expandSubtasks
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.collapseSubtasks,
+                                    onPressed: () {
+                                      final vm = ref.read(
+                                        workspaceViewModelProvider.notifier,
+                                      );
+                                      vm.selectTask(task.id);
+                                      unawaited(vm.toggleSelectedCollapsed());
+                                    },
+                                    icon: Icon(
+                                      task.collapsed
+                                          ? Icons.arrow_right
+                                          : Icons.arrow_drop_down,
+                                    ),
+                                  )
+                                : Text(
+                                    '-',
+                                    key: ValueKey('task-prefix-${task.id}'),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: visuallySelected
+                                          ? TerminalPalette.of(
+                                              context,
+                                            ).background
+                                          : TerminalPalette.of(context).muted,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                           Expanded(child: title),
                           _TaskTags(task: task, selected: visuallySelected),
@@ -433,6 +460,28 @@ double _twoSpaceWidth(BuildContext context) {
     textDirection: Directionality.of(context),
   )..layout();
   return painter.width;
+}
+
+bool _lastTextLineHasRoom(
+  BuildContext context,
+  String text,
+  TextStyle style, {
+  required double maxWidth,
+  required double trailingWidth,
+  required bool wraps,
+}) {
+  if (maxWidth <= 0) return false;
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: wraps ? null : 1,
+    ellipsis: wraps ? null : '…',
+  )..layout(maxWidth: maxWidth);
+  if (painter.didExceedMaxLines) return false;
+  final lines = painter.computeLineMetrics();
+  final lastLineWidth = lines.isEmpty ? 0 : lines.last.width;
+  return maxWidth - lastLineWidth >= trailingWidth;
 }
 
 class _DottedTaskDividerPainter extends CustomPainter {
@@ -614,11 +663,7 @@ class _TerminalTaskDropTargetState
 }
 
 class _TaskTags extends StatelessWidget {
-  const _TaskTags({
-    required this.task,
-    required this.selected,
-    this.fontSize,
-  });
+  const _TaskTags({required this.task, required this.selected, this.fontSize});
   final Task task;
   final bool selected;
   final double? fontSize;
