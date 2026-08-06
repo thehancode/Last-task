@@ -116,7 +116,9 @@ class WorkspaceTaskRow extends ConsumerWidget {
             : TerminalPalette.of(context).text,
         fontWeight: visuallySelected || multiSelected || highlighted
             ? FontWeight.bold
-            : FontWeight.normal,
+            : terminal
+            ? FontWeight.normal
+            : FontWeight.bold,
         decoration: done || archived ? TextDecoration.lineThrough : null,
         decorationColor: TerminalPalette.of(context).muted,
         height: terminal ? null : 1.1,
