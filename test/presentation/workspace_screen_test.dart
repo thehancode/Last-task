@@ -21,6 +21,10 @@ import 'package:flutter_app/presentation/workspace/workspace_task_panel.dart';
 import 'package:flutter_app/presentation/workspace/workspace_task_row.dart';
 
 void main() {
+  ThemeCatalog? loadedThemeCatalog;
+  Future<ThemeCatalog> loadThemeCatalog() async =>
+      loadedThemeCatalog ??= await ThemeCatalog.load(rootBundle);
+
   testWidgets('workspace loads its default list and exposes pointer commands', (
     tester,
   ) async {
@@ -884,13 +888,6 @@ void main() {
       expect(archivedStamp, findsOneWidget);
       final cell = TerminalMetrics.cell(tester.element(olderStamp));
       expect(tester.getSize(olderStamp).width, closeTo(cell * 5, 0.1));
-      final stampPadding = tester.widget<Padding>(
-        find.byKey(const ValueKey('status-stamp-gap-older-done')),
-      );
-      expect(
-        stampPadding.padding.resolve(TextDirection.ltr).left,
-        closeTo(cell, 0.1),
-      );
       expect(
         tester.getRect(wrappedStamp).right,
         closeTo(tester.getRect(olderStamp).right, 0.1),
@@ -902,6 +899,10 @@ void main() {
       expect(
         tester.getSize(find.textContaining('that wraps onto')).height,
         greaterThan(tester.getSize(wrappedStamp).height),
+      );
+      expect(
+        tester.getRect(find.textContaining('that wraps onto')).right,
+        lessThanOrEqualTo(tester.getRect(wrappedStamp).left),
       );
       expect(tester.takeException(), isNull);
       debugDefaultTargetPlatformOverride = null;
@@ -2218,27 +2219,37 @@ void main() {
       greaterThan(tester.getCenter(leafPrefix).dx),
     );
 
-    final divider = find.byKey(const ValueKey('task-divider-leaf-one'));
-    final leafRow = find.bySemanticsLabel(
-      RegExp('Pending task: First leaf task'),
-    );
-    expect(divider, findsOneWidget);
-    expect(find.byKey(const ValueKey('task-divider-root')), findsNothing);
-    expect(find.byKey(const ValueKey('task-divider-child')), findsNothing);
-    expect(find.byKey(const ValueKey('task-divider-leaf-two')), findsNothing);
-    expect(tester.getSize(divider).height, 10);
+    void expectTimestampedDivider(String id, String title) {
+      final divider = find.byKey(ValueKey('task-divider-$id'));
+      final stamp = find.byKey(ValueKey('status-stamp-$id'));
+      final titleFinder = find.text(title);
+      expect(divider, findsOneWidget);
+      expect(stamp, findsOneWidget);
+      expect(tester.getSize(divider).height, 10);
+      expect(
+        find.descendant(of: divider, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+      );
+      final dividerRect = tester.getRect(divider);
+      final stampRect = tester.getRect(stamp);
+      expect(dividerRect.left, closeTo(tester.getRect(titleFinder).left, 0.1));
+      expect(
+        dividerRect.width,
+        closeTo((stampRect.left - dividerRect.left) * 0.75, 0.1),
+      );
+    }
+
+    expectTimestampedDivider('root', 'Root task\nsecond line');
+    expectTimestampedDivider('child', 'Child task');
+    expectTimestampedDivider('leaf-one', 'First leaf task');
+    expectTimestampedDivider('leaf-two', 'Second leaf task');
     expect(
-      find.descendant(of: divider, matching: find.byType(CustomPaint)),
-      findsOneWidget,
+      tester.getRect(find.byKey(const ValueKey('task-divider-child'))).left,
+      greaterThan(
+        tester.getRect(find.byKey(const ValueKey('task-divider-root'))).left,
+      ),
     );
-    expect(
-      tester.getSize(divider).width,
-      closeTo(tester.getSize(leafRow).width * 0.75, 0.1),
-    );
-    expect(
-      tester.getCenter(divider).dx,
-      closeTo(tester.getCenter(leafRow).dx, 0.1),
-    );
+    expect(find.text('└'), findsNothing);
 
     await tester.tap(collapse);
     await tester.pumpAndSettle();
@@ -2247,6 +2258,85 @@ void main() {
       find.descendant(of: collapse, matching: find.byIcon(Icons.arrow_right)),
       findsOneWidget,
     );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Android centers task dividers when status time is disabled', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+    Task task(String id, String title, {String? parentId}) => Task(
+      id: id,
+      title: title,
+      status: TaskStatus.pending,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null,
+      daily: false,
+      completionHistory: const [],
+      parentId: parentId,
+    );
+    final list = TaskList(
+      schemaVersion: currentSchemaVersion,
+      id: 'divider-list',
+      name: 'Dividers',
+      createdAt: now,
+      tasks: [
+        task('divider-root', 'Root divider task'),
+        task('divider-child', 'Child divider task', parentId: 'divider-root'),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(_Lists([list])),
+          settingsRepositoryProvider.overrideWithValue(
+            const _Settings(AppSettings(showStatusTime: false)),
+          ),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+
+    void expectCenteredDivider(String id, String title) {
+      final row = find.bySemanticsLabel(RegExp('Pending task: $title'));
+      final titleFinder = find.text(title);
+      final divider = find.byKey(ValueKey('task-divider-$id'));
+      expect(row, findsOneWidget);
+      expect(divider, findsOneWidget);
+      expect(find.byKey(ValueKey('status-stamp-$id')), findsNothing);
+      final rowRect = tester.getRect(row);
+      final titleRect = tester.getRect(titleFinder);
+      final dividerRect = tester.getRect(divider);
+      final availableRight = rowRect.right - 8;
+      final availableWidth = availableRight - titleRect.left;
+      expect(dividerRect.width, closeTo(availableWidth * 0.75, 0.1));
+      expect(
+        dividerRect.center.dx,
+        closeTo((titleRect.left + availableRight) / 2, 0.1),
+      );
+    }
+
+    expectCenteredDivider('divider-root', 'Root divider task');
+    expectCenteredDivider('divider-child', 'Child divider task');
+    expect(
+      tester
+          .getCenter(find.byKey(const ValueKey('task-divider-divider-child')))
+          .dx,
+      greaterThan(
+        tester
+            .getCenter(find.byKey(const ValueKey('task-divider-divider-root')))
+            .dx,
+      ),
+    );
+    expect(find.text('└'), findsNothing);
+    expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -3105,7 +3195,7 @@ void main() {
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
       await tester.binding.setSurfaceSize(const Size(420, 600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final catalog = await ThemeCatalog.load(rootBundle);
+      final catalog = await loadThemeCatalog();
       final settings = _RecordingSettings();
       await tester.pumpWidget(
         ProviderScope(
@@ -3255,7 +3345,7 @@ void main() {
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    final catalog = await ThemeCatalog.load(rootBundle);
+    final catalog = await loadThemeCatalog();
     final theme = catalog.byId('gruvbox-light');
     await tester.pumpWidget(
       ProviderScope(
@@ -3270,7 +3360,8 @@ void main() {
         child: const LastTaskApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     final workspaceTheme = Theme.of(
       tester.element(find.byKey(const ValueKey('task-panel-list'))),
