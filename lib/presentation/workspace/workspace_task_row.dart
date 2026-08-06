@@ -302,6 +302,16 @@ class WorkspaceTaskRow extends ConsumerWidget {
                           ),
                         ],
                       );
+                      if (!wrapsTitle) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(child: taskTitle),
+                            SizedBox(width: cell),
+                            metadata,
+                          ],
+                        );
+                      }
                       if (keepMetadataOnLastTitleLine) {
                         return Stack(
                           alignment: Alignment.bottomRight,
