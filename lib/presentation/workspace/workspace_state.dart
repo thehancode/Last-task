@@ -211,6 +211,7 @@ class CompletionTreeRow {
 List<CompletionTreeRow> completedTreeRows(
   TaskList? list, {
   Set<String> revealTaskIds = const {},
+  bool includeCollapsedDescendants = false,
 }) {
   if (list == null) return const [];
   final revealPathIds = _taskRevealPathIds(list, revealTaskIds);
@@ -228,7 +229,9 @@ List<CompletionTreeRow> completedTreeRows(
           ),
         );
       }
-      if (suppressed || task.collapsed) suppressedParents.add(task.id);
+      if (suppressed || (!includeCollapsedDescendants && task.collapsed)) {
+        suppressedParents.add(task.id);
+      }
     }
   }
   return rows;
@@ -238,6 +241,7 @@ List<Task> visibleTreeTasks(
   TaskList? list, {
   Set<TaskStatus>? rootStatuses,
   Set<String> revealTaskIds = const {},
+  bool includeCollapsedDescendants = false,
 }) {
   if (list == null) return const [];
   final revealPathIds = _taskRevealPathIds(list, revealTaskIds);
@@ -251,7 +255,9 @@ List<Task> visibleTreeTasks(
     if (!suppressed || revealPathIds.contains(task.id)) {
       result.add(task);
     }
-    if (suppressed || task.collapsed) suppressedParents.add(task.id);
+    if (suppressed || (!includeCollapsedDescendants && task.collapsed)) {
+      suppressedParents.add(task.id);
+    }
   }
   return result;
 }

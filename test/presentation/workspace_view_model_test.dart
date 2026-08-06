@@ -685,6 +685,13 @@ void main() {
     expect(
       visibleTreeTasks(
         list,
+        includeCollapsedDescendants: true,
+      ).map((task) => task.id),
+      ['root', 'branch', 'match', 'unrelated'],
+    );
+    expect(
+      visibleTreeTasks(
+        list,
         revealTaskIds: const {'match'},
       ).map((task) => task.id),
       ['root', 'branch', 'match'],

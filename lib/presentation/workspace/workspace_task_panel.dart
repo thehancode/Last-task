@@ -70,8 +70,14 @@ class WorkspaceTaskPanel extends ConsumerWidget {
                 onOpenDrawer: onAndroidOpenDrawer,
               )
             : _ListContent(state: state),
-      WorkspaceView.completed => _CompletedContent(state: state),
-      WorkspaceView.multi => _MultiContent(state: state),
+      WorkspaceView.completed => _CompletedContent(
+        state: state,
+        includeCollapsedDescendants: android,
+      ),
+      WorkspaceView.multi => _MultiContent(
+        state: state,
+        includeCollapsedDescendants: android,
+      ),
     };
     final border =
         state.view != WorkspaceView.multi && state.currentList?.isHabit == true
@@ -115,9 +121,9 @@ class WorkspaceTaskPanel extends ConsumerWidget {
                       : BoxFit.contain,
                 ),
                 ColoredBox(
-                  color: TerminalPalette.of(context).background.withValues(
-                    alpha: backgroundOverlayOpacity,
-                  ),
+                  color: TerminalPalette.of(
+                    context,
+                  ).background.withValues(alpha: backgroundOverlayOpacity),
                 ),
                 content,
               ],
@@ -774,6 +780,7 @@ class _AndroidPendingContent extends StatelessWidget {
     final visible = visibleTreeTasks(
       state.currentList,
       revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+      includeCollapsedDescendants: true,
     );
     final pendingTasks = visible.where((task) {
       final status = taskRoot(state.currentList!, task).status;
@@ -828,11 +835,13 @@ class _AndroidDoneArchivedContent extends StatelessWidget {
       state.currentList,
       rootStatuses: const {TaskStatus.done},
       revealTaskIds: searchMatches,
+      includeCollapsedDescendants: true,
     );
     final archivedTasks = visibleTreeTasks(
       state.currentList,
       rootStatuses: const {TaskStatus.archived},
       revealTaskIds: searchMatches,
+      includeCollapsedDescendants: true,
     );
     final doneTitle = workspaceStatusLabel(
       TaskStatus.done,
@@ -893,14 +902,19 @@ class _AndroidDoneArchivedContent extends StatelessWidget {
 }
 
 class _CompletedContent extends StatelessWidget {
-  const _CompletedContent({required this.state});
+  const _CompletedContent({
+    required this.state,
+    required this.includeCollapsedDescendants,
+  });
   final WorkspaceState state;
+  final bool includeCollapsedDescendants;
 
   @override
   Widget build(BuildContext context) {
     final rows = completedTreeRows(
       state.currentList,
       revealTaskIds: state.search?.matchIds.toSet() ?? const {},
+      includeCollapsedDescendants: includeCollapsedDescendants,
     );
     if (rows.isEmpty) {
       return WorkspaceEmptyState(
@@ -929,8 +943,12 @@ class _CompletedContent extends StatelessWidget {
 }
 
 class _MultiContent extends StatelessWidget {
-  const _MultiContent({required this.state});
+  const _MultiContent({
+    required this.state,
+    required this.includeCollapsedDescendants,
+  });
   final WorkspaceState state;
+  final bool includeCollapsedDescendants;
 
   @override
   Widget build(BuildContext context) {
@@ -941,6 +959,7 @@ class _MultiContent extends StatelessWidget {
         list,
         rootStatuses: const {TaskStatus.doing, TaskStatus.pending},
         revealTaskIds: searchMatchIds,
+        includeCollapsedDescendants: includeCollapsedDescendants,
       );
       final matchingDoneRootIds = <String>{
         for (final task in list.tasks)
@@ -954,6 +973,7 @@ class _MultiContent extends StatelessWidget {
                   list,
                   rootStatuses: const {TaskStatus.done},
                   revealTaskIds: searchMatchIds,
+                  includeCollapsedDescendants: includeCollapsedDescendants,
                 )
                 .where(
                   (task) =>

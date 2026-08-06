@@ -2209,7 +2209,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android compacts task rows and keeps collapse before text', (
+  testWidgets('Android always shows subtasks with dash prefixes', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -2234,7 +2234,7 @@ void main() {
       name: 'Tree',
       createdAt: now,
       tasks: [
-        task('root', 'Root task\nsecond line'),
+        task('root', 'Root task\nsecond line').copyWith(collapsed: true),
         task('child', 'Child task', parentId: 'root'),
         task('leaf-one', 'First leaf task'),
         task('leaf-two', 'Second leaf task'),
@@ -2262,19 +2262,18 @@ void main() {
     final collapse = find.byKey(const ValueKey('task-collapse-root'));
     final advance = find.byKey(const ValueKey('task-advance-root'));
     final rootText = find.text('Root task\nsecond line');
-    expect(collapse, findsOneWidget);
+    expect(collapse, findsNothing);
     expect(advance, findsNothing);
-    expect(
-      tester.getCenter(collapse).dx,
-      lessThan(tester.getTopLeft(rootText).dx),
-    );
     expect(tester.widget<Text>(rootText).style?.height, 1.1);
     expect(tester.getSize(rootText).height, inInclusiveRange(30, 32));
-    expect(find.byKey(const ValueKey('task-prefix-root')), findsNothing);
+    final rootPrefix = find.byKey(const ValueKey('task-prefix-root'));
     final childPrefix = find.byKey(const ValueKey('task-prefix-child'));
     final leafPrefix = find.byKey(const ValueKey('task-prefix-leaf-one'));
+    expect(rootPrefix, findsOneWidget);
     expect(childPrefix, findsOneWidget);
     expect(leafPrefix, findsOneWidget);
+    expect(tester.widget<Text>(rootPrefix).data, '-');
+    expect(tester.widget<Text>(childPrefix).data, '-');
     expect(
       tester.getCenter(childPrefix).dx,
       greaterThan(tester.getCenter(leafPrefix).dx),
@@ -2311,14 +2310,87 @@ void main() {
       ),
     );
     expect(find.text('└'), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
 
-    await tester.tap(collapse);
-    await tester.pumpAndSettle();
-    expect(find.text('Child task'), findsNothing);
-    expect(
-      find.descendant(of: collapse, matching: find.byIcon(Icons.arrow_right)),
-      findsOneWidget,
+  testWidgets('Android completed and multi views ignore collapsed state', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.binding.setSurfaceSize(const Size(420, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.utc(2026, 1, 1);
+
+    Task task(
+      String id,
+      String title, {
+      required TaskStatus status,
+      String? parentId,
+      DateTime? completedAt,
+    }) => Task(
+      id: id,
+      title: title,
+      status: status,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: completedAt,
+      daily: false,
+      completionHistory: const [],
+      parentId: parentId,
     );
+
+    Future<void> pumpView(WorkspaceView view) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      final completed = view == WorkspaceView.completed;
+      final rootStatus = completed ? TaskStatus.done : TaskStatus.pending;
+      final list = TaskList(
+        schemaVersion: currentSchemaVersion,
+        id: 'tree-$view',
+        name: 'Tree',
+        createdAt: now,
+        tasks: [
+          task(
+            'root-$view',
+            'Root $view',
+            status: rootStatus,
+            completedAt: completed ? now : null,
+          ).copyWith(collapsed: true),
+          task(
+            'child-$view',
+            'Child $view',
+            status: rootStatus,
+            parentId: 'root-$view',
+            completedAt: completed ? now : null,
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            deviceStateRepositoryProvider.overrideWithValue(
+              _DeviceState(DeviceWorkspaceState(view: view)),
+            ),
+            taskListRepositoryProvider.overrideWithValue(_Lists([list])),
+            settingsRepositoryProvider.overrideWithValue(const _Settings()),
+          ],
+          child: const LastTaskApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(find.text('Child $view'), findsOneWidget);
+      expect(find.byKey(ValueKey('task-collapse-root-$view')), findsNothing);
+      expect(
+        tester
+            .widget<Text>(find.byKey(ValueKey('task-prefix-root-$view')))
+            .data,
+        '-',
+      );
+    }
+
+    await pumpView(WorkspaceView.completed);
+    await pumpView(WorkspaceView.multi);
     debugDefaultTargetPlatformOverride = null;
   });
 
