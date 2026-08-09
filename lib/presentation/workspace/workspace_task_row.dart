@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -344,8 +343,7 @@ class WorkspaceTaskRow extends ConsumerWidget {
         ),
       ),
     );
-    final interactiveRow =
-        !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+    final interactiveRow = !usesTerminalPresentation
         ? _AndroidTaskGesture(
             task: task,
             onLongPress: onLongPress ?? interactions?.onLongPress,

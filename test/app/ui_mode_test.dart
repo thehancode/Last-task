@@ -5,7 +5,7 @@ import 'package:flutter_app/app/ui_mode.dart';
 import 'package:flutter_app/app/window_position_persistence.dart';
 
 void main() {
-  test('terminal presentation is used by web, Linux, and Windows', () {
+  test('terminal presentation is used by desktop web, Linux, and Windows', () {
     for (final platform in const [
       TargetPlatform.linux,
       TargetPlatform.windows,
@@ -15,13 +15,16 @@ void main() {
         isTrue,
       );
     }
-    expect(
-      usesTerminalPresentationFor(
-        isWeb: true,
-        platform: TargetPlatform.android,
-      ),
-      isTrue,
-    );
+    for (final platform in const [
+      TargetPlatform.linux,
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+    ]) {
+      expect(
+        usesTerminalPresentationFor(isWeb: true, platform: platform),
+        isTrue,
+      );
+    }
     for (final platform in const [
       TargetPlatform.android,
       TargetPlatform.iOS,
@@ -30,6 +33,15 @@ void main() {
     ]) {
       expect(
         usesTerminalPresentationFor(isWeb: false, platform: platform),
+        isFalse,
+      );
+    }
+  });
+
+  test('mobile browsers use the touch-oriented Material presentation', () {
+    for (final platform in const [TargetPlatform.android, TargetPlatform.iOS]) {
+      expect(
+        usesTerminalPresentationFor(isWeb: true, platform: platform),
         isFalse,
       );
     }
@@ -62,10 +74,12 @@ void main() {
         isFalse,
       );
     }
-    expect(
-      supportsDesktopBackgroundFor(isWeb: true, platform: TargetPlatform.linux),
-      isFalse,
-    );
+    for (final platform in TargetPlatform.values) {
+      expect(
+        supportsDesktopBackgroundFor(isWeb: true, platform: platform),
+        isFalse,
+      );
+    }
   });
 
   test('frameless desktop windows are limited to Linux and Windows', () {

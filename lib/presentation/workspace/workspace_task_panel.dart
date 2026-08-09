@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,13 +56,13 @@ class WorkspaceTaskPanel extends ConsumerWidget {
     final appearance = state.deviceState.desktopAppearance;
     final hasBackground = background != null;
     final panelOpacity = backgroundConfigured ? 0.0 : 1.0;
-    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    final backgroundOverlayOpacity = android
+    final mobile = !usesTerminalPresentation;
+    final backgroundOverlayOpacity = mobile
         ? .82
         : appearance.backgroundOverlayOpacity;
     final normalContent = switch (state.view) {
       WorkspaceView.list =>
-        android
+        mobile
             ? _AndroidListPages(
                 state: state,
                 currentPage: androidListPage,
@@ -72,11 +72,11 @@ class WorkspaceTaskPanel extends ConsumerWidget {
             : _ListContent(state: state),
       WorkspaceView.completed => _CompletedContent(
         state: state,
-        includeCollapsedDescendants: android,
+        includeCollapsedDescendants: mobile,
       ),
       WorkspaceView.multi => _MultiContent(
         state: state,
-        includeCollapsedDescendants: android,
+        includeCollapsedDescendants: mobile,
       ),
     };
     final border =
@@ -130,7 +130,7 @@ class WorkspaceTaskPanel extends ConsumerWidget {
             )
           : content,
     );
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (mobile) {
       panel = WorkspaceTaskInteractions(
         contextualTaskId: contextualTaskId,
         onLongPress: onTaskLongPress ?? (_, _) {},

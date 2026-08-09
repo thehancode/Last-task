@@ -1,17 +1,20 @@
 import 'package:flutter/foundation.dart';
 
-/// The browser, Linux, and Windows builds mirror the terminal application.
-/// Other Flutter targets retain the touch-oriented Material presentation.
+/// Desktop browsers, Linux, and Windows mirror the terminal application.
+/// Mobile browsers and other Flutter targets retain the touch-oriented
+/// Material presentation.
 bool get usesTerminalPresentation =>
     usesTerminalPresentationFor(isWeb: kIsWeb, platform: defaultTargetPlatform);
 
 bool usesTerminalPresentationFor({
   required bool isWeb,
   required TargetPlatform platform,
-}) =>
-    isWeb ||
-    platform == TargetPlatform.linux ||
-    platform == TargetPlatform.windows;
+}) {
+  if (isWeb) {
+    return platform != TargetPlatform.android && platform != TargetPlatform.iOS;
+  }
+  return platform == TargetPlatform.linux || platform == TargetPlatform.windows;
+}
 
 /// Native background images are available where an IO image picker and
 /// filesystem-backed image loading are supported.
