@@ -171,7 +171,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('terminal Enter creates and Shift+Enter edits a task', (
+  testWidgets('terminal N and Enter create while Shift+Enter edits a task', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
@@ -191,6 +191,18 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 20));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('New task'),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
@@ -218,7 +230,6 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
     await tester.pump();
     expect(find.byType(AlertDialog), findsNothing);
@@ -2975,7 +2986,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('terminal copy shortcuts use title and indented section text', (
+  testWidgets('terminal copy aliases use title and indented section text', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
@@ -3013,6 +3024,12 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 20));
 
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyY);
+    await tester.pump();
+    expect(clipboardText, 'Swipe me');
+    expect(find.textContaining('Task was copied'), findsOneWidget);
+
+    clipboardText = null;
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);

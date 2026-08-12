@@ -564,7 +564,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     }
     if (key == LogicalKeyboardKey.f2) {
       unawaited(_showListEditor(rename: true));
-    } else if (!usesTerminalPresentation && key == LogicalKeyboardKey.keyN) {
+    } else if (key == LogicalKeyboardKey.keyN) {
       unawaited(_showTaskEditor());
     } else if (key == LogicalKeyboardKey.keyA) {
       unawaited(_showTaskEditor(subtask: true));
@@ -574,6 +574,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
       unawaited(_showTaskEditor(edit: true));
     } else if (key == LogicalKeyboardKey.keyD) {
       unawaited(_showTaskEditor(duplicate: true));
+    } else if (key == LogicalKeyboardKey.keyY) {
+      unawaited(_copySelectedTitle());
     } else if (key == LogicalKeyboardKey.keyX) {
       unawaited(_confirmDeleteTask());
     } else if (key == LogicalKeyboardKey.keyR) {
