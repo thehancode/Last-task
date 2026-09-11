@@ -125,6 +125,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openSidebar => 'Open sidebar';
 
   @override
+  String get offline => 'Offline';
+
+  @override
   String get renameList => 'Rename list';
 
   @override

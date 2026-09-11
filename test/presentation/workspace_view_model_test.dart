@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,23 @@ import 'package:flutter_app/domain/repositories.dart';
 import 'package:flutter_app/presentation/workspace_view_model.dart';
 
 void main() {
+  test('sync status controls offline state without an error notice', () async {
+    final list = _list('personal', 'Personal', [_task('one', 'Task')]);
+    final repository = _SyncTaskLists([list]);
+    final container = _container([list], repository: repository);
+    addTearDown(container.dispose);
+    await _ready(container);
+
+    repository.emit(SyncConnectionStatus.offline);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(workspaceViewModelProvider).offline, isTrue);
+    expect(container.read(workspaceViewModelProvider).notice, isNull);
+
+    repository.emit(SyncConnectionStatus.online);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(workspaceViewModelProvider).offline, isFalse);
+  });
+
   test('exports all task lists as a portable JSON document', () async {
     final first = _list('personal', 'Personal', [_task('one', 'One')]);
     final second = _list('work', 'Work', [_task('two', 'Two')]);
@@ -855,6 +873,28 @@ class _TaskLists implements TaskListRepository {
       lists = [...lists]..[index] = list;
     }
   }
+}
+
+class _SyncTaskLists extends _TaskLists implements BackgroundSyncRepository {
+  _SyncTaskLists(super.source);
+
+  final _statuses = StreamController<SyncConnectionStatus>.broadcast(
+    sync: true,
+  );
+
+  void emit(SyncConnectionStatus status) => _statuses.add(status);
+
+  @override
+  Stream<void> get remoteChanges => const Stream.empty();
+
+  @override
+  Stream<Object> get syncErrors => const Stream.empty();
+
+  @override
+  Stream<SyncConnectionStatus> get syncConnectionStatus => _statuses.stream;
+
+  @override
+  Future<void> synchronize({bool force = false}) async {}
 }
 
 class _Settings implements SettingsRepository {

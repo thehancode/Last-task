@@ -126,10 +126,16 @@ class LocalFirstTaskListRepository
   Future<void> _backendQueue = Future<void>.value();
   final StreamController<Object> _syncErrors =
       StreamController<Object>.broadcast(sync: true);
+  final StreamController<SyncConnectionStatus> _syncConnectionStatus =
+      StreamController<SyncConnectionStatus>.broadcast(sync: true);
   bool _backendInitialized = false;
 
   @override
   Stream<Object> get syncErrors => _syncErrors.stream;
+
+  @override
+  Stream<SyncConnectionStatus> get syncConnectionStatus =>
+      _syncConnectionStatus.stream;
 
   @override
   Stream<void> get remoteChanges => const Stream<void>.empty();
@@ -166,11 +172,17 @@ class LocalFirstTaskListRepository
             _backendInitialized = true;
           }
           await write();
+          if (!_syncConnectionStatus.isClosed) {
+            _syncConnectionStatus.add(SyncConnectionStatus.online);
+          }
         })
         // A backend outage must not surface as an unhandled asynchronous error
         // or prevent later writes from being attempted.
         .catchError((Object error, StackTrace _) {
           if (!_syncErrors.isClosed) _syncErrors.add(error);
+          if (!_syncConnectionStatus.isClosed) {
+            _syncConnectionStatus.add(SyncConnectionStatus.offline);
+          }
         });
     unawaited(_backendQueue);
   }
@@ -181,5 +193,8 @@ class LocalFirstTaskListRepository
   /// and deterministic tests.
   Future<void> flushBackendWrites() => _backendQueue;
 
-  Future<void> dispose() => _syncErrors.close();
+  Future<void> dispose() async {
+    await _syncErrors.close();
+    await _syncConnectionStatus.close();
+  }
 }

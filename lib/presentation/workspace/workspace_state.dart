@@ -49,6 +49,7 @@ class WorkspaceState {
     this.currentListId,
     this.selectedTaskId,
     this.soundEnabled = true,
+    this.offline = false,
     this.animatedTaskId,
     this.notice,
     this.error,
@@ -67,6 +68,7 @@ class WorkspaceState {
       currentListId = null,
       selectedTaskId = null,
       soundEnabled = true,
+      offline = false,
       animatedTaskId = null,
       notice = null,
       error = null,
@@ -83,6 +85,7 @@ class WorkspaceState {
   final String? currentListId;
   final String? selectedTaskId;
   final bool soundEnabled;
+  final bool offline;
   final String? animatedTaskId;
   final NoticeState? notice;
   final String? error;
@@ -101,6 +104,7 @@ class WorkspaceState {
     String? selectedTaskId,
     bool clearSelection = false,
     bool? soundEnabled,
+    bool? offline,
     String? animatedTaskId,
     bool clearAnimation = false,
     NoticeState? notice,
@@ -125,6 +129,7 @@ class WorkspaceState {
         ? null
         : (selectedTaskId ?? this.selectedTaskId),
     soundEnabled: soundEnabled ?? this.soundEnabled,
+    offline: offline ?? this.offline,
     animatedTaskId: clearAnimation
         ? null
         : (animatedTaskId ?? this.animatedTaskId),

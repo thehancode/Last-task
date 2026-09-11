@@ -161,6 +161,30 @@ void main() {
 
     expect(backend.events, ['load', 'save:list', 'save:list']);
   });
+
+  test(
+    'reports offline after failure and online after a successful retry',
+    () async {
+      final local = _Lists();
+      final backend = _Lists(saveErrors: [StateError('unreachable')]);
+      final repository = LocalFirstTaskListRepository(local, backend);
+      final statuses = <SyncConnectionStatus>[];
+      final subscription = repository.syncConnectionStatus.listen(statuses.add);
+      addTearDown(subscription.cancel);
+      addTearDown(repository.dispose);
+
+      await repository.save(_list());
+      await repository.flushBackendWrites();
+      expect(statuses, [SyncConnectionStatus.offline]);
+
+      await repository.save(_list().copyWith(name: 'Retry'));
+      await repository.flushBackendWrites();
+      expect(statuses, [
+        SyncConnectionStatus.offline,
+        SyncConnectionStatus.online,
+      ]);
+    },
+  );
 }
 
 TaskList _list() => TaskList(
@@ -172,9 +196,11 @@ TaskList _list() => TaskList(
 );
 
 class _Lists implements TaskListRepository {
-  _Lists({this.saveGate});
+  _Lists({this.saveGate, List<Object> saveErrors = const []})
+    : _saveErrors = List.of(saveErrors);
 
   final Completer<void>? saveGate;
+  final List<Object> _saveErrors;
   final List<String> events = [];
   var _saveCount = 0;
 
@@ -197,6 +223,7 @@ class _Lists implements TaskListRepository {
   @override
   Future<void> save(TaskList list) async {
     events.add('save:${list.id}');
+    if (_saveErrors.isNotEmpty) throw _saveErrors.removeAt(0);
     if (_saveCount++ == 0 && saveGate != null) await saveGate!.future;
   }
 }

@@ -72,6 +72,8 @@
   "@listsLabel": {"description": "Heading above the stacked task lists in the Android sidebar."},
   "openSidebar": "Open sidebar",
   "@openSidebar": {"description": "Tooltip for the Android button that opens the list sidebar."},
+  "offline": "Offline",
+  "@offline": {"description": "Persistent status shown while the workspace cannot synchronize with the backend."},
   "renameList": "Rename list",
   "@renameList": {"description": "Task-list menu action and editor title."},
   "toggleMultiView": "Toggle Multi view",

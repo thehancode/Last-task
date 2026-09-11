@@ -125,6 +125,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get openSidebar => 'Abrir barra lateral';
 
   @override
+  String get offline => 'Sin conexión';
+
+  @override
   String get renameList => 'Renombrar lista';
 
   @override
@@ -604,6 +607,9 @@ class AppLocalizationsEs419 extends AppLocalizationsEs {
   String get openSidebar => 'Abrir barra lateral';
 
   @override
+  String get offline => 'Sin conexión';
+
+  @override
   String get renameList => 'Renombrar lista';
 
   @override
@@ -1081,6 +1087,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get openSidebar => 'Abrir barra lateral';
+
+  @override
+  String get offline => 'Sin conexión';
 
   @override
   String get renameList => 'Renombrar lista';

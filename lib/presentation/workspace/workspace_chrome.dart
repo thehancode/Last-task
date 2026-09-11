@@ -101,6 +101,14 @@ class WorkspaceHeader extends ConsumerWidget {
               ),
             ),
           ),
+          if (state.offline) ...[
+            Text(
+              strings.offline,
+              key: const ValueKey('terminal-offline-indicator'),
+              style: TextStyle(color: TerminalPalette.of(context).muted),
+            ),
+            SizedBox(width: TerminalMetrics.cell(context)),
+          ],
           Text(
             _viewLabel(state.view, strings),
             style: TextStyle(

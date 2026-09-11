@@ -42,9 +42,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
   Timer? _deviceSaveTimer;
   Timer? _highlightTimer;
   Timer? _reorderSaveTimer;
-  StreamSubscription<Object>? _syncErrorSubscription;
+  StreamSubscription<SyncConnectionStatus>? _syncStatusSubscription;
   StreamSubscription<void>? _remoteChangeSubscription;
-  Object? _pendingSyncError;
+  SyncConnectionStatus? _pendingSyncStatus;
   final List<_HistoryEntry> _history = [];
   final List<_HistoryEntry> _redoHistory = [];
   final Map<String, TaskList> _pendingReorderUpserts = {};
@@ -59,7 +59,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     final repository = _lists;
     if (repository is BackgroundSyncRepository) {
       final background = repository as BackgroundSyncRepository;
-      _syncErrorSubscription = background.syncErrors.listen(_handleSyncError);
+      _syncStatusSubscription = background.syncConnectionStatus.listen(
+        _handleSyncConnectionStatus,
+      );
       _remoteChangeSubscription = background.remoteChanges.listen(
         (_) => unawaited(_reloadRemoteChanges()),
       );
@@ -70,7 +72,7 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       _deviceSaveTimer?.cancel();
       _highlightTimer?.cancel();
       _reorderSaveTimer?.cancel();
-      unawaited(_syncErrorSubscription?.cancel());
+      unawaited(_syncStatusSubscription?.cancel());
       unawaited(_remoteChangeSubscription?.cancel());
     });
     Future<void>.microtask(initialize);
@@ -101,7 +103,9 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
             .toSet(),
       );
     } on Object catch (error) {
-      _handleSyncError(error);
+      // Keep the last locally loaded workspace visible if applying remote
+      // changes fails. The repository's sync status owns offline reporting.
+      debugPrint('Last Task remote reload error: $error');
     }
   }
 
@@ -154,10 +158,10 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
       state = restoredSelection
           ? initial.copyWith(selectedTaskId: device.selectedTaskId)
           : _withFirstVisibleSelected(initial);
-      final pendingSyncError = _pendingSyncError;
-      if (pendingSyncError != null) {
-        _pendingSyncError = null;
-        _handleSyncError(pendingSyncError);
+      final pendingSyncStatus = _pendingSyncStatus;
+      if (pendingSyncStatus != null) {
+        _pendingSyncStatus = null;
+        _handleSyncConnectionStatus(pendingSyncStatus);
       }
       if (loaded.warnings.isNotEmpty) _expireNotice(const Duration(seconds: 8));
     } on Object catch (error) {
@@ -171,13 +175,13 @@ class WorkspaceViewModel extends Notifier<WorkspaceState> {
     }
   }
 
-  void _handleSyncError(Object error) {
+  void _handleSyncConnectionStatus(SyncConnectionStatus status) {
     if (state.phase != WorkspacePhase.ready) {
-      _pendingSyncError = error;
+      _pendingSyncStatus = status;
       return;
     }
-    _showNotice(NoticeState('Backend sync failed: $error', error: true));
-    _expireNotice(const Duration(seconds: 8));
+    final offline = status == SyncConnectionStatus.offline;
+    if (state.offline != offline) state = state.copyWith(offline: offline);
   }
 
   Future<List<TaskList>> _resetExpiredDailyTasks(List<TaskList> lists) async {

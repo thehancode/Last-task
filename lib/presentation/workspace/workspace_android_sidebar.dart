@@ -79,6 +79,24 @@ class AndroidWorkspaceHeader extends ConsumerWidget {
               icon: const _TwoLineMenuIcon(),
             ),
           ),
+          if (state.offline)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Tooltip(
+                message: strings.offline,
+                child: Semantics(
+                  key: const ValueKey('android-offline-indicator'),
+                  label: strings.offline,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.cloud_off_outlined,
+                      color: TerminalPalette.of(context).muted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -85,6 +85,8 @@ class OperationLogTaskListRepository
   final _uuid = const Uuid();
   final StreamController<Object> _syncErrors =
       StreamController<Object>.broadcast(sync: true);
+  final StreamController<SyncConnectionStatus> _syncConnectionStatus =
+      StreamController<SyncConnectionStatus>.broadcast(sync: true);
   final StreamController<void> _remoteChanges =
       StreamController<void>.broadcast(sync: true);
 
@@ -100,6 +102,10 @@ class OperationLogTaskListRepository
 
   @override
   Stream<Object> get syncErrors => _syncErrors.stream;
+
+  @override
+  Stream<SyncConnectionStatus> get syncConnectionStatus =>
+      _syncConnectionStatus.stream;
 
   @override
   Stream<void> get remoteChanges => _remoteChanges.stream;
@@ -205,6 +211,9 @@ class OperationLogTaskListRepository
         await _synchronizeNow();
         _failureCount = 0;
         _retryAfter = null;
+        if (!_syncConnectionStatus.isClosed) {
+          _syncConnectionStatus.add(SyncConnectionStatus.online);
+        }
       } on Object catch (error) {
         _failureCount++;
         final seconds = min(120, 15 * (1 << min(_failureCount - 1, 3)));
@@ -212,6 +221,9 @@ class OperationLogTaskListRepository
           Duration(seconds: seconds + Random().nextInt(4)),
         );
         if (!_syncErrors.isClosed) _syncErrors.add(error);
+        if (!_syncConnectionStatus.isClosed) {
+          _syncConnectionStatus.add(SyncConnectionStatus.offline);
+        }
       }
     });
   }
@@ -385,6 +397,7 @@ class OperationLogTaskListRepository
 
   Future<void> dispose() async {
     await _syncErrors.close();
+    await _syncConnectionStatus.close();
     await _remoteChanges.close();
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' show PointerDeviceKind;
 
@@ -24,6 +25,69 @@ void main() {
   ThemeCatalog? loadedThemeCatalog;
   Future<ThemeCatalog> loadThemeCatalog() async =>
       loadedThemeCatalog ??= await ThemeCatalog.load(rootBundle);
+
+  testWidgets('offline status uses platform-specific header indicators', (
+    tester,
+  ) async {
+    final repository = _SyncLists([_listWithTask()]);
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    repository.emit(SyncConnectionStatus.offline);
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('android-offline-indicator')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('terminal-offline-indicator')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('android-floating-notice')), findsNothing);
+
+    repository.emit(SyncConnectionStatus.online);
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('android-offline-indicator')),
+      findsNothing,
+    );
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deviceStateRepositoryProvider.overrideWithValue(const _DeviceState()),
+          taskListRepositoryProvider.overrideWithValue(repository),
+          settingsRepositoryProvider.overrideWithValue(const _Settings()),
+        ],
+        child: const LastTaskApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    repository.emit(SyncConnectionStatus.offline);
+    await tester.pump();
+
+    final indicator = find.byKey(const ValueKey('terminal-offline-indicator'));
+    expect(indicator, findsOneWidget);
+    expect(tester.widget<Text>(indicator).data, 'Offline');
+    expect(
+      find.byKey(const ValueKey('android-offline-indicator')),
+      findsNothing,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
 
   testWidgets('workspace loads its default list and exposes pointer commands', (
     tester,
@@ -1843,7 +1907,9 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android page return does not open the sidebar', (tester) async {
+  testWidgets('Android back opens sidebar from the Pending page', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.binding.setSurfaceSize(const Size(900, 700));
@@ -1903,6 +1969,15 @@ void main() {
       tester.getCenter(headerButton).dx,
       lessThan(tester.getCenter(title).dx),
     );
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('android-sidebar-scroll')),
+      findsOneWidget,
+    );
+    await tester.tapAt(const Offset(880, 350));
+    await tester.pumpAndSettle();
 
     final panel = find.byKey(const ValueKey('task-panel-list'));
     await tester.dragFrom(tester.getCenter(panel), const Offset(-600, 0));
@@ -3845,6 +3920,28 @@ class _Lists implements TaskListRepository {
     _lists.removeWhere((candidate) => candidate.id == list.id);
     _lists.add(list);
   }
+}
+
+class _SyncLists extends _Lists implements BackgroundSyncRepository {
+  _SyncLists(super.lists);
+
+  final _statuses = StreamController<SyncConnectionStatus>.broadcast(
+    sync: true,
+  );
+
+  void emit(SyncConnectionStatus status) => _statuses.add(status);
+
+  @override
+  Stream<void> get remoteChanges => const Stream.empty();
+
+  @override
+  Stream<Object> get syncErrors => const Stream.empty();
+
+  @override
+  Stream<SyncConnectionStatus> get syncConnectionStatus => _statuses.stream;
+
+  @override
+  Future<void> synchronize({bool force = false}) async {}
 }
 
 class _Settings implements SettingsRepository {

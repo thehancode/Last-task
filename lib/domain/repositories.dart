@@ -25,9 +25,12 @@ abstract interface class TaskListRepository {
 
 abstract interface class BackgroundSyncRepository {
   Stream<Object> get syncErrors;
+  Stream<SyncConnectionStatus> get syncConnectionStatus;
   Stream<void> get remoteChanges;
   Future<void> synchronize({bool force = false});
 }
+
+enum SyncConnectionStatus { online, offline }
 
 abstract interface class DeviceStateRepository {
   Future<DeviceWorkspaceState> load();

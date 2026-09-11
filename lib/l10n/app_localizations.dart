@@ -316,6 +316,12 @@ abstract class AppLocalizations {
   /// **'Open sidebar'**
   String get openSidebar;
 
+  /// Persistent status shown while the workspace cannot synchronize with the backend.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offline;
+
   /// Task-list menu action and editor title.
   ///
   /// In en, this message translates to:

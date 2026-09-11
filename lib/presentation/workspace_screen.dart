@@ -1051,11 +1051,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
     );
     if (terminal) return focusedWorkspace;
     return PopScope(
-      canPop:
-          !_androidSecondaryListPage &&
-          !_composerFocusNode.hasFocus &&
-          _composerMode == _ComposerMode.create &&
-          state.selectedTaskId == null,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_androidSecondaryListPage) {
@@ -1065,10 +1061,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen>
         } else if (_composerMode == _ComposerMode.edit ||
             _composerMode == _ComposerMode.duplicate) {
           _cancelEditingComposer();
-        } else if (ref.read(workspaceViewModelProvider).selectedTaskId !=
-            null) {
+        } else if (_contextualTaskId != null) {
           _dismissContextMenu();
           ref.read(workspaceViewModelProvider.notifier).clearTaskSelection();
+        } else {
+          if (ref.read(workspaceViewModelProvider).selectedTaskId != null) {
+            ref.read(workspaceViewModelProvider.notifier).clearTaskSelection();
+          }
+          _openAndroidSidebar();
         }
       },
       child: focusedWorkspace,
